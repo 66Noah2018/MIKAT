@@ -9,8 +9,48 @@ and open the template in the editor.
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdn.metroui.org.ua/v4.3.2/css/metro-all.min.css">
+        <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
     </head>
     <body>
-        <div>TODO write content</div>
+        <!-- navigation and sidebar -->
+        <nav data-role="ribbonmenu">
+            <ul class="tabs-holder">
+                <li class="static" id="sidebar-toggle"><a>File</a></li>
+                <li><a href="#section-main">Main</a></li>
+                <li><a href="#section-comp">Components</a></li>
+            </ul>
+
+            <div class="content-holder">
+                <div class="section" id="section-main">
+                    <p class="p-4">Main</p>
+                </div>
+                <div class="section" id="section-comp">
+                    <button class="ribbon-button">
+                        <span class="icon">
+                            <span class="mif-add icon"></span>
+                        </span>
+                        <span class="caption">Add</span>
+                    </button>
+                    <p class="p-4">Components: parts that can be added to the guideline. Will be icon with subtitle</p>
+                </div>
+            </div>
+        </nav>
+        <aside class="sidebar" data-role="sidebar" data-toggle="#sidebar-toggle" style="margin-top:25px; width:22vh; height:100vh; background-color:#f5f5f5">
+            <ul class="sidebar-menu">
+                <li class="group-title">New</li>
+                <li><a href="#"><span class="mif-add icon"></span>New Project</a></li>
+                <li><a href="#"><span class="mif-folder-open icon"></span>Open Existing Project</a></li>
+                <li class="group-title">Project Options</li>
+                <li><a href="#"><span class="mif-floppy-disk icon"></span>Save</a></li>
+                <li><a href="#"><span class="mif-floppy-disk icon"></span>Save As</a></li>
+                <li><a href="#"><span class="mif-assignment icon"></span>Edit Project Properties</a></li>
+                <li class="group-title">Settings</li>
+                <li><a href="#"><span class="mif-cogs icon"></span>Preferences</a></li>
+            </ul>
+        </aside>
+        
+        <!-- body -->
+
     </body>
 </html>
