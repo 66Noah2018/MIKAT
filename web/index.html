@@ -1,56 +1,228 @@
 <!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>Prototype</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- metro 4 -->
         <link rel="stylesheet" href="https://cdn.metroui.org.ua/v4.3.2/css/metro-all.min.css">
         <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
+        <!-- fontawesome v5 -->
+        <script src="https://kit.fontawesome.com/e64cafaf4a.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="./styles.css">
     </head>
     <body>
         <!-- navigation and sidebar -->
         <nav data-role="ribbonmenu">
             <ul class="tabs-holder">
                 <li class="static" id="sidebar-toggle"><a>File</a></li>
-                <li><a href="#section-main">Main</a></li>
-                <li><a href="#section-comp">Components</a></li>
+                <li><a href="#section-model">Model</a></li>
+                <li><a href="#section-test">Testing</a></li>
             </ul>
 
             <div class="content-holder">
-                <div class="section" id="section-main">
-                    <p class="p-4">Main</p>
+                <div class="section" id="section-model">
+                    <div class="group">
+                        <div data-role="button-group" data-cls-active="active">
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-undo"></span>
+                                </span>
+                                <span class="caption">Undo</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-redo"></span>
+                                </span>
+                                <span class="caption">Redo</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon" style="transform: rotate(90deg)">
+                                    <span class="mif-move-down"></span>
+                                </span>
+                                <span class="caption">Switch with Previous</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon" style="transform:rotate(90deg)">
+                                    <span class="mif-move-up"></span>
+                                </span>
+                                <span class="caption">Switch with Next</span>
+                            </button>
+                        </div>
+                        <span class="title">Actions</span>
+                    </div>
+                    <div class="group">
+                        <div data-role="button-group" data-cls-active="active">
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="far fa-play-circle"></span>
+                                </span>
+                                <span class="caption">Start</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="far fa-stop-circle"></span>
+                                </span>
+                                <span class="caption">Stop</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-link"></span>
+                                </span>
+                                <span class="caption">Add Subroutine</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-flow-branch"></span>
+                                </span>
+                                <span class="caption">If-Else</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-loop"></span>
+                                </span>
+                                <span class="caption">For-loop</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="fas fa-long-arrow-alt-right"></span>
+                                </span>
+                                <span class="caption">Arrow</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="fas fa-file-medical"></span>
+                                </span>
+                                <span class="caption">Retrieve medical data</span>
+                            </button>
+                        </div>
+                        <span class="title">Components</span>
+                    </div>
+                    <div class="group">
+                        <div class="ribbon-toggle-group">
+                            <button class="ribbon-icon-button">
+                                <span class="icon">
+                                    <span class="fas fa-procedures"></span>
+                                </span>
+                                <span class="caption">New Procedure</span>
+                            </button>
+                            <button class="ribbon-icon-button">
+                                <span class="icon">
+                                    <span class="fas fa-microscope"></span>
+                                </span>
+                                <span class="caption">Order Labs</span>
+                            </button>
+                            <button class="ribbon-icon-button">
+                                <span class="icon">
+                                    <span class="fas fa-prescription-bottle-alt"></span>
+                                </span>
+                                <span class="caption">New Prescription</span>
+                            </button>
+                            <button class="ribbon-icon-button">
+                                <span class="icon">
+                                    <span class="fas fa-diagnoses"></span>
+                                </span>
+                                <span class="caption">Add Diagnosis</span>
+                            </button>
+                            <button class="ribbon-icon-button">
+                                <span class="icon">
+                                    <span class="fas fa-syringe"></span>
+                                </span>
+                                <span class="caption">New Vaccination</span>
+                            </button>
+                            <button class="ribbon-icon-button">
+                                <span class="icon">
+                                    <span class="fas fa-notes-medical"></span>
+                                </span>
+                                <span class="caption">Add Medical Notes</span>
+                            </button>
+                        </div> 
+                        <span class="title">Medical actions</span>  
+                    </div>
                 </div>
-                <div class="section" id="section-comp">
-                    <button class="ribbon-button">
-                        <span class="icon">
-                            <span class="mif-add icon"></span>
-                        </span>
-                        <span class="caption">Add</span>
-                    </button>
-                    <p class="p-4">Components: parts that can be added to the guideline. Will be icon with subtitle</p>
+                <div class="section" id="section-test">
+<!--                    <p>generate test cases, import test cases, manually create test cases, edit test cases (includes delete singular/plural), run test & stop test (js to gray out?), display results (auto during/after test, save most recent)</p><br>-->
+                    <div class="group">
+                        <div data-role="button-group" data-cls-active="active">
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-table"></span>
+                                </span>
+                                <span class="caption">Create Test Cases</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="fas fa-file-import"></span>
+                                </span>
+                                <span class="caption">Import Test Cases</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-equalizer"></span>
+                                </span>
+                                <span class="caption">Generate Test Cases</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="far fa-edit"></span>
+                                </span>
+                                <span class="caption">Edit Test Cases</span>
+                            </button>
+                        </div>
+                        <span class="title">Test Cases</span>
+                    </div>
+                    <div class="group">
+                        <div data-role="button-group" data-cls-active="active">
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="far fa-play-circle"></span>
+                                </span>
+                                <span class="caption">Run Test</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="far fa-stop-circle"></span>
+                                </span>
+                                <span class="caption">Stop Test</span>
+                            </button>
+                            <button class="ribbon-button">
+                                <span class="icon">
+                                    <span class="mif-assignment"></span>
+                                </span>
+                                <span class="caption">Test Results</span>
+                            </button>
+                        </div>
+                        <span class="title">Run Tests</span>
+                    </div>
                 </div>
             </div>
         </nav>
-        <aside class="sidebar" data-role="sidebar" data-toggle="#sidebar-toggle" style="margin-top:25px; width:22vh; height:100vh; background-color:#f5f5f5">
+        <aside class="sidebar" data-role="sidebar" data-toggle="#sidebar-toggle">
             <ul class="sidebar-menu">
                 <li class="group-title">New</li>
-                <li><a href="#"><span class="mif-add icon"></span>New Project</a></li>
+                <li><a href="#"><span class="mif-file-empty icon"></span>New Project</a></li>
                 <li><a href="#"><span class="mif-folder-open icon"></span>Open Existing Project</a></li>
                 <li class="group-title">Project Options</li>
                 <li><a href="#"><span class="mif-floppy-disk icon"></span>Save</a></li>
                 <li><a href="#"><span class="mif-floppy-disk icon"></span>Save As</a></li>
-                <li><a href="#"><span class="mif-assignment icon"></span>Edit Project Properties</a></li>
+                <li><a href="#"><span class="mif-description icon"></span>Edit Project Properties</a></li>
+                <li><a href="#"><span class="mif-file-code icon"></span>Export as Arden Syntax</a></li>
                 <li class="group-title">Settings</li>
                 <li><a href="#"><span class="mif-cogs icon"></span>Preferences</a></li>
             </ul>
         </aside>
         
         <!-- body -->
-
+        <h1>TODO</h1>
+        <p>overlay file menu</p>
+        <p>create/edit test cases</p>
+        <p>test results: https://metroui.org.ua/splitter.html</p>
+        <p>retrieve medical data</p>
+        <p>preferences -> content</p>
+        <p>open: https://metroui.org.ua/file.html</p>
+        <p>project setup: https://metroui.org.ua/wizard.html</p>
+        <p>project files: https://metroui.org.ua/windows.html</p>
+        <p>hotkeys: https://metroui.org.ua/hotkeys.html</p>
+        <p>remove class active(??) on click, otherwise sticky buttons...</p>
     </body>
 </html>
