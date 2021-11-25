@@ -13,10 +13,13 @@ and open the template in the editor.
 }
 
 .sidebar{
-    margin-top:25px; 
     width: 27vh; 
     height:100vh; 
     background-color: var(--menu-bg-color)
+}
+
+#sidebar-index{
+    margin-top:25px; 
 }
 
 .ribbon-toggle-group {
@@ -26,3 +29,18 @@ and open the template in the editor.
 .ribbon-button{
     vertical-align: text-top
 }
+
+.sidebar-back{
+    width: fit-content; 
+    margin-left: 15px;
+    margin-top: 15px;
+}
+
+a{
+    color: black;
+}
+
+#file-content{
+    height: 100vh;
+}
+
