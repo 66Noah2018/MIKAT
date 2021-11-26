@@ -44,3 +44,28 @@ a{
     height: 100vh;
 }
 
+#sidebar-fixed{
+    height: 100vh;
+    width: 27vh;
+}
+
+.ribbon-button.active{
+    background-color: var(--menu-bg-color) !important;
+    color: #000;
+    border: 0px;
+}
+
+#create-project{
+    height: 99vh;
+    margin-left: 28vh;
+    margin-top: -99.5vh;
+}
+
+.wizard{
+    width: inherit;
+    height: inherit !important;
+}
+
+.sidebar-div{
+    height: 100vh;
+}

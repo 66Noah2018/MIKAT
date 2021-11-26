@@ -11,9 +11,9 @@
  */
 function openCreateProject(open){
     Metro.session.setItem("openCreateProject", open);
-//    document.getElementById('file-content').style.display = 'none';
-    $("#file-content").hide();
-    alert("test")
+    document.getElementById('file-content').style.display='none';
+//    $("#file-content").hide();
+//    alert("test")
 }
 
 /**
@@ -42,4 +42,3 @@ function exportAsArden(){}
  * @returns {null}
  */
 function preferences(){}
-        
