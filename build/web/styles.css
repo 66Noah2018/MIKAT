@@ -52,13 +52,17 @@ a{
 .ribbon-button.active{
     background-color: var(--menu-bg-color) !important;
     color: #000;
-    border: 0px;
+    border-color: var(--menu-bg-color);
 }
 
-#create-project{
+#create-project, #edit-project, #open-project{
     height: 99vh;
     margin-left: 28vh;
     margin-top: -99.5vh;
+}
+
+#open-project{
+    height: 97vh !important;
 }
 
 .wizard{
@@ -68,4 +72,17 @@ a{
 
 .sidebar-div{
     height: 100vh;
+}
+
+.node-data.item-data-fileName, .node-data.item-data-lastEdited{
+    padding: 5vh;
+}
+
+.file{
+    max-width: 70vh;
+}
+
+.window{
+    width: 100vw !important;
+    height: 86vh !important;
 }

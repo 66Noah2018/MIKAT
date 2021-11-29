@@ -6,23 +6,38 @@
 
 /**
  * 
- * @param {boolean} open
+ * 
  * @returns {null}
  */
-function openCreateProject(open){
-    Metro.session.setItem("openCreateProject", open);
-    document.getElementById('file-content').style.display='none';
-//    $("#file-content").hide();
-//    alert("test")
+function openProject(){
+    
 }
 
 /**
  * 
- * @param {boolean} saveAs
+ * @param {type} node
+ * @returns {undefined}
+ */
+function openRecentProject(node){
+    // getAttribute('data-filename') always returns the filename of the selected project. project can be opened by searching for full path in array. full path will not be included in listview
+    alert(node.getAttribute('data-filename'))
+}
+
+/**
+ * 
+ * 
  * @returns {null}
  */
-function saveProject(saveAs){
-    Metro.session.setItem("saveProject", saveAs)
+function saveProject(){
+    
+}
+
+/**
+ * 
+ * @returns {undefined}
+ */
+function saveProjectAs(){
+    
 }
 
 /**

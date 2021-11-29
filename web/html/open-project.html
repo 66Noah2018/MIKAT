@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Prototype</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- metro 4 -->
+        <link rel="stylesheet" href="https://cdn.metroui.org.ua/v4.3.2/css/metro-all.css">
+        <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
+        <!-- fontawesome v5 -->
+        <script src="https://kit.fontawesome.com/e64cafaf4a.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="../styles.css">
+        <script src="../script.js"></script>
+    </head>
+    <body>
+        <div class="sidebar-div">
+            <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
+        </div>
+        <div id="open-project">
+            <h1 class="open-project">Open Project</h1>
+            <input type="file" data-role="file" accept=".xml" data-prepend="Open Project" data-button-title="<span class='mif-folder'></span>">
+            
+            <h2 class="recently-opened">Recently Opened Projects</h2>
+            <ul data-role="listview" data-view="table" data-select-node="true"
+                data-structure='{"fileName": true, "lastEdited": true}' data-on-node-dblclick="openRecentProject(fileName)">
+                <li data-icon="<span class='far fa-file-alt'>"
+                    data-caption="This will be the MLM name"
+                    data-fileName="fileName"
+                    data-lastEdited="27/11/2021"
+                    id="fileName"></li>
+            </ul>
+        </div>
+    </body>
+</html>
