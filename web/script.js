@@ -4,6 +4,11 @@
  * and open the template in the editor.
  */
 
+var parser = new DOMParser();
+
+function getRandom(max){
+    return (Math.floor(Math.random() * max));
+}
 /**
  * 
  * 
@@ -57,3 +62,47 @@ function exportAsArden(){}
  * @returns {null}
  */
 function preferences(){}
+
+/**
+ * 
+ * @returns {undefined}
+ */
+function generateTestcases(){
+    var spinner = $("#generate_testcases_load")[0];
+    spinner.style.display = "block";
+}
+
+/**
+ * 
+ * 
+ * @returns {undefined}
+ */
+function minimizeWindow(){
+    var window = document.getElementById(event.path[3].id);
+    window.classList.add("minimized")
+    if (window.parentElement.classList[0] == "cell-2"){ 
+        return;
+    }
+    var doc = parser.parseFromString(`<div class='cell-2' id=cell${getRandom(10)}></div>`, 'text/html');
+    var cell = doc.body.firstChild;
+    var row = document.getElementsByClassName("row")[0];
+    row.appendChild(cell);
+    var targetList = document.getElementsByClassName("cell-2");
+    var target = targetList[targetList.length -1];
+    target.appendChild(window);
+}
+
+/**
+ * 
+ * @returns {undefined}
+ */
+function maximizeWindow(){
+    var window = document.getElementById(event.path[3].id);
+    var cellid = window.parentElement.getAttribute('id');
+    if (cellid == null){
+        return;
+    }
+    var target = document.getElementsByClassName("index-body")[0];
+    target.appendChild(window);
+    document.getElementById(cellid).remove();
+}

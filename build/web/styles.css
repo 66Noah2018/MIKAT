@@ -10,6 +10,7 @@ and open the template in the editor.
 :root {
     --bg-color: white;
     --menu-bg-color: #f5f5f5;
+    --bg-color-dialog: snow;
 }
 
 .sidebar{
@@ -83,6 +84,49 @@ a{
 }
 
 .window{
-    width: 100vw !important;
+    width: inherit !important;
     height: 86vh !important;
+    position: absolute;
+    left: 0px;
+    top: 14vh;
+}
+
+.mif-spinner{
+    font-size: 75px;
+    font-weight: 100;
+}
+
+.dialog{
+    position: fixed !important;
+    height: 204px;
+    width: 250px;
+    top: calc(50vh - 102px);
+    left: calc(50vw - 125px);
+    background-color: var(--bg-color-dialog);
+    display: none;
+}
+
+.content-spinner{
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+}
+
+.index-body{
+    width: 99vw;
+    height: 81vh;
+}
+
+.grid {
+    height: 4vh;
+    padding-left: 6px;
+}
+
+[class*=cell]{
+    padding: 0;
+}
+
+.cell-2 {
+    width: 195px;
+    margin-right: -14px;
 }

@@ -157,7 +157,7 @@
                                 </span>
                                 <span class="caption">Import Test Cases</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="generateTestcases()">
                                 <span class="icon">
                                     <span class="mif-equalizer"></span>
                                 </span>
@@ -202,32 +202,77 @@
             <ul class="sidebar-menu">
                 <li class="group-title">New</li>
                 <li><a href="./html/create-project.html"><span class="mif-file-empty icon"></span>New Project</a></li>
-                <li><a href="./html/create-project.html"><span class="mif-folder-open icon"></span>Open Project</a></li>
+                <li><a href="./html/open-project.html"><span class="mif-folder-open icon"></span>Open Project</a></li>
                 <li class="group-title">Project Options</li>
-                <li><a href="./html/create-project.html"><span class="mif-floppy-disk icon"></span>Save</a></li>
-                <li><a href="./html/create-project.html"><span class="mif-floppy-disk icon"></span>Save As</a></li>
-                <li><a href="./html/create-project.html"><span class="mif-description icon"></span>Edit Project Properties</a></li>
-                <li><a href="./html/create-project.html"><span class="mif-file-code icon"></span>Export as Arden Syntax</a></li>
+                <li><a href="#" onclick="saveProject()"><span class="mif-floppy-disk icon"></span>Save</a></li>
+                <li><a href="#" onclick="saveProjectAs()"><span class="mif-floppy-disk icon"></span>Save As</a></li>
+                <li><a href="./html/edit-properties.html"><span class="mif-description icon"></span>Edit Project Properties</a></li>
+                <li><a href="#" onclick="exportAsArden()"><span class="mif-file-code icon"></span>Export as Arden Syntax</a></li>
                 <li class="group-title">Settings</li>
-                <li><a href="./html/create-project.html"><span class="mif-cogs icon"></span>Preferences</a></li>
+                <li><a href="./html/preferences.html"><span class="mif-cogs icon"></span>Preferences</a></li>
             </ul>
         </aside>
         
         <!-- body -->
-        <div class="index-body">
+        <div class="grid">
+            <div class="row" id="window-row">
+
+            </div>
+        </div>
+        <div class="index-body">            
             <div data-role="window" 
-                data-title="Project 1"
+                data-title="Project"
                 data-resizable="false"
                 class="p-2"
-                id="project-1">
+                id="project-1"
+                data-on-min-click="minimizeWindow()"
+                data-on-max-click="maximizeWindow()">
                 <h1>TODO</h1>
                 <p>create/edit test cases</p>
                 <p>retrieve medical data</p>
                 <p>preferences -> content</p>
                 <p>project files/test results: https://metroui.org.ua/windows.html</p>
                 <p>hotkeys: https://metroui.org.ua/hotkeys.html</p>
-                <p><i>Semi-fixed: css .ribbon-button.active </i>remove class active on click, otherwise sticky buttons...</p>    
-           </div>
+                <p><i>Semi-fixed: css .ribbon-button.active </i>onclick--> remove class. remove class active on click, otherwise sticky buttons...</p>  
+            </div>
+            <div data-role="window"
+                data-title="Testcases"
+                data-resizeable="false"
+                class="p-2"
+                id="testcases"
+                data-on-min-click="minimizeWindow()"
+                data-on-max-click="maximizeWindow()">
+                <table class="table cell-hover table-border row-border cell-border compact">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>CRP</th>
+                            <th>ANA</th>
+                        </tr>
+                    </thead>
+                    <tbody contenteditable>
+                        <tr>
+                            <td>1</td>
+                            <td>5</td>
+                            <td>Neg</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>500</td>
+                            <td>Pos</td>
+                        </tr>
+                    </tbody>
+                </table> 
+            </div>
+        </div>
+        
+        <div class="dialog" id="generate_testcases_load">
+            <div class="dialog-title">Generating test cases</div>
+            <div class="dialog-content">
+                <div class="content-spinner">
+                    <span class="mif-spinner ani-pulse"></span>
+                </div>
+            </div>
         </div>
     </body>
 </html>
