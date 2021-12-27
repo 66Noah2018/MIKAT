@@ -24,7 +24,6 @@
             <div class="content-holder">
                 <div class="section" id="section-model">
                     <div class="group">
-                        <div data-role="button-group" data-cls-active="active">
                             <button class="ribbon-button">
                                 <span class="icon">
                                     <span class="mif-undo"></span>
@@ -49,11 +48,9 @@
                                 </span>
                                 <span class="caption">Switch with Next</span>
                             </button>
-                        </div>
                         <span class="title">Actions</span>
                     </div>
                     <div class="group">
-                        <div data-role="button-group" data-cls-active="active">
                             <button class="ribbon-button">
                                 <span class="icon">
                                     <span class="far fa-play-circle"></span>
@@ -96,11 +93,10 @@
                                 </span>
                                 <span class="caption">Retrieve medical data</span>
                             </button>
-                        </div>
                         <span class="title">Components</span>
                     </div>
                     <div class="group">
-                        <div class="ribbon-toggle-group">
+                        <div class="ribbon-grid">
                             <button class="ribbon-icon-button">
                                 <span class="icon">
                                     <span class="fas fa-procedures"></span>
@@ -144,7 +140,6 @@
                 <div class="section" id="section-test">
 <!--                    <p>generate test cases, import test cases, manually create test cases, edit test cases (includes delete singular/plural), run test & stop test (js to gray out?), display results (auto during/after test, save most recent)</p><br>-->
                     <div class="group">
-                        <div data-role="button-group" data-cls-active="active">
                             <button class="ribbon-button">
                                 <span class="icon">
                                     <span class="mif-table"></span>
@@ -157,7 +152,7 @@
                                 </span>
                                 <span class="caption">Import Test Cases</span>
                             </button>
-                            <button class="ribbon-button" onclick="generateTestcases()">
+                            <button class="ribbon-button" id="generateTestcasesBtn" onclick="generateTestcases(this.id)">
                                 <span class="icon">
                                     <span class="mif-equalizer"></span>
                                 </span>
@@ -169,11 +164,10 @@
                                 </span>
                                 <span class="caption">Edit Test Cases</span>
                             </button>
-                        </div>
                         <span class="title">Test Cases</span>
                     </div>
                     <div class="group">
-                        <div data-role="button-group" data-cls-active="active">
+                        <div class="button-group">
                             <button class="ribbon-button">
                                 <span class="icon">
                                     <span class="far fa-play-circle"></span>
@@ -216,7 +210,6 @@
         <!-- body -->
         <div class="grid">
             <div class="row" id="window-row">
-
             </div>
         </div>
         <div class="index-body">            
@@ -226,43 +219,15 @@
                 class="p-2"
                 id="project-1"
                 data-on-min-click="minimizeWindow()"
-                data-on-max-click="maximizeWindow()">
+                data-on-max-click="maximizeWindow()"
+                data-draggable="false">
                 <h1>TODO</h1>
-                <p>create/edit test cases</p>
-                <p>retrieve medical data</p>
+                <p>create/edit test cases -> deal with input, save somewhere, auto retrieve values + defaults</p>
+                <p>retrieve medical data -> only for testcases imported from EHR = could have</p>
                 <p>preferences -> content</p>
                 <p>project files/test results: https://metroui.org.ua/windows.html</p>
                 <p>hotkeys: https://metroui.org.ua/hotkeys.html</p>
-                <p><i>Semi-fixed: css .ribbon-button.active </i>onclick--> remove class. remove class active on click, otherwise sticky buttons...</p>  
-            </div>
-            <div data-role="window"
-                data-title="Testcases"
-                data-resizeable="false"
-                class="p-2"
-                id="testcases"
-                data-on-min-click="minimizeWindow()"
-                data-on-max-click="maximizeWindow()">
-                <table class="table cell-hover table-border row-border cell-border compact">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>CRP</th>
-                            <th>ANA</th>
-                        </tr>
-                    </thead>
-                    <tbody contenteditable>
-                        <tr>
-                            <td>1</td>
-                            <td>5</td>
-                            <td>Neg</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>500</td>
-                            <td>Pos</td>
-                        </tr>
-                    </tbody>
-                </table> 
+                <p>move all file dialogs to Java, because of initialDirectory property in Java (can load this from some sort of tmp file?)
             </div>
         </div>
         

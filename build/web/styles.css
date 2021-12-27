@@ -50,12 +50,6 @@ a{
     width: 27vh;
 }
 
-.ribbon-button.active{
-    background-color: var(--menu-bg-color) !important;
-    color: #000;
-    border-color: var(--menu-bg-color);
-}
-
 #create-project, #edit-project, #open-project{
     height: 99vh;
     margin-left: 28vh;
@@ -118,7 +112,7 @@ a{
 }
 
 .grid {
-    height: 4vh;
+    height: 36px;
     padding-left: 6px;
 }
 
@@ -128,5 +122,22 @@ a{
 
 .cell-2 {
     width: 195px;
-    margin-right: -14px;
+    /*margin-right: -14px;*/
+    flex: inherit;
+    max-width: inherit;
+}
+
+.ribbon-grid{
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    flex-direction: column;
+    flex-wrap: wrap;
+    max-height: 80px;
+    border: 1px solid #dadbdc;
+    width: 300px !important;
+}
+
+.ribbon-icon-button{
+    background-color: #f8f8f8;
 }
