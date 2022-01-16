@@ -8,6 +8,28 @@ let parser = new DOMParser();
 let recentlyOpened = {};
 const testcaseWindowPrologue = "<div data-role='window' data-title='Testcases' data-resizeable='false' class='p-2' id='testcases' data-on-min-click='minimizeWindow()' data-on-max-click='maximizeWindow()' data-draggable='false'>";
 const testcaseWindowEpilogue = "</div>";
+let statusbarExpanded = false;
+let testPatients = {};
+const flowchartImageCodes = {
+    start: "<span class='far fa-play-circle flow-icon'></span>",
+    end: "<span class='far fa-stop-circle flow-icon'></span>",
+    subroutine: "<span class='mif-link mif-3x'></span>",
+    conditional: "<span class='mif-flow-branch mif-3x'></span>",
+    loop: "<span class='mif-loop mif-3x'></span>",
+    retrievedata: "<span class='fas fa-file-medical flow-icon'></span>",
+    newProcedure:"<span class='fas fa-procedure flow-icon></span>",
+    orderLabs: "<span class='fas fa-microscope flow-icon'></span>",
+    newPrescription: "<span class='fas fa-prescription-bottle-alt flow-icon'></span>",
+    addDiagnosis: "<span class='fas fa-diagnoses flow-icon'></span>",
+    newVaccination: "<span class='fas fa-synringe flow-icon'></span>",
+    addNotes: "<span class='fas fa-notes-medical flow-icon'></span>"
+};
+let selectedItemId = -1;
+let lowestY = 0;
+let startIcon = null;
+let endIcon = null;
+let maxX = 0;
+let lines = [];
 
 function getRandom(max){
     return (Math.floor(Math.random() * max));
@@ -41,14 +63,20 @@ function generateTestcasesTableCode(variables, possibleValues){
     const valueCombinations = cartesian(possibleValues);
     let caseNr = 1;
     valueCombinations.forEach(combination => {
+        let patient = {id: caseNr};
         code += "<tr><td>" + caseNr + "</td>";
+        index = 0;
         combination.forEach(value => {
             code += "<td>" + value + "</td>";
+            patient[variables[index]] = value;
+            index += 1;
         });
         code += "</tr>";
+        testPatients[caseNr] = patient;
         caseNr += 1;
     });
     code += "</tbody></table>";
+    console.log(testPatients);
     return code;    
 }
 /**
@@ -110,17 +138,10 @@ function preferences(){}
 
 /**
  * 
- * @param {type} target
+ * @param {type} clicked_id
  * @returns {undefined}
  */
 function generateTestcases(clicked_id){ //get variables and default values
-//    let btn = document.getElementById(clicked_id);
-//    $("#" + clicked_id).removeAttr("class");
-////    $("#" + clicked_id).attr("class", "ribbon-button");
-////    console.log(btn.getAttribute("class"));
-////    btn.classList.remove("active");
-////    btn.classList.remove("js-active");
-//    console.log(btn.classList)
     table = document.getElementById("testcases");
     if (table === null){
         var spinner = $("#generate_testcases_load")[0];
@@ -130,8 +151,8 @@ function generateTestcases(clicked_id){ //get variables and default values
         const windowCode = testcaseWindowPrologue + tableCode + testcaseWindowEpilogue;
         target.appendChild(parser.parseFromString(windowCode, 'text/html').body.firstChild);
         spinner.style.display = "none";
-        document.getElementById("testcases").addEventListener("input", function() {
-            console.log("input event fired");
+        document.getElementById("testcases").addEventListener("input", function(event) {
+            console.log(event.target.value);
         }, false);
     }
 }
@@ -142,6 +163,7 @@ function generateTestcases(clicked_id){ //get variables and default values
  * @returns {undefined}
  */
 function minimizeWindow(){
+    // if window is project window: hide all elements with class leader-line
     var window = document.getElementById(event.path[3].id);
     window.classList.add("minimized");
     if (window.parentElement.classList[0] === "cell-2"){ 
@@ -161,6 +183,7 @@ function minimizeWindow(){
  * @returns {undefined}
  */
 function maximizeWindow(){
+    // if window is project window: show all elements with class leader-line
     var window = document.getElementById(event.path[3].id);
     var cellid = window.parentElement.getAttribute('id');
     if (cellid === null){
@@ -169,4 +192,197 @@ function maximizeWindow(){
     var target = document.getElementsByClassName("index-body")[0];
     target.appendChild(window);
     document.getElementById(cellid).remove();
+}
+
+function openStatusbarDbl(){
+    if (statusbarExpanded){
+        document.getElementById("statusbar").style.bottom = "0px";
+        document.getElementById("error-warning-list").style.display = "none";
+    } else {
+        document.getElementById("statusbar").style.bottom = "225px";
+        document.getElementById("error-warning-list").style.display = "block";
+    }
+    statusbarExpanded = !statusbarExpanded;    
+}
+
+function openErrorStatusbar(context){
+    openStatusbarDbl();
+    if (statusbarExpanded){
+        context.firstChild.style.transform = "rotate(180deg)";
+    } else {
+        context.firstChild.style.transform = "rotate(0deg)";
+    }
+}
+
+function addNewStep(iconCode, iconCaption, prevId){
+    if (iconCode === flowchartImageCodes.end && endIcon !== null) {
+        connectToEnd();
+        return;
+    }
+    if (iconCode === flowchartImageCodes.start && startIcon !== null){
+        return;
+    }
+    let lastIconCoordinates = {x: -90, y: 10};
+    if (prevId !== -1){
+        const prevIcon = document.getElementById(prevId);
+        prevX = prevIcon.style.left;
+        prevY = prevIcon.style.top;
+        lastIconCoordinates = {x: parseInt(prevX.substring(0, prevX.length - 2)), y: parseInt(prevY.substring(0, prevY.length - 2))};
+        console.log(lastIconCoordinates);
+    }
+    
+    let coordinates = lastIconCoordinates;
+    coordinates.x += 120;
+    if (coordinates.x > (maxX - 120)){
+        coordinates.x = 30;
+        coordinates.y = lowestY + 90;
+    }
+    if (coordinates.y > lowestY) { lowestY = coordinates.y; }
+    if (iconCode === flowchartImageCodes.end) { coordinates = {x: maxX - 60, y: 10}; }
+    let stepId = "a" + getRandom(1000);
+    let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
+    let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;
+    let target = document.getElementsByClassName("window")[0].children[1].children[0];
+    newStep.style.top = coordinates.y;
+    newStep.style.left = coordinates.x;
+    target.appendChild(newStep);
+    if (target.children.length >= 2){
+        const prevIcon = target.children[target.children.length-2];
+        const currIcon = target.children[target.children.length-1];
+        let line = new LeaderLine(prevIcon.children[0], currIcon.children[0], {'color':'black', 'size': 4});
+        lines.push(line);
+    }
+    
+    if (iconCode === flowchartImageCodes.start){ startIcon = newStep; }
+    if (iconCode === flowchartImageCodes.end){ endIcon = newStep; }
+    return stepId;
+}
+
+function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodePos, iconCaptionPos, iconCodeNeg, iconCaptionNeg, prevId){
+    const prevIcon = document.getElementById(prevId);
+    let lastIconCoordinates = {x: -90, y: 10};
+    if (prevId !== -1){
+        const prevIcon = document.getElementById(prevId);
+        prevX = prevIcon.style.left;
+        prevY = prevIcon.style.top;
+        lastIconCoordinates = {x: parseInt(prevX.substring(0, prevX.length - 2)), y: parseInt(prevY.substring(0, prevY.length - 2))}; 
+        console.log(lastIconCoordinates)
+    }
+    if (lastIconCoordinates.x + 280 > (maxX - 120)){
+        lastIconCoordinates.x = -90;
+        lastIconCoordinates.y = lowestY + 90;
+    }
+    if (lastIconCoordinates.y + 90 > lowestY) { lowestY = lastIconCoordinates.y; }
+    console.log(lastIconCoordinates)
+    let stepId = "a" + getRandom(1000);
+    let stepIdPos = "a" + getRandom(1000);
+    let stepIdNeg = "a" + getRandom(1000);
+    let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
+    let posIcon = `<div id="${stepIdPos}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCodePos} <p class="icon-font">${iconCaptionPos}</p></div>`;
+    let negIcon = `<div id="${stepIdNeg}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCodeNeg} <p class="icon-font">${iconCaptionNeg}</p></div>`;
+    let target = document.getElementsByClassName("window")[0].children[1].children[0];
+    let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;  
+    newStep.style.top = lastIconCoordinates.y;
+    newStep.style.left = lastIconCoordinates.x + 120;
+    let posStep = parser.parseFromString(posIcon, 'text/html').body.firstChild;
+    posStep.style.top = lastIconCoordinates.y;
+    posStep.style.left = lastIconCoordinates.x + 280;
+    let negStep = parser.parseFromString(negIcon, 'text/html').body.firstChild;
+    negStep.style.top = lastIconCoordinates.y + 90;
+    negStep.style.left = lastIconCoordinates.x + 280;
+    
+    if (iconCodePos === flowchartImageCodes.end) { 
+        posStep.style.top = Math.max(Math.floor(lowestY/2), 10);
+        posStep.style.left = maxX - 60;
+    } else if (iconCodeNeg === flowchartImageCodes.end) {
+        negStep.style.top = Math.max(Math.floor(lowestY/2), 10);
+        negStep.style.left = maxX - 60;
+    }
+    
+    target.appendChild(newStep);
+    target.appendChild(posStep);
+    target.appendChild(negStep);
+    
+    const conditionalIcon = target.children[target.children.length - 3];
+    const posStepIcon = target.children[target.children.length - 2];
+    const negStepIcon = target.children[target.children.length - 1];
+    
+    let line = new LeaderLine(prevIcon.children[0], conditionalIcon.children[0], {'color':'black', 'size': 4});
+    lines.push(line);
+    line = new LeaderLine(conditionalIcon.children[0], posStepIcon.children[0], {'color':'black', 'size': 4, middleLabel: posValue, startSocket: "right"});
+    lines.push(line);
+    line = new LeaderLine(conditionalIcon.children[0], negStepIcon.children[0], {'color':'black', 'size': 4, middleLabel: negValue, startSocket: "right", endSocket: "left", startSocketGravity: 1, path: "arc"});
+    lines.push(line);
+    
+    return {idPos: stepIdPos, idNeg: stepIdNeg};
+}
+
+function buildPrototypeChart(){
+    let id = addNewStep(flowchartImageCodes.start, "Start", -1);
+    id = addNewStep(flowchartImageCodes.retrievedata, "CRP", id);
+    let idPosNeg = addConditionalStep(flowchartImageCodes.conditional, "CRP", ">=10", "<10", flowchartImageCodes.retrievedata, "ANA", flowchartImageCodes.end, "End", id);
+    addConditionalStep(flowchartImageCodes.conditional, "ANA", "Pos", "Neg", flowchartImageCodes.addNotes, "ANA positive", flowchartImageCodes.end, "End", idPosNeg.idPos); 
+}
+
+function addStart(){ 
+    maxX = document.getElementsByClassName("window")[0].children[1].children[0].getBoundingClientRect().width;
+    buildPrototypeChart();
+//    addNewStep(flowchartImageCodes.start, "Start"); 
+}
+
+function addStop(){ addNewStep(flowchartImageCodes.end, "End"); }
+
+function addSubroutine() { 
+    // select project using java, read in project. use projectname as caption for subroutine
+    addNewStep(flowchartImageCodes.subroutine, ""); 
+}
+
+function addIfElse(){
+    // create popup to select variable and set values. select next action for both flows
+    addNewStep(flowchartImageCodes.conditional, "");
+}
+
+function addLoop(){
+    //popup: start new or end existing loop
+     addNewStep(flowchartImageCodes.loop, "");
+}
+
+function retrieveData(){
+    //popup: which data
+    addNewStep(flowchartImageCodes.retrievedata, "");
+}
+
+function addNewProcedure(){
+    //popup: free text or imported template
+    addNewStep(flowchartImageCodes.newProcedure, "");
+}
+
+function addOrderLabs(){
+    // popup: free text or imported template
+    addNewStep(flowchartImageCodes.orderLabs, "");
+}
+
+function addNewPrescription(){
+    //popup: free text, imported template, select list?
+    addNewStep(flowchartImageCodes.newPrescription,"");
+}
+
+function addDiagnosis(){
+    // popup: free text, imported template, select list?
+    addNewStep(flowchartImageCodes.addDiagnosis, "");
+}
+
+function addNewVaccination(){
+    //popup: free text, imported template, select list?
+    addNewStep(flowchartImageCodes.newVaccination, "");
+}
+
+function addMedicalNotes(){
+    // popup: free text or imported template
+    addNewStep(flowchartImageCodes.addNotes, "");
+}
+
+function setSelectedItem(id){
+    selectedItemId = id;
+    console.log(selectedItemId);
 }

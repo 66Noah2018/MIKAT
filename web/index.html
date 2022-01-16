@@ -1,4 +1,15 @@
 <!DOCTYPE html>
+<!--<h1>TODO</h1>
+<p>create/edit test cases -> deal with input, save somewhere, auto retrieve values + defaults</p>
+<p>link error-view update to save</p>
+<p>retrieve medical data -> only for testcases imported from EHR</p>
+<p>preferences -> content</p>
+<p>test results: https://metroui.org.ua/windows.html</p>
+<p>allow insert before selected item (needed for loop!)</p>
+<p>hotkeys?: https://metroui.org.ua/hotkeys.html</p>
+<p>move all file dialogs to Java, because of initialDirectory property in Java (can load this from some sort of tmp file?)</p>
+<p>we can extract if-else statements + conditions from XML(java!). branch conditions can be used for testcases (e.g., >500, =< 500). user then doesn't have to enter defaults. if the data doesn't exist, that's Arden's problem</p>-->
+
 <html>
     <head>
         <title>Prototype</title>
@@ -11,6 +22,8 @@
         <script src="https://kit.fontawesome.com/e64cafaf4a.js" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="./styles.css">
         <script src="./script.js"></script>
+        <!-- LeaderLine -->
+        <script src="./node_modules/leader-line/leader-line.min.js"></script>
     </head>
     <body>
         <!-- navigation and sidebar -->
@@ -51,7 +64,7 @@
                         <span class="title">Actions</span>
                     </div>
                     <div class="group">
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="addStart()">
                                 <span class="icon">
                                     <span class="far fa-play-circle"></span>
                                 </span>
@@ -80,12 +93,6 @@
                                     <span class="mif-loop"></span>
                                 </span>
                                 <span class="caption">For-loop</span>
-                            </button>
-                            <button class="ribbon-button">
-                                <span class="icon">
-                                    <span class="fas fa-long-arrow-alt-right"></span>
-                                </span>
-                                <span class="caption">Arrow</span>
                             </button>
                             <button class="ribbon-button">
                                 <span class="icon">
@@ -221,18 +228,24 @@
                 data-on-min-click="minimizeWindow()"
                 data-on-max-click="maximizeWindow()"
                 data-draggable="false">
-                <h1>TODO</h1>
-                <p>create/edit test cases -> deal with input, save somewhere, auto retrieve values + defaults</p>
-                <p>retrieve medical data -> only for testcases imported from EHR = could have</p>
-                <p>preferences -> content</p>
-                <p>project files/test results: https://metroui.org.ua/windows.html</p>
-                <p>hotkeys: https://metroui.org.ua/hotkeys.html</p>
-                <p>move all file dialogs to Java, because of initialDirectory property in Java (can load this from some sort of tmp file?)
             </div>
+        </div>
+        <div id="statusbar" class="bottom-bar">
+            <div class="bar-content">
+                <button class="button primary square issue-info-btn warnings-btn" ondblclick="openErrorStatusbarDbl"><span class="badge">9</span><span class="mif-warning mif-2x"></span></button>
+                <button class="button primary square issue-info-btn errors-btn" ondblclick="openErrorStatusbarDbl"><span class="badge">1</span><span class="mif-cancel mif-2x"></span></button>
+                <button class="button primary square issue-info-btn" onclick="openErrorStatusbar(this)"><span class="mif-expand-less mif-2x"></span></button>
+            </div>
+        </div>
+        <div id="error-view" class="error-view">
+            <ul data-role="listview" data-view="list" id="error-warning-list">
+                <li data-icon="<span class='mif-warning'></span>" data-caption="warning1"></li>
+                <li data-icon="<span class='mif-cancel'></span>" data-caption="error1"></li>
+            </ul>
         </div>
         
         <div class="dialog" id="generate_testcases_load">
-            <div class="dialog-title">Generating test cases</div>
+            <div class="dialog-title">Generating testcases</div>
             <div class="dialog-content">
                 <div class="content-spinner">
                     <span class="mif-spinner ani-pulse"></span>

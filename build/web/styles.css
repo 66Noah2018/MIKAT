@@ -11,6 +11,7 @@ and open the template in the editor.
     --bg-color: white;
     --menu-bg-color: #f5f5f5;
     --bg-color-dialog: snow;
+    --statusbar-bg-color: #707070;
 }
 
 .sidebar{
@@ -78,11 +79,20 @@ a{
 }
 
 .window{
-    width: inherit !important;
-    height: 86vh !important;
+    width: -webkit-fill-available !important;
     position: absolute;
     left: 0px;
     top: 14vh;
+    padding-bottom: 40px;
+}
+
+.window-content{
+    min-height: 70vh;
+    height: fit-content !important;
+}
+
+.window-content > div {
+    height: inherit;
 }
 
 .mif-spinner{
@@ -106,11 +116,6 @@ a{
     margin: auto;
 }
 
-.index-body{
-    width: 99vw;
-    height: 81vh;
-}
-
 .grid {
     height: 36px;
     padding-left: 6px;
@@ -122,7 +127,6 @@ a{
 
 .cell-2 {
     width: 195px;
-    /*margin-right: -14px;*/
     flex: inherit;
     max-width: inherit;
 }
@@ -140,4 +144,96 @@ a{
 
 .ribbon-icon-button{
     background-color: #f8f8f8;
+}
+
+.sidebar-active{
+    background-color: rgba(red(#1d1d1d), green(#1d1d1d), blue(#1d1d1d), .1);
+}
+
+.bottom-bar {
+    width: 100vw;
+    height: min-content;
+    background-color: var(--statusbar-bg-color);
+    position: fixed;
+    bottom: 0;
+    z-index: 9999;
+}
+
+.bar-content{
+    width: fit-content;
+    margin-right: 20px;
+    margin-left: auto;
+}
+
+.mif-warning{
+    color: orange;
+}
+
+.mif-cancel{
+    color: red;
+}
+
+.issue-info-btn{
+    background-color: transparent !important;
+}
+
+.badge{
+    background-color: var(--statusbar-bg-color);
+    color: white;
+}
+
+/*.error-view{
+    position: fixed;
+    width: 100vw;
+    height: 225px;
+    left: 0;
+    bottom:0;
+    z-index: 9999;
+    background-color: var(--menu-bg-color);
+}*/
+
+#error-warning-list{
+    position: fixed;
+    width: 100vw;
+    height: 225px;
+    left: 0;
+    bottom: 0;
+    padding-top: 25px;
+    background-color: var(--menu-bg-color);
+    z-index: 9999;
+    display: none;
+    overflow-y: scroll;
+}
+
+#error-warning-list li {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border-bottom: 1px;
+    border-bottom-color: var(--statusbar-bg-color);
+    border-style: solid;
+    padding-bottom: 30px;
+}
+
+.flow-icon-div{
+    position: absolute;
+    cursor: pointer;
+}
+
+.flow-icon{
+    font-size: 50px;
+}
+
+.flow-icon-div p{
+    margin: 0;
+    text-align: center;
+}
+
+.leader-line{
+    z-index: 1;
+}
+
+.flow-icon-div:active{
+    background-color: #a4cef9;
+    opacity: 0.8;
+    
 }
