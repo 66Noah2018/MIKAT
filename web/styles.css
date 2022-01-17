@@ -116,21 +116,6 @@ a{
     margin: auto;
 }
 
-.grid {
-    height: 36px;
-    padding-left: 6px;
-}
-
-[class*=cell]{
-    padding: 0;
-}
-
-.cell-2 {
-    width: 195px;
-    flex: inherit;
-    max-width: inherit;
-}
-
 .ribbon-grid{
     display: flex;
     -webkit-box-orient: vertical;
@@ -236,4 +221,26 @@ a{
     background-color: #a4cef9;
     opacity: 0.8;
     
+}
+
+.tests{
+    display: none;
+}
+
+.chartarea{
+    overflow: hidden;
+    min-height: 80vh;
+    height: fit-content;
+}
+
+.tests{
+    position: absolute;
+    top: 0px;
+    width: -webkit-fill-available;
+    height: fit-content;
+}
+
+table{
+    table-layout: fixed;
+    width: 100%;
 }

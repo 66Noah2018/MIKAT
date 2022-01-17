@@ -6,8 +6,6 @@
 
 let parser = new DOMParser();
 let recentlyOpened = {};
-const testcaseWindowPrologue = "<div data-role='window' data-title='Testcases' data-resizeable='false' class='p-2' id='testcases' data-on-min-click='minimizeWindow()' data-on-max-click='maximizeWindow()' data-draggable='false'>";
-const testcaseWindowEpilogue = "</div>";
 let statusbarExpanded = false;
 let testPatients = {};
 const flowchartImageCodes = {
@@ -27,12 +25,18 @@ const flowchartImageCodes = {
 let selectedItemId = -1;
 let lowestY = 0;
 let startIcon = null;
-let endIcon = null;
+let endIconId = -1;
 let maxX = 0;
+let highestX = 0;
 let lines = [];
+let linesToEnd = [];
 
 function getRandom(max){
     return (Math.floor(Math.random() * max));
+}
+
+function getRandomId() {
+    return "a" + getRandom(1000);
 }
 
 function cartesian(args) {
@@ -53,12 +57,17 @@ function cartesian(args) {
     return r;
 }
 
-function generateTestcasesTableCode(variables, possibleValues){
+function generateTestcasesTableCode(variables, possibleValues, possibleOutcomes){
     // possibleValues: array of arrays with every possible value for a variable (as in neg/pos or a value within a specific range)
     let code = "<table class='table cell-hover table-border row-border cell-border compact' id='testcases'><thead><tr><th>#</th>";
+    alert(possibleOutcomes)
     variables.forEach(element => {
         code += "<th>" + element + "</th>";
     });
+    possibleOutcomes.forEach(element => {
+        code += "<th>" + element + "</th>";
+    });
+    alert(code);
     code += "</tr></thead><tbody contenteditable>";
     const valueCombinations = cartesian(possibleValues);
     let caseNr = 1;
@@ -71,12 +80,14 @@ function generateTestcasesTableCode(variables, possibleValues){
             patient[variables[index]] = value;
             index += 1;
         });
+        possibleOutcomes.forEach(element => {
+            code += `<td><input type="checkbox" id="${element}_${caseNr}" name="${element}"></td>`;
+        })
         code += "</tr>";
         testPatients[caseNr] = patient;
         caseNr += 1;
     });
     code += "</tbody></table>";
-    console.log(testPatients);
     return code;    
 }
 /**
@@ -136,6 +147,10 @@ function exportAsArden(){}
  */
 function preferences(){}
 
+function showTestcases(){
+    document.getElementsByClassName("tests")[0].style.display = "block";
+}
+
 /**
  * 
  * @param {type} clicked_id
@@ -146,52 +161,15 @@ function generateTestcases(clicked_id){ //get variables and default values
     if (table === null){
         var spinner = $("#generate_testcases_load")[0];
         spinner.style.display = "block";
-        let target = document.getElementsByClassName("index-body")[0];
-        const tableCode = generateTestcasesTableCode(["CRP", "ANA"], [[5, 500], ["Pos", "Neg"]]);
-        const windowCode = testcaseWindowPrologue + tableCode + testcaseWindowEpilogue;
-        target.appendChild(parser.parseFromString(windowCode, 'text/html').body.firstChild);
+        let target = document.getElementById("_target_testcases");
+        const tableCode = generateTestcasesTableCode(["CRP", "ANA"], [[5, 500], ["Pos", "Neg"]],["Log ANA positive"]);
+        target.appendChild(parser.parseFromString(tableCode, 'text/html').body.firstChild);
         spinner.style.display = "none";
-        document.getElementById("testcases").addEventListener("input", function(event) {
+        document.getElementById("_target_testcases").addEventListener("input", function(event) {
             console.log(event.target.value);
         }, false);
     }
-}
-
-/**
- * 
- * 
- * @returns {undefined}
- */
-function minimizeWindow(){
-    // if window is project window: hide all elements with class leader-line
-    var window = document.getElementById(event.path[3].id);
-    window.classList.add("minimized");
-    if (window.parentElement.classList[0] === "cell-2"){ 
-        return;
-    }
-    var doc = parser.parseFromString(`<div class='cell-2' id=cell${getRandom(10)}></div>`, 'text/html');
-    var cell = doc.body.firstChild;
-    var row = document.getElementsByClassName("row")[0];
-    row.appendChild(cell);
-    var targetList = document.getElementsByClassName("cell-2");
-    var target = targetList[targetList.length -1];
-    target.appendChild(window);
-}
-
-/**
- * 
- * @returns {undefined}
- */
-function maximizeWindow(){
-    // if window is project window: show all elements with class leader-line
-    var window = document.getElementById(event.path[3].id);
-    var cellid = window.parentElement.getAttribute('id');
-    if (cellid === null){
-        return;
-    }
-    var target = document.getElementsByClassName("index-body")[0];
-    target.appendChild(window);
-    document.getElementById(cellid).remove();
+    showTestcases()
 }
 
 function openStatusbarDbl(){
@@ -214,9 +192,11 @@ function openErrorStatusbar(context){
     }
 }
 
-function addNewStep(iconCode, iconCaption, prevId){
-    if (iconCode === flowchartImageCodes.end && endIcon !== null) {
-        connectToEnd();
+function addNewStep(iconCode, iconCaption, prevId, options, lowerY = false){
+    if (iconCode === flowchartImageCodes.end && endIconId !== -1) {
+        endElement = document.getElementById(endIconId);
+        let newX = Math.min(highestX + 120, maxX - 90);
+        endElement.style.left = newX;
         return;
     }
     if (iconCode === flowchartImageCodes.start && startIcon !== null){
@@ -228,7 +208,7 @@ function addNewStep(iconCode, iconCaption, prevId){
         prevX = prevIcon.style.left;
         prevY = prevIcon.style.top;
         lastIconCoordinates = {x: parseInt(prevX.substring(0, prevX.length - 2)), y: parseInt(prevY.substring(0, prevY.length - 2))};
-        console.log(lastIconCoordinates);
+        if (lowerY) { lastIconCoordinates.y += 90; }       
     }
     
     let coordinates = lastIconCoordinates;
@@ -238,27 +218,32 @@ function addNewStep(iconCode, iconCaption, prevId){
         coordinates.y = lowestY + 90;
     }
     if (coordinates.y > lowestY) { lowestY = coordinates.y; }
-    if (iconCode === flowchartImageCodes.end) { coordinates = {x: maxX - 60, y: 10}; }
-    let stepId = "a" + getRandom(1000);
+    if (coordinates.x > highestX) { highestX = coordinates.x; }
+    if (iconCode === flowchartImageCodes.end) { coordinates = {x: Math.min(highestX + 120, maxX - 90), y: lastIconCoordinates.y + 90}; }
+    let stepId = getRandomId();
     let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
     let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;
-    let target = document.getElementsByClassName("window")[0].children[1].children[0];
+    let target = document.getElementsByClassName("chartarea")[0];
     newStep.style.top = coordinates.y;
     newStep.style.left = coordinates.x;
     target.appendChild(newStep);
     if (target.children.length >= 2){
-        const prevIcon = target.children[target.children.length-2];
-        const currIcon = target.children[target.children.length-1];
-        let line = new LeaderLine(prevIcon.children[0], currIcon.children[0], {'color':'black', 'size': 4});
+        const prevIcon = document.getElementById(prevId);
+        const currIcon = document.getElementById(stepId);
+        let line = new LeaderLine(prevIcon.children[0], currIcon.children[0], options);
         lines.push(line);
+        if (iconCode === flowchartImageCodes.end){ linesToEnd.push(line); }
     }
     
     if (iconCode === flowchartImageCodes.start){ startIcon = newStep; }
-    if (iconCode === flowchartImageCodes.end){ endIcon = newStep; }
+    if (iconCode === flowchartImageCodes.end){ endIconId = stepId; }
     return stepId;
 }
 
 function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodePos, iconCaptionPos, iconCodeNeg, iconCaptionNeg, prevId){
+    if (iconCode === flowchartImageCodes.start && startIcon !== null){
+        return;
+    }
     const prevIcon = document.getElementById(prevId);
     let lastIconCoordinates = {x: -90, y: 10};
     if (prevId !== -1){
@@ -266,66 +251,71 @@ function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodeP
         prevX = prevIcon.style.left;
         prevY = prevIcon.style.top;
         lastIconCoordinates = {x: parseInt(prevX.substring(0, prevX.length - 2)), y: parseInt(prevY.substring(0, prevY.length - 2))}; 
-        console.log(lastIconCoordinates)
+        if (lastIconCoordinates.x > highestX) { highestX = lastIconCoordinates.x; }
     }
-    if (lastIconCoordinates.x + 280 > (maxX - 120)){
-        lastIconCoordinates.x = -90;
-        lastIconCoordinates.y = lowestY + 90;
-    }
-    if (lastIconCoordinates.y + 90 > lowestY) { lowestY = lastIconCoordinates.y; }
-    console.log(lastIconCoordinates)
-    let stepId = "a" + getRandom(1000);
-    let stepIdPos = "a" + getRandom(1000);
-    let stepIdNeg = "a" + getRandom(1000);
+    let target = document.getElementsByClassName("chartarea")[0];
+    
+    // add first icon (conditional)
+    let stepId = getRandomId();
     let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
-    let posIcon = `<div id="${stepIdPos}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCodePos} <p class="icon-font">${iconCaptionPos}</p></div>`;
-    let negIcon = `<div id="${stepIdNeg}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCodeNeg} <p class="icon-font">${iconCaptionNeg}</p></div>`;
-    let target = document.getElementsByClassName("window")[0].children[1].children[0];
     let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;  
     newStep.style.top = lastIconCoordinates.y;
     newStep.style.left = lastIconCoordinates.x + 120;
-    let posStep = parser.parseFromString(posIcon, 'text/html').body.firstChild;
-    posStep.style.top = lastIconCoordinates.y;
-    posStep.style.left = lastIconCoordinates.x + 280;
-    let negStep = parser.parseFromString(negIcon, 'text/html').body.firstChild;
-    negStep.style.top = lastIconCoordinates.y + 90;
-    negStep.style.left = lastIconCoordinates.x + 280;
-    
-    if (iconCodePos === flowchartImageCodes.end) { 
-        posStep.style.top = Math.max(Math.floor(lowestY/2), 10);
-        posStep.style.left = maxX - 60;
-    } else if (iconCodeNeg === flowchartImageCodes.end) {
-        negStep.style.top = Math.max(Math.floor(lowestY/2), 10);
-        negStep.style.left = maxX - 60;
-    }
     
     target.appendChild(newStep);
-    target.appendChild(posStep);
-    target.appendChild(negStep);
-    
-    const conditionalIcon = target.children[target.children.length - 3];
-    const posStepIcon = target.children[target.children.length - 2];
-    const negStepIcon = target.children[target.children.length - 1];
-    
-    let line = new LeaderLine(prevIcon.children[0], conditionalIcon.children[0], {'color':'black', 'size': 4});
-    lines.push(line);
-    line = new LeaderLine(conditionalIcon.children[0], posStepIcon.children[0], {'color':'black', 'size': 4, middleLabel: posValue, startSocket: "right"});
-    lines.push(line);
-    line = new LeaderLine(conditionalIcon.children[0], negStepIcon.children[0], {'color':'black', 'size': 4, middleLabel: negValue, startSocket: "right", endSocket: "left", startSocketGravity: 1, path: "arc"});
+    let line = new LeaderLine(prevIcon.children[0], document.getElementById(stepId).children[0], {'color':'black', 'size': 4});
     lines.push(line);
     
+    let stepIdPos = -1;
+    let stepIdNeg = -1;
+    // option 1: no end nodes
+    if (iconCodePos !== flowchartImageCodes.end && iconCodeNeg !== flowchartImageCodes.end){
+        stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, {'color':'black', 'size': 4, middleLabel: posValue, startSocket: "right", endSocket: "left", startSocketGravity: 1});
+        stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, {'color':'black', 'size': 4, middleLabel: negValue, startSocket: "right", endSocket: "left", startSocketGravity: 1, path: "arc"}, true);
+    } else if (iconCodePos === flowchartImageCodes.end) {
+        // option 2: positive node is end node
+        if (endIconId !== -1){
+            // there is already an end node we can connect to          
+            let endNode = document.getElementById(endIconId);
+            endNode.style.left = highestX + 120; // move node
+            linesToEnd.forEach((line) => {
+                line.position();
+            });
+            let line = new LeaderLine(newStep.children[0], endNode.children[0], {'color': 'black', 'size': 4, middleLabel: posValue, startSocket: "right", endSocket: "left", startSocketGravity: 1});
+            lines.push(line);
+            linesToEnd.push(line);
+        } else {
+            stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, {'color':'black', 'size': 4, middleLabel: posValue, startSocket: "right", endSocket: "left", startSocketGravity: 1});
+        }
+        // add step for neg
+        stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, {'color':'black', 'size': 4, middleLabel: negValue, startSocket: "right", endSocket: "left", startSocketGravity: 1, path: "arc"}, true);
+    } else if (iconCodeNeg === flowchartImageCodes.end){
+        stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, {'color':'black', 'size': 4, middleLabel: posValue, startSocket: "right", endSocket: "left", startSocketGravity: 1});
+        if (endIconId !== -1){
+            let endNode = document.getElementById(endIconId);
+            endNode.style.left = highestX + 120; // move node
+            linesToEnd.forEach((line) => {
+                line.position();
+            });
+            let line = new LeaderLine(newStep.children[0], endNode.children[0], {'color': 'black', 'size': 4, middleLabel: negValue, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"arc"}, true);
+            lines.push(line);
+            linesToEnd.push(line);
+        } else {
+            stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, {'color':'black', 'size': 4, middleLabel: negValue, startSocket: "right", endSocket: "left", startSocketGravity: 1, path: "arc"}, true);
+        }
+    }
     return {idPos: stepIdPos, idNeg: stepIdNeg};
 }
 
 function buildPrototypeChart(){
-    let id = addNewStep(flowchartImageCodes.start, "Start", -1);
-    id = addNewStep(flowchartImageCodes.retrievedata, "CRP", id);
+    let id = addNewStep(flowchartImageCodes.start, "Start", -1, {'color':'black', 'size': 4});
+    id = addNewStep(flowchartImageCodes.retrievedata, "CRP", id, {'color':'black', 'size': 4});
     let idPosNeg = addConditionalStep(flowchartImageCodes.conditional, "CRP", ">=10", "<10", flowchartImageCodes.retrievedata, "ANA", flowchartImageCodes.end, "End", id);
     addConditionalStep(flowchartImageCodes.conditional, "ANA", "Pos", "Neg", flowchartImageCodes.addNotes, "ANA positive", flowchartImageCodes.end, "End", idPosNeg.idPos); 
 }
 
 function addStart(){ 
-    maxX = document.getElementsByClassName("window")[0].children[1].children[0].getBoundingClientRect().width;
+    maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
     buildPrototypeChart();
 //    addNewStep(flowchartImageCodes.start, "Start"); 
 }

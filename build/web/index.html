@@ -214,20 +214,17 @@
             </ul>
         </aside>
         
-        <!-- body -->
-        <div class="grid">
-            <div class="row" id="window-row">
-            </div>
-        </div>
         <div class="index-body">            
-            <div data-role="window" 
-                data-title="Project"
-                data-resizable="false"
-                class="p-2"
-                id="project-1"
-                data-on-min-click="minimizeWindow()"
-                data-on-max-click="maximizeWindow()"
-                data-draggable="false">
+            <div class="chartarea"></div>
+            <div class="tests">
+                <ul data-role="tabs" data-expand="true">
+                    <li onclick="openTestcases"><a href="#_target_testcases">Test cases</a></li>
+                    <li onclick="openTestresults"><a href=#_target_results">Test results</a></li>
+                </ul>
+                <div class="border bd-default no-border-top p-2">
+                    <div id="_target_testcases"></div>
+                    <div id="_target_results"></div>
+                </div>
             </div>
         </div>
         <div id="statusbar" class="bottom-bar">
