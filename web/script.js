@@ -59,15 +59,14 @@ function cartesian(args) {
 
 function generateTestcasesTableCode(variables, possibleValues, possibleOutcomes){
     // possibleValues: array of arrays with every possible value for a variable (as in neg/pos or a value within a specific range)
-    let code = "<table class='table cell-hover table-border row-border cell-border compact' id='testcases'><thead><tr><th>#</th>";
-    alert(possibleOutcomes)
+    let code = "<table class='table cell-hover table-border row-border cell-border compact' id='testcases'>";
+    code += "<colgroup><col span='1' style='width: 5%'></colgroup><thead><tr><th>#</th>";
     variables.forEach(element => {
         code += "<th>" + element + "</th>";
     });
     possibleOutcomes.forEach(element => {
         code += "<th>" + element + "</th>";
     });
-    alert(code);
     code += "</tr></thead><tbody contenteditable>";
     const valueCombinations = cartesian(possibleValues);
     let caseNr = 1;
@@ -82,7 +81,7 @@ function generateTestcasesTableCode(variables, possibleValues, possibleOutcomes)
         });
         possibleOutcomes.forEach(element => {
             code += `<td><input type="checkbox" id="${element}_${caseNr}" name="${element}"></td>`;
-        })
+        });
         code += "</tr>";
         testPatients[caseNr] = patient;
         caseNr += 1;
@@ -147,16 +146,46 @@ function exportAsArden(){}
  */
 function preferences(){}
 
-function showTestcases(){
-    document.getElementsByClassName("tests")[0].style.display = "block";
+function showTestCases(){
+    const currentState = document.getElementsByClassName("tests")[0].style.display;
+    if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; } //make tabs + content visible
+    else if (document.getElementById("openTestCases").classList.contains("highlight")) { //user clicks on the highlighted button (e.g., edit when tab test cases is open), leads to hide tabs + content
+        document.getElementsByClassName("tests")[0].style.display = "none"; 
+        document.getElementById("openTestCases").classList.remove("highlight");
+        document.getElementById("openTestCases").classList.remove("active");
+    }
+    highlight('openTestCases', 'openTestResults');
+    document.getElementById("testCases").classList.add("active"); //switch to correct tab
+    document.getElementById("testResults").classList.remove("active");
+    document.getElementById("_target_testcases").style.display = "block";
+    document.getElementById("_target_results").style.display = "none";
+}
+
+function showTestResults(){
+    const currentState = document.getElementsByClassName("tests")[0].style.display;
+    if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; }
+    else if (document.getElementById("openTestResults").classList.contains("highlight")) { 
+        document.getElementsByClassName("tests")[0].style.display = "none"; 
+        document.getElementById("openTestResults").classList.remove("highlight");
+        document.getElementById("openTestResults").classList.remove("active");
+    }
+    highlight('openTestResults', 'openTestCases');
+    document.getElementById("testCases").classList.remove("active");
+    document.getElementById("testResults").classList.add("active");
+    document.getElementById("_target_testcases").style.display = "none";
+    document.getElementById("_target_results").style.display = "block";
+}
+
+function highlight(elToHighlight, elToNormalize){
+    document.getElementById(elToHighlight).classList.add("highlight");
+    document.getElementById(elToNormalize).classList.remove("highlight");
 }
 
 /**
  * 
- * @param {type} clicked_id
  * @returns {undefined}
  */
-function generateTestcases(clicked_id){ //get variables and default values
+function generateTestcases(){ //get variables and default values
     table = document.getElementById("testcases");
     if (table === null){
         var spinner = $("#generate_testcases_load")[0];
@@ -165,11 +194,11 @@ function generateTestcases(clicked_id){ //get variables and default values
         const tableCode = generateTestcasesTableCode(["CRP", "ANA"], [[5, 500], ["Pos", "Neg"]],["Log ANA positive"]);
         target.appendChild(parser.parseFromString(tableCode, 'text/html').body.firstChild);
         spinner.style.display = "none";
+        showTestCases();
         document.getElementById("_target_testcases").addEventListener("input", function(event) {
             console.log(event.target.value);
         }, false);
     }
-    showTestcases()
 }
 
 function openStatusbarDbl(){

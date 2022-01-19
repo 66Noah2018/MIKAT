@@ -223,6 +223,11 @@ a{
     
 }
 
+.highlight{
+    background-color: #a4cef9;
+    opacity: 0.8;
+}
+
 .tests{
     display: none;
 }
@@ -237,7 +242,9 @@ a{
     position: absolute;
     top: 0px;
     width: -webkit-fill-available;
-    height: fit-content;
+    height: -webkit-fill-available;
+    z-index: 9999;
+    background-color: white;
 }
 
 table{
