@@ -147,14 +147,15 @@ function exportAsArden(){}
 function preferences(){}
 
 function showTestCases(){
+    highlight('openTestCases', 'openTestResults');
     const currentState = document.getElementsByClassName("tests")[0].style.display;
     if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; } //make tabs + content visible
-    else if (document.getElementById("openTestCases").classList.contains("highlight")) { //user clicks on the highlighted button (e.g., edit when tab test cases is open), leads to hide tabs + content
+    else if (!document.getElementById("openTestCases").classList.contains("highlight")) { //user clicks on the highlighted button (e.g., edit when tab test cases is open), leads to hide tabs + content
         document.getElementsByClassName("tests")[0].style.display = "none"; 
         document.getElementById("openTestCases").classList.remove("highlight");
         document.getElementById("openTestCases").classList.remove("active");
     }
-    highlight('openTestCases', 'openTestResults');
+    
     document.getElementById("testCases").classList.add("active"); //switch to correct tab
     document.getElementById("testResults").classList.remove("active");
     document.getElementById("_target_testcases").style.display = "block";
@@ -162,14 +163,15 @@ function showTestCases(){
 }
 
 function showTestResults(){
+    highlight('openTestResults', 'openTestCases');
     const currentState = document.getElementsByClassName("tests")[0].style.display;
     if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; }
-    else if (document.getElementById("openTestResults").classList.contains("highlight")) { 
+    else if (!document.getElementById("openTestResults").classList.contains("highlight")) { 
         document.getElementsByClassName("tests")[0].style.display = "none"; 
         document.getElementById("openTestResults").classList.remove("highlight");
         document.getElementById("openTestResults").classList.remove("active");
     }
-    highlight('openTestResults', 'openTestCases');
+    
     document.getElementById("testCases").classList.remove("active");
     document.getElementById("testResults").classList.add("active");
     document.getElementById("_target_testcases").style.display = "none";
@@ -177,7 +179,11 @@ function showTestResults(){
 }
 
 function highlight(elToHighlight, elToNormalize){
-    document.getElementById(elToHighlight).classList.add("highlight");
+    if (document.getElementById(elToHighlight).classList.contains("highlight")){
+        document.getElementById(elToHighlight).classList.remove("highlight");
+    } else {
+        document.getElementById(elToHighlight).classList.add("highlight");
+    }
     document.getElementById(elToNormalize).classList.remove("highlight");
 }
 
