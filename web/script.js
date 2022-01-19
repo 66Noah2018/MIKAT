@@ -30,6 +30,8 @@ let maxX = 0;
 let highestX = 0;
 let lines = [];
 let linesToEnd = [];
+let nrVarsTable = 0;
+let outcomesTable = 0;
 
 function getRandom(max){
     return (Math.floor(Math.random() * max));
@@ -58,6 +60,8 @@ function cartesian(args) {
 }
 
 function generateTestcasesTableCode(variables, possibleValues, possibleOutcomes){
+    nrVarsTable = variables.length;
+    outcomesTable = possibleOutcomes;
     // possibleValues: array of arrays with every possible value for a variable (as in neg/pos or a value within a specific range)
     let code = "<table class='table cell-hover table-border row-border cell-border compact' id='testcases'>";
     code += "<colgroup><col span='1' style='width: 5%'></colgroup><thead><tr><th>#</th>";
@@ -160,6 +164,7 @@ function showTestCases(){
     document.getElementById("testResults").classList.remove("active");
     document.getElementById("_target_testcases").style.display = "block";
     document.getElementById("_target_results").style.display = "none";
+    return;
 }
 
 function showTestResults(){
@@ -176,6 +181,7 @@ function showTestResults(){
     document.getElementById("testResults").classList.add("active");
     document.getElementById("_target_testcases").style.display = "none";
     document.getElementById("_target_results").style.display = "block";
+    return;
 }
 
 function highlight(elToHighlight, elToNormalize){
@@ -205,6 +211,9 @@ function generateTestcases(){ //get variables and default values
             console.log(event.target.value);
         }, false);
     }
+    document.getElementById("generateTestcasesBtn").classList.add("disabled");
+    document.getElementById("openTestCases").classList.remove("disabled");
+    document.getElementById("createTestCases").classList.add("disabled");
 }
 
 function openStatusbarDbl(){
@@ -270,8 +279,11 @@ function addNewStep(iconCode, iconCaption, prevId, options, lowerY = false){
         if (iconCode === flowchartImageCodes.end){ linesToEnd.push(line); }
     }
     
-    if (iconCode === flowchartImageCodes.start){ startIcon = newStep; }
-    if (iconCode === flowchartImageCodes.end){ endIconId = stepId; }
+    if (iconCode === flowchartImageCodes.start){ 
+        startIcon = newStep; 
+        document.getElementById("addStartBtn").classList.add("disabled");
+    }
+    if (iconCode === flowchartImageCodes.end){ endIconId = stepId; } // do not disable, click again links to existing btn
     return stepId;
 }
 
@@ -409,5 +421,32 @@ function addMedicalNotes(){
 
 function setSelectedItem(id){
     selectedItemId = id;
-    console.log(selectedItemId);
+    alert(selectedItemId);
+}
+
+function createTestCases(){}
+
+function importTestCases(){}
+
+function startTests(){}
+
+function stopTests(){}
+
+function addNewTestCase(){
+    let newRow = document.getElementById("testcases").insertRow();
+    let newCell = newRow.insertCell(0);
+    let nextId = document.getElementById("testcases").rows.length - 1;
+    newCell.appendChild(document.createTextNode(nextId));
+    [...Array(nrVarsTable)].forEach((e) => newRow.insertCell(-1));
+    [...Array(outcomesTable)].forEach((outcome) => {
+        let content = `<input type="checkbox" id="${outcome}_${nextId}" name="${outcome}">`;
+        newCell = newRow.insertCell(-1);
+        newCell.appendChild(parser.parseFromString(content, 'text/html').body.firstChild);
+    });
+}
+
+function createTestCases(){
+    
+    
+    generateTestcasesTableCode(variables, possibleValues, possibleOutcomes
 }

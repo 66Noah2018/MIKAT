@@ -64,37 +64,37 @@
                         <span class="title">Actions</span>
                     </div>
                     <div class="group">
-                            <button class="ribbon-button" onclick="addStart()">
+                            <button class="ribbon-button" onclick="addStart()" id="addStartBtn">
                                 <span class="icon">
                                     <span class="far fa-play-circle"></span>
                                 </span>
                                 <span class="caption">Start</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" id="addStopBtn" onclick="addStop()">
                                 <span class="icon">
                                     <span class="far fa-stop-circle"></span>
                                 </span>
                                 <span class="caption">Stop</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="addSubroutine()">
                                 <span class="icon">
                                     <span class="mif-link"></span>
                                 </span>
                                 <span class="caption">Add Subroutine</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="addIfElse()">
                                 <span class="icon">
                                     <span class="mif-flow-branch"></span>
                                 </span>
                                 <span class="caption">If-Else</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="addLoop()">
                                 <span class="icon">
                                     <span class="mif-loop"></span>
                                 </span>
                                 <span class="caption">For-loop</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="retrieveData()">
                                 <span class="icon">
                                     <span class="fas fa-file-medical"></span>
                                 </span>
@@ -104,37 +104,37 @@
                     </div>
                     <div class="group">
                         <div class="ribbon-grid">
-                            <button class="ribbon-icon-button">
+                            <button class="ribbon-icon-button" onclick="addNewProcedure()">
                                 <span class="icon">
                                     <span class="fas fa-procedures"></span>
                                 </span>
                                 <span class="caption">New Procedure</span>
                             </button>
-                            <button class="ribbon-icon-button">
+                            <button class="ribbon-icon-button" onclick="addOrderLabs()">
                                 <span class="icon">
                                     <span class="fas fa-microscope"></span>
                                 </span>
                                 <span class="caption">Order Labs</span>
                             </button>
-                            <button class="ribbon-icon-button">
+                            <button class="ribbon-icon-button" onclick="addNewPrescription()">
                                 <span class="icon">
                                     <span class="fas fa-prescription-bottle-alt"></span>
                                 </span>
                                 <span class="caption">New Prescription</span>
                             </button>
-                            <button class="ribbon-icon-button">
+                            <button class="ribbon-icon-button" onclick="addDiagnosis()">
                                 <span class="icon">
                                     <span class="fas fa-diagnoses"></span>
                                 </span>
                                 <span class="caption">Add Diagnosis</span>
                             </button>
-                            <button class="ribbon-icon-button">
+                            <button class="ribbon-icon-button" onclick="addNewVaccination()">
                                 <span class="icon">
                                     <span class="fas fa-syringe"></span>
                                 </span>
                                 <span class="caption">New Vaccination</span>
                             </button>
-                            <button class="ribbon-icon-button">
+                            <button class="ribbon-icon-button" onclick="addMedicalNotes()">
                                 <span class="icon">
                                     <span class="fas fa-notes-medical"></span>
                                 </span>
@@ -147,13 +147,13 @@
                 <div class="section" id="section-test">
 <!--                    <p>generate test cases, import test cases, manually create test cases, edit test cases (includes delete singular/plural), run test & stop test (js to gray out?), display results (auto during/after test, save most recent)</p><br>-->
                     <div class="group">
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" id="createTestCases" onclick="createTestCases()">
                                 <span class="icon">
                                     <span class="mif-table"></span>
                                 </span>
                                 <span class="caption">Create Test Cases</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="importTestCases()">
                                 <span class="icon">
                                     <span class="fas fa-file-import"></span>
                                 </span>
@@ -165,7 +165,7 @@
                                 </span>
                                 <span class="caption">Generate Test Cases</span>
                             </button>
-                            <button id="openTestCases" class="ribbon-button" onclick="showTestCases()">
+                            <button id="openTestCases" class="ribbon-button disabled" onclick="showTestCases()">
                                 <span class="icon">
                                     <span class="far fa-edit"></span>
                                 </span>
@@ -175,13 +175,13 @@
                     </div>
                     <div class="group">
                         <div class="button-group">
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="startTests()">
                                 <span class="icon">
                                     <span class="far fa-play-circle"></span>
                                 </span>
                                 <span class="caption">Run Test</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" onclick="stopTests()">
                                 <span class="icon">
                                     <span class="far fa-stop-circle"></span>
                                 </span>
@@ -222,7 +222,12 @@
                     <li id="testResults" onclick="highlight('openTestResults', 'openTestCases')"><a href="#_target_results">Test results</a></li>
                 </ul>
                 <div class="border bd-default no-border-top p-2">
-                    <div id="_target_testcases"></div>
+                    <div id="_target_testcases">
+                        <button class="image-button" onclick="addNewTestCase()">
+                            <span class="mif-plus icon"></span>
+                            <span class="caption">Add new test case</span>
+                        </button>
+                    </div>
                     <div id="_target_results"></div>
                 </div>
             </div>
