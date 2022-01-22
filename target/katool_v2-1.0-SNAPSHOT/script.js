@@ -20,7 +20,7 @@ const flowchartImageCodes = {
     newPrescription: "<span class='fas fa-prescription-bottle-alt flow-icon'></span>",
     addDiagnosis: "<span class='fas fa-diagnoses flow-icon'></span>",
     newVaccination: "<span class='fas fa-synringe flow-icon'></span>",
-    addNotes: "<span class='fas fa-notes-medical flow-icon'></span>"
+    addNotes: "<span class='fas fa-pencil-alt flow-icon'></span>"
 };
 let selectedItemId = -1;
 let lowestY = 0;
