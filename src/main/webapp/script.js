@@ -420,8 +420,13 @@ function addMedicalNotes(){
 }
 
 function setSelectedItem(id){
-    selectedItemId = id;
-    alert(selectedItemId);
+    if (selectedItemId !== -1){
+        document.getElementById(selectedItemId).classList.remove("highlight");
+    }
+    if (selectedItemId !== id){
+        selectedItemId = id;
+        document.getElementById(selectedItemId).classList.add("highlight");
+    }
 }
 
 function createTestCases(){}

@@ -202,10 +202,13 @@ a{
 .flow-icon-div{
     position: absolute;
     cursor: pointer;
+    width: fit-content;
 }
 
 .flow-icon{
     font-size: 50px;
+    display: table;
+    margin: 0 auto;
 }
 
 .flow-icon-div p{
