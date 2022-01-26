@@ -70,7 +70,7 @@
                                 </span>
                                 <span class="caption">Start</span>
                             </button>
-                            <button class="ribbon-button" id="addStopBtn" onclick="addStop()">
+                            <button class="ribbon-button" id="add-stop-btn" onclick="addStop()">
                                 <span class="icon">
                                     <span class="far fa-stop-circle"></span>
                                 </span>
@@ -88,7 +88,7 @@
                                 </span>
                                 <span class="caption">If-Else</span>
                             </button>
-                            <button class="ribbon-button" onclick="addLoop()">
+                            <button class="ribbon-button" onclick="addLoop()" disabled>
                                 <span class="icon">
                                     <span class="mif-loop"></span>
                                 </span>
@@ -147,7 +147,7 @@
                 <div class="section" id="section-test">
 <!--                    <p>generate test cases, import test cases, manually create test cases, edit test cases (includes delete singular/plural), run test & stop test (js to gray out?), display results (auto during/after test, save most recent)</p><br>-->
                     <div class="group">
-                            <button class="ribbon-button" id="createTestCases" onclick="createTestCases()">
+                            <button class="ribbon-button" id="create-test-cases" onclick="createTestCases()">
                                 <span class="icon">
                                     <span class="mif-table"></span>
                                 </span>
@@ -159,13 +159,13 @@
                                 </span>
                                 <span class="caption">Import Test Cases</span>
                             </button>
-                            <button class="ribbon-button" id="generateTestcasesBtn" onclick="generateTestcases(this.id)">
+                            <button class="ribbon-button" id="generate-test-cases-btn" onclick="generateTestcases(this.id)">
                                 <span class="icon">
                                     <span class="mif-equalizer"></span>
                                 </span>
                                 <span class="caption">Generate Test Cases</span>
                             </button>
-                            <button id="openTestCases" class="ribbon-button disabled" onclick="showTestCases()">
+                            <button id="open-test-cases" class="ribbon-button disabled" onclick="showTestCases()">
                                 <span class="icon">
                                     <span class="far fa-edit"></span>
                                 </span>
@@ -187,7 +187,7 @@
                                 </span>
                                 <span class="caption">Stop Test</span>
                             </button>
-                            <button id="openTestResults" class="ribbon-button" onclick="showTestResults()">
+                            <button id="open-test-results" class="ribbon-button" onclick="showTestResults()">
                                 <span class="icon">
                                     <span class="mif-assignment"></span>
                                 </span>
@@ -218,8 +218,8 @@
             <div class="chartarea"></div>
             <div class="tests">
                 <ul data-role="tabs" data-expand="true">
-                    <li id="testCases" onclick="highlight('openTestCases', 'openTestResults')"><a href="#_target_testcases">Test cases</a></li>
-                    <li id="testResults" onclick="highlight('openTestResults', 'openTestCases')"><a href="#_target_results">Test results</a></li>
+                    <li id="test-cases" onclick="highlight('open-test-cases', 'open-test-results')"><a href="#_target_testcases">Test cases</a></li>
+                    <li id="test-results" onclick="highlight('open-test-results', 'open-test-cases')"><a href="#_target_results">Test results</a></li>
                 </ul>
                 <div class="border bd-default no-border-top p-2">
                     <div id="_target_testcases">
@@ -233,6 +233,7 @@
             </div>
         </div>
         <div id="statusbar" class="bottom-bar">
+            <!-- add: https://metroui.org.ua/notify.html -->
             <div class="bar-content">
                 <button class="button primary square issue-info-btn warnings-btn" ondblclick="openErrorStatusbarDbl()"><span class="badge">9</span><span class="mif-warning mif-2x"></span></button>
                 <button class="button primary square issue-info-btn errors-btn" ondblclick="openErrorStatusbarDbl()"><span class="badge">1</span><span class="mif-cancel mif-2x"></span></button>
@@ -246,7 +247,7 @@
             </ul>
         </div>
         
-        <div class="dialog" id="generate_testcases_load">
+        <div class="dialog" id="generate-testcases-load">
             <div class="dialog-title">Generating testcases</div>
             <div class="dialog-content">
                 <div class="content-spinner">
@@ -255,6 +256,84 @@
             </div>
         </div>
         
+        <div class="chart-item-popup" onsubmit="getFormValueStandard()">
+            <form id="basic-chartitem-form">
+                <div class="form-group">
+                    <label>Caption</label>
+                    <input type="text" name="caption">
+                </div>
+                <div class="form-group">
+                    <button class="button">OK</button>
+                </div>
+            </form>
+        </div>
         
+<!--        <div class="chart-forloop-popup" onsubmit="getFormValuesForloop()">
+            <form id="forloop-form">
+                <div class="form-group">
+                    <label>Condition</label>
+                    <input type="text" name="condition">
+                </div>
+                <div class="form-group">
+                    <label>First action in loop</label>
+                    <select data-role="select">
+                        <option value=""
+                    </select>
+                </div>
+            </form>
+        </div>-->
+        <div class="chart-conditional-popup" onsubmit="getFormValuesConditional()">
+            <form id="conditional-form">
+                <div class="form-group">
+                    <label id="data-label">Data</label>
+                    <select data-role="select" id="conditional-data"></select>
+                </div>
+                <div class="form-group">
+                    <label>Condition 1</label>
+                    <input type="text" id="condition1">
+                    
+                    <label>Statement 1</label>
+                    <select data-role="select" id="conditional-statement1"></select>
+                    
+                    <label>Caption for statement 1</label>
+                    <input type="text" id="statement1-caption">
+                </div>
+                <div class="form-group">
+                    <label>Condition 2</label>
+                    <input type="text" id="condition2">
+                    
+                    <label>Statement 2</label>
+                    <select data-role="select" id="conditional-statement2"></select>
+                    
+                    <label>Caption for statement 2</label>
+                    <input type="text" id="statement2-caption">
+                </div>
+                <div class="form-group">
+                    <button class="button">OK</button>
+                </div>
+            </form>
+        </div>
+        <div class="chart-retrieve-data-popup">
+            <form id="retrieve-data-form" onsubmit="getFormValueRetrieve()">
+                <div class="form-group" id="retrieve-data-form-group">
+                    <label>Data to retrieve</label>
+                    <!--<select data-role="select" id="data-retrieve-select" data-add-empty-value="true"></select>-->
+                </div>
+                <div class="form-group">
+                    <button class="button">OK</button>
+                </div>
+            </form>
+        </div>
+        <div class="chart-subroutine-popup">
+            <form id="subroutine-form">
+                <div class="form-group">
+                    <label>Select file to embed</label>
+                    <input type="file" data-role="file" onSelect="processEmbedFile(files)" data-button-title="Choose file">
+                </div>
+                <div class="form-group">
+                    <button class="button">OK</button>
+                </div>
+            </form>
+        </div>
     </body>
 </html>

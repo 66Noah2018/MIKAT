@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 let parser = new DOMParser();
 let recentlyOpened = {};
 let statusbarExpanded = false;
@@ -32,6 +31,8 @@ let lines = [];
 let linesToEnd = [];
 let nrVarsTable = 0;
 let outcomesTable = 0;
+let formValues = null;
+let formSent = false;
 
 function getRandom(max){
     return (Math.floor(Math.random() * max));
@@ -151,34 +152,34 @@ function exportAsArden(){}
 function preferences(){}
 
 function showTestCases(){
-    highlight('openTestCases', 'openTestResults');
+    highlight('open-test-cases', 'open-test-results');
     const currentState = document.getElementsByClassName("tests")[0].style.display;
     if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; } //make tabs + content visible
-    else if (!document.getElementById("openTestCases").classList.contains("highlight")) { //user clicks on the highlighted button (e.g., edit when tab test cases is open), leads to hide tabs + content
+    else if (!document.getElementById("open-test-cases").classList.contains("highlight")) { //user clicks on the highlighted button (e.g., edit when tab test cases is open), leads to hide tabs + content
         document.getElementsByClassName("tests")[0].style.display = "none"; 
-        document.getElementById("openTestCases").classList.remove("highlight");
-        document.getElementById("openTestCases").classList.remove("active");
+        document.getElementById("open-test-cases").classList.remove("highlight");
+        document.getElementById("open-test-cases").classList.remove("active");
     }
     
-    document.getElementById("testCases").classList.add("active"); //switch to correct tab
-    document.getElementById("testResults").classList.remove("active");
+    document.getElementById("test-cases").classList.add("active"); //switch to correct tab
+    document.getElementById("test-results").classList.remove("active");
     document.getElementById("_target_testcases").style.display = "block";
     document.getElementById("_target_results").style.display = "none";
     return;
 }
 
 function showTestResults(){
-    highlight('openTestResults', 'openTestCases');
+    highlight('open-test-results', 'open-test-cases');
     const currentState = document.getElementsByClassName("tests")[0].style.display;
     if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; }
-    else if (!document.getElementById("openTestResults").classList.contains("highlight")) { 
+    else if (!document.getElementById("open-test-results").classList.contains("highlight")) { 
         document.getElementsByClassName("tests")[0].style.display = "none"; 
-        document.getElementById("openTestResults").classList.remove("highlight");
-        document.getElementById("openTestResults").classList.remove("active");
+        document.getElementById("open-test-results").classList.remove("highlight");
+        document.getElementById("open-test-results").classList.remove("active");
     }
     
-    document.getElementById("testCases").classList.remove("active");
-    document.getElementById("testResults").classList.add("active");
+    document.getElementById("test-cases").classList.remove("active");
+    document.getElementById("test-results").classList.add("active");
     document.getElementById("_target_testcases").style.display = "none";
     document.getElementById("_target_results").style.display = "block";
     return;
@@ -200,7 +201,7 @@ function highlight(elToHighlight, elToNormalize){
 function generateTestcases(){ //get variables and default values
     table = document.getElementById("testcases");
     if (table === null){
-        var spinner = $("#generate_testcases_load")[0];
+        var spinner = $("#generate-testcases-load")[0];
         spinner.style.display = "block";
         let target = document.getElementById("_target_testcases");
         const tableCode = generateTestcasesTableCode(["CRP", "ANA"], [[5, 500], ["Pos", "Neg"]],["Log ANA positive"]);
@@ -211,9 +212,9 @@ function generateTestcases(){ //get variables and default values
             console.log(event.target.value);
         }, false);
     }
-    document.getElementById("generateTestcasesBtn").classList.add("disabled");
-    document.getElementById("openTestCases").classList.remove("disabled");
-    document.getElementById("createTestCases").classList.add("disabled");
+    document.getElementById("generate-test-cases-btn").classList.add("disabled");
+    document.getElementById("open-test-cases").classList.remove("disabled");
+    document.getElementById("create-test-cases").classList.add("disabled");
 }
 
 function openStatusbarDbl(){
@@ -363,11 +364,11 @@ function buildPrototypeChart(){
 
 function addStart(){ 
     maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
-    buildPrototypeChart();
-//    addNewStep(flowchartImageCodes.start, "Start"); 
+//    buildPrototypeChart();
+    addNewStep(flowchartImageCodes.start, "Start", -1, {'color': 'black', 'size': 4}); 
 }
 
-function addStop(){ addNewStep(flowchartImageCodes.end, "End"); }
+function addStop(){ addNewStep(flowchartImageCodes.end, "End", selectedItemId, {'color':'black', 'size': 4}); }
 
 function addSubroutine() { 
     // select project using java, read in project. use projectname as caption for subroutine
@@ -379,14 +380,32 @@ function addIfElse(){
     addNewStep(flowchartImageCodes.conditional, "");
 }
 
-function addLoop(){
-    //popup: start new or end existing loop
-     addNewStep(flowchartImageCodes.loop, "");
-}
+//function addLoop(){
+//    //popup: start new or end existing loop
+//     addNewStep(flowchartImageCodes.loop, "");
+//}
 
 function retrieveData(){
     //popup: which data
-    addNewStep(flowchartImageCodes.retrievedata, "");
+    let selectBoxCode = '<select data-role="select" id="data-retrieve-select" data-add-empty-value="true" data-on-item-select="storeDataRetrieveValue(this.value)">';
+    const selectBoxCodePost = '</select>';
+    let popup = document.getElementById("retrieve-data-form-group");
+    //fill select box
+//    selectBox.innerHTML = ''; //clear old values
+    //retrieve values for select from servlet
+    const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
+    Object.keys(values).forEach((key) => {
+        selectBoxCode += `<option value=${key}>${key}</option>`;
+    });
+    popup.appendChild(parser.parseFromString(selectBoxCode, 'text/html').body.firstChild);
+    document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "initial";
+}
+
+function servletRequest(url){
+    const Http = new XMLHttpRequest();
+    Http.open("GET", url, false);
+    Http.send();
+    return Http.responseText;
 }
 
 function addNewProcedure(){
@@ -455,3 +474,24 @@ function addNewTestCase(){
 //    
 //    generateTestcasesTableCode(variables, possibleValues, possibleOutcomes
 //}
+
+function getFormValueStandard(){
+    event.preventDefault();
+    let formdata = new FormData(document.getElementById("basic-chartitem-form"));
+    formValues = {"caption": formdata.get("caption")};
+}
+
+function processEmbedFile(files){
+    console.log(files[0]);
+}
+
+function getFormValueRetrieve(){
+    event.preventDefault();
+    console.log(formValues.dataToRetrieve)
+    addNewStep(flowchartImageCodes.retrievedata, formValues.dataToRetrieve);
+    document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "none";
+}
+
+function storeDataRetrieveValue(value){
+    formValues = {"dataToRetrieve": value};
+}

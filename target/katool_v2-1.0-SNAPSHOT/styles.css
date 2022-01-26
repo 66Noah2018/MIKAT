@@ -254,3 +254,101 @@ table{
     table-layout: fixed;
     width: 100%;
 }
+
+.chart-item-popup{
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 105px);
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--menu-bg-color);
+    width: 210px;
+    height: 130px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-item-popup form{
+    width: 180px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.chart-item-popup button{
+    margin-left: auto;
+    margin-right: auto;
+    width: 80px;
+}
+
+.chart-conditional-popup{
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 450px);
+    background-color: var(--menu-bg-color);
+    width: 900px;
+    height: 180px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-conditional-popup input, .chart-conditional-popup .select{
+    width: 150px;
+    margin-left: 10px;
+}
+
+.form-group+.form-group, .form-group{
+    display: -webkit-box;
+}
+
+.chart-conditional-popup form{
+    margin: 20px;
+}
+
+.chart-conditional-popup label{
+    line-height: 35px;
+    margin-left: 10px;
+}
+
+#data-label{
+    margin-right: 49px;
+}
+
+.select-focus-trigger{
+    display: none;
+}
+
+.chart-retrieve-data-popup, .chart-subroutine-popup{
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 105px);
+    background-color: var(--menu-bg-color);
+    width: 210px;
+    height: 130px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-retrieve-data-popup .form-group, .chart-subroutine-popup .form-group{
+    display: initial;
+}
+
+.chart-retrieve-data-popup form, .chart-subroutine-popup form{
+    width: 180px;
+    margin-left: auto;
+    margin-right: auto; 
+}
+
+.chart-retrieve-data-popup label, .chart-subroutine-popup label{
+    line-height: 35px;
+}
+
+.chart-item-popup .form-group{
+    display: block;
+}
+
+.chart-retrieve-data-popup button, .chart-subroutine-popup button{
+    margin-top: 10px;
+}

@@ -7,7 +7,6 @@ package katool;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -59,6 +58,14 @@ public class chartservlet extends HttpServlet {
                 break;                
             case "redoSize":
                 response.getWriter().write("{'size':" + redoStack.size() + "}");
+                break;
+            case "localmap":
+                String localMapping = getLocalMapping();
+                response.getWriter().write(localMapping);
+                break;
+            case "standardmap":
+                String standardizedMapping = getStandardizedMapping();
+                response.getWriter().write(standardizedMapping);
                 break;
             default:
                 break;
@@ -155,5 +162,13 @@ public class chartservlet extends HttpServlet {
             }
         }
         return itemIndex;
+    }
+    
+    private String getLocalMapping(){
+        return "{\"test1\":\"test1query\", \"test2\": \"test2query\", \"test3\":\"test3query\"}";
+    }
+    
+    private String getStandardizedMapping(){
+        return "{\"standardtest1\":\"test1\", \"standardtest2\":\"test2\", \"standardtest3\":\"test3\"}";
     }
 }
