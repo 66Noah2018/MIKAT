@@ -4,8 +4,6 @@
  * and open the template in the editor.
  */
 
-//let parser = new DOMParser();
-
 let testPatients = {};
 let nrVarsTable = 0;
 let outcomesTable = 0;

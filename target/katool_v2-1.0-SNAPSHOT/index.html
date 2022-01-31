@@ -23,7 +23,6 @@
         <link rel="stylesheet" href="./styles.css">
         <script src="js/chart.js"></script>
         <script src="js/file.js"></script>
-        <script src="js/forms.js"></script>
         <script src="js/test.js"></script>
         <!-- LeaderLine -->
         <script src="./node_modules/leader-line/leader-line.min.js"></script>
@@ -79,13 +78,13 @@
                                 </span>
                                 <span class="caption">Stop</span>
                             </button>
-                            <button class="ribbon-button" onclick="addSubroutine()">
+                            <button class="ribbon-button" onclick="openFormPopup('chart-subroutine-popup')">
                                 <span class="icon">
                                     <span class="mif-link"></span>
                                 </span>
                                 <span class="caption">Add Subroutine</span>
                             </button>
-                            <button class="ribbon-button" onclick="addIfElse()">
+                            <button class="ribbon-button" onclick="openFormPopup('chart-conditional-popup')">
                                 <span class="icon">
                                     <span class="mif-flow-branch"></span>
                                 </span>
@@ -95,9 +94,9 @@
                                 <span class="icon">
                                     <span class="mif-loop"></span>
                                 </span>
-                                <span class="caption">For-loop</span>
+                                <span class="caption">For loop</span>
                             </button>
-                            <button class="ribbon-button" onclick="retrieveData()">
+                            <button class="ribbon-button" onclick="openFormPopup('chart-retrieve-data-popup')">
                                 <span class="icon">
                                     <span class="fas fa-file-medical"></span>
                                 </span>
@@ -107,37 +106,37 @@
                     </div>
                     <div class="group">
                         <div class="ribbon-grid">
-                            <button class="ribbon-icon-button" onclick="addNewProcedure()">
+                            <button class="ribbon-icon-button" onclick="openFormPopup('chart-item-popup', 'newProcedure')">
                                 <span class="icon">
                                     <span class="fas fa-procedures"></span>
                                 </span>
                                 <span class="caption">New Procedure</span>
                             </button>
-                            <button class="ribbon-icon-button" onclick="addOrderLabs()">
+                            <button class="ribbon-icon-button" onclick="openFormPopup('chart-item-popup', 'orderLabs')">
                                 <span class="icon">
                                     <span class="fas fa-microscope"></span>
                                 </span>
                                 <span class="caption">Order Labs</span>
                             </button>
-                            <button class="ribbon-icon-button" onclick="addNewPrescription()">
+                            <button class="ribbon-icon-button" onclick="openFormPopup('chart-item-popup', 'newPrescription')">
                                 <span class="icon">
                                     <span class="fas fa-prescription-bottle-alt"></span>
                                 </span>
                                 <span class="caption">New Prescription</span>
                             </button>
-                            <button class="ribbon-icon-button" onclick="addDiagnosis()">
+                            <button class="ribbon-icon-button" onclick="openFormPopup('chart-item-popup', 'addDiagnosis')">
                                 <span class="icon">
                                     <span class="fas fa-diagnoses"></span>
                                 </span>
                                 <span class="caption">Add Diagnosis</span>
                             </button>
-                            <button class="ribbon-icon-button" onclick="addNewVaccination()">
+                            <button class="ribbon-icon-button" onclick="openFormPopup('chart-item-popup', 'newVaccination')">
                                 <span class="icon">
                                     <span class="fas fa-syringe"></span>
                                 </span>
                                 <span class="caption">New Vaccination</span>
                             </button>
-                            <button class="ribbon-icon-button" onclick="addMedicalNotes()">
+                            <button class="ribbon-icon-button" onclick="openFormPopup('chart-item-popup', 'addNotes')">
                                 <span class="icon">
                                     <span class="fas fa-pencil-alt"></span>
                                 </span>
@@ -148,7 +147,6 @@
                     </div>
                 </div>
                 <div class="section" id="section-test">
-<!--                    <p>generate test cases, import test cases, manually create test cases, edit test cases (includes delete singular/plural), run test & stop test (js to gray out?), display results (auto during/after test, save most recent)</p><br>-->
                     <div class="group">
                             <button class="ribbon-button" id="create-test-cases" onclick="createTestCases()">
                                 <span class="icon">
@@ -259,11 +257,11 @@
             </div>
         </div>
         
-        <div class="chart-item-popup" onsubmit="getFormValueStandard()">
+        <div class="chart-item-popup" onsubmit="addMedicalAction()">
             <form id="basic-chartitem-form">
                 <div class="form-group">
-                    <label>Caption</label>
-                    <input type="text" name="caption">
+                    <label>Message</label>
+                    <input type="text" name="message" id="medical-action-input">
                 </div>
                 <div class="form-group">
                     <button class="button">OK</button>
