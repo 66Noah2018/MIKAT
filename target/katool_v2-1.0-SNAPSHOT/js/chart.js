@@ -33,6 +33,10 @@ let highestX = 0;
 let formValues = null;
 let medicalActionToAdd = null;
 
+window.addEventListener('load', function () {
+  addStart();
+});
+
 function getLineStyle(standard=true, label=null){
     if (standard) return {"color": "black", "size": 4};
     else return {"color": "black", "size": 4, middleLabel: label, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"arc"};
@@ -75,8 +79,22 @@ function openErrorStatusbar(context){
     }
 }
 
-function addNewStep(iconCode, iconCaption, prevId, options, lowerY = false){
-    if (iconCode === flowchartImageCodes.end && endIconId !== -1) {
+function updateState(newItemArray, isConditional = false){
+    if (newItemArray === null) { return; }
+    let state = null;
+    if (!isConditional){
+        state = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}`)).state;
+    } else {
+        servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&isMultipart=true`);
+        servletRequest(`./chartservlet?function=update&id=${newItemArray[1].id}&type=${newItemArray[1].type}&prevItemId=${newItemArray[1].prevItemId}&caption=${newItemArray[1].caption}&condition=${newItemArray[1].condition}&isMultipart=true`);
+        state = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&condition=${newItemArray[2].condition}&isMultipart=true&finalMultipart=true`));
+    }
+    drawChart(state);
+}
+
+function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false){
+    const iconCode = flowchartImageCodes[stepType];
+    if (stepType === "end" && endIconId !== -1) {
         endElement = document.getElementById(endIconId);
         let newX = Math.min(highestX + 120, maxX - 90);
         endElement.style.left = newX;
@@ -87,12 +105,11 @@ function addNewStep(iconCode, iconCaption, prevId, options, lowerY = false){
         linesToEnd.push(line);
         return;
     }
-    if (iconCode === flowchartImageCodes.start && startIcon !== null){
+    if (stepType === "start" && startIcon !== null){
         return;
     }
     let lastIconCoordinates = {x: -90, y: 10};
     if (prevId !== -1){
-        console.log(prevId)
         const prevIcon = document.getElementById(prevId);
         prevX = prevIcon.style.left;
         prevY = prevIcon.style.top;
@@ -108,8 +125,7 @@ function addNewStep(iconCode, iconCaption, prevId, options, lowerY = false){
     }
     if (coordinates.y > lowestY) { lowestY = coordinates.y; }
     if (coordinates.x > highestX) { highestX = coordinates.x; }
-    if (iconCode === flowchartImageCodes.end) { coordinates = {x: Math.min(highestX + 120, maxX - 90), y: lastIconCoordinates.y + 90}; }
-    let stepId = getRandomId();
+    if (stepType === "end") { coordinates = {x: Math.min(highestX + 120, maxX - 90), y: lastIconCoordinates.y + 90}; }
     let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
     let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;
     let target = document.getElementsByClassName("chartarea")[0];
@@ -122,19 +138,24 @@ function addNewStep(iconCode, iconCaption, prevId, options, lowerY = false){
         const currIcon = document.getElementById(stepId);
         let line = new LeaderLine(prevIcon.children[0], currIcon.children[0], options);
         lines.push(line);
-        if (iconCode === flowchartImageCodes.end){ linesToEnd.push(line); }
+        if (stepType === "end"){ linesToEnd.push(line); }
     }
     
-    if (iconCode === flowchartImageCodes.start){ 
+    if (stepType === "start"){ 
         startIcon = newStep; 
         document.getElementById("addStartBtn").classList.add("disabled");
     }
-    if (iconCode === flowchartImageCodes.end){ endIconId = stepId; } // do not disable, click again links to existing btn
-    return stepId;
+    if (stepType === "end"){ endIconId = stepId; } // do not disable, click again links to existing btn
+    
+    return {id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption};
 }
 
-function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodePos, iconCaptionPos, iconCodeNeg, iconCaptionNeg, prevId){
-    if (iconCode === flowchartImageCodes.start && startIcon !== null){
+function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, prevId){
+    const iconCode = flowchartImageCodes[stepType];
+    const iconCodePos = flowchartImageCodes[stepTypePos];
+    const iconCodeNeg = flowchartImageCodes[stepTypeNeg];
+    
+    if (stepType === "start" && startIcon !== null){
         return;
     }
     const prevIcon = document.getElementById(prevId);
@@ -149,7 +170,6 @@ function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodeP
     let target = document.getElementsByClassName("chartarea")[0];
     
     // add first icon (conditional)
-    let stepId = getRandomId();
     let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
     let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;  
     newStep.style.top = lastIconCoordinates.y;
@@ -164,10 +184,10 @@ function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodeP
     let stepIdPos = -1;
     let stepIdNeg = -1;
     // option 1: no end nodes
-    if (iconCodePos !== flowchartImageCodes.end && iconCodeNeg !== flowchartImageCodes.end){
+    if (stepTypePos !== "end" && stepTypeNeg !== "end"){
         stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
         stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
-    } else if (iconCodePos === flowchartImageCodes.end) {
+    } else if (stepTypePos === "end") {
         // option 2: positive node is end node
         if (endIconId !== -1){
             // there is already an end node we can connect to          
@@ -184,7 +204,7 @@ function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodeP
         }
         // add step for neg
         stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
-    } else if (iconCodeNeg === flowchartImageCodes.end){
+    } else if (stepTypeNeg === "end"){
         stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
         if (endIconId !== -1){
             let endNode = document.getElementById(endIconId);
@@ -199,37 +219,76 @@ function addConditionalStep(iconCode, iconCaption, posValue, negValue, iconCodeP
             stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
         }
     }
-    return {idPos: stepIdPos, idNeg: stepIdNeg};
+    
+    return [{id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption},
+        {id:stepIdPos, type:stepTypePos, prevItemId: stepId, caption: iconCaptionPos, condition: posValue},
+        {id:stepIdNeg, type:stepTypeNeg, prevItemId: stepId, caption: iconCaptionNeg, condition: negValue}];
 }
 
-function buildPrototypeChart(){
-    let id = addNewStep(flowchartImageCodes.start, "Start", -1, );
-    id = addNewStep(flowchartImageCodes.retrievedata, "CRP", id, getLineStyle());
-    let idPosNeg = addConditionalStep(flowchartImageCodes.conditional, "CRP", ">=10", "<10", flowchartImageCodes.retrievedata, "ANA", flowchartImageCodes.end, "End", id);
-    addConditionalStep(flowchartImageCodes.conditional, "ANA", "Pos", "Neg", flowchartImageCodes.addNotes, "ANA positive", flowchartImageCodes.end, "End", idPosNeg.idPos); 
+function drawChart(state){
+    lines = [];
+    linesToEnd = [];
+    startIcon = null;
+    endIconId = -1;
+    lowestY = 0;
+    highestX = 0;
+    selectedItemId = -1;
+    prevId = -1;
+    document.getElementsByClassName("chartarea")[0].innerHTML = '';
+    
+    let oldLines = document.getElementsByClassName("leader-line");
+    for (let i = oldLines.length - 1; i >= 0; i--){ // live list, if not iterated in reverse, nothing gets deleted
+        oldLines[i].remove();
+    }
+    
+    let conditionalEncountered = false;
+    let conditionalData = [];
+    for (let i = 0; i < state.length; i++){
+        const item = state[i];
+        if (item.type === "start") { addNewStep(item.id, item.type, item.caption, -1); }
+        else if (item.type === "conditional"){
+            conditionalEncountered = true;
+            conditionalData.append(item);
+        }
+        else {
+            if (conditionalEncountered){
+                if (length(conditionalData) < 3){
+                    conditionalData.append(item);
+                } else {
+                    conditionalEncountered = false;
+                    addConditionalStep(item.id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[2].condition, conditionalData[1].type, conditionalData[2].type, conditionalData[0].prevItemId);
+                }
+            } else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(), false); }
+        }
+    }
 }
 
 function addStart(){ 
     maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
-//    buildPrototypeChart();
-    addNewStep(flowchartImageCodes.start, "Start", -1, getLineStyle()); 
+    let newItem = addNewStep(getRandomId(), "start", "Start", -1, getLineStyle());
+    updateState([newItem], false);
 }
 
-function addStop(){ addNewStep(flowchartImageCodes.end, "End", selectedItemId, getLineStyle()); }
+function addStop(){ 
+    let newItem = addNewStep(getRandomId(), "end", "End", selectedItemId, getLineStyle()); 
+    updateState([newItem], false);
+}
 
 function addSubroutine() { 
     // select project using java, read in project. use projectname as caption for subroutine
-    addNewStep(flowchartImageCodes.subroutine, ""); 
+    let newItem = addNewStep(getRandomId(), "subroutine", "", ); 
+    updateState([newItem], false);
 }
 
 function addIfElse(){
     // create popup to select variable and set values. select next action for both flows
-    addNewStep(flowchartImageCodes.conditional, "");
+    let newItemArray = addConditionalStep(getRandomId(), "conditional", "");
+    updateState(newItemArray, true);
 }
 
 //function addLoop(){
 //    //popup: start new or end existing loop
-//     addNewStep(flowchartImageCodes.loop, "");
+//     addNewStep("loop", "");
 //}
 
 function setSelectedItem(id){
@@ -242,36 +301,6 @@ function setSelectedItem(id){
     }
 }
 
-function addNewProcedure(){
-    //popup: free text or imported template
-    addNewStep(flowchartImageCodes.newProcedure, "");
-}
-
-function addOrderLabs(){
-    // popup: free text or imported template
-    addNewStep(flowchartImageCodes.orderLabs, "");
-}
-
-function addNewPrescription(){
-    //popup: free text, imported template, select list?
-    addNewStep(flowchartImageCodes.newPrescription,"");
-}
-
-function addDiagnosis(){
-    // popup: free text, imported template, select list?
-    addNewStep(flowchartImageCodes.addDiagnosis, "");
-}
-
-function addNewVaccination(){
-    //popup: free text, imported template, select list?
-    addNewStep(flowchartImageCodes.newVaccination, "");
-}
-
-function addMedicalNotes(){
-    // popup: free text or imported template
-    addNewStep(flowchartImageCodes.addNotes, "");
-}
-
 // form-related functions
 
 function openFormPopup(popupClass, subclass=null){
@@ -280,7 +309,7 @@ function openFormPopup(popupClass, subclass=null){
     let popup = document.getElementsByClassName(popupClass)[0];
     switch (popupClass){
         case "chart-item-popup":
-            medicalActionToAdd = flowchartImageCodes[subclass];
+            medicalActionToAdd = subclass;
             document.getElementsByClassName("chart-item-popup")[0].style.display = "initial";
             break;
         case "chart-conditional-popup":
@@ -302,10 +331,10 @@ function openFormPopup(popupClass, subclass=null){
 }
 
 function servletRequest(url){
-    const Http = new XMLHttpRequest();
-    Http.open("GET", url, false);
-    Http.send();
-    return Http.responseText;
+    const http = new XMLHttpRequest();
+    http.open("GET", url, false);
+    http.send();
+    return http.responseText;
 }
 
 function getFormValueStandard(){
@@ -322,8 +351,9 @@ function addMedicalAction(){
     event.preventDefault();
     const message = document.getElementById("medical-action-input").value;
     document.getElementById("medical-action-input").value = '';
-    addNewStep(medicalActionToAdd, message, selectedItemId, getLineStyle());
+    let newItem = addNewStep(getRandomId(), medicalActionToAdd, message, selectedItemId, getLineStyle());
     document.getElementsByClassName("chart-item-popup")[0].style.display = "none";
+    updateState([newItem], false);
 }
 
 function storeDataRetrieveValue(value){
