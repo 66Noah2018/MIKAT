@@ -37,6 +37,16 @@ window.addEventListener('load', function () {
   addStart();
 });
 
+document.addEventListener('keydown', function(event) {
+    if (event.keyCode === 46){
+        if (selectedItemId !== -1){
+            let state = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${selectedItemId}`));
+            selectedItemId = -1;
+            drawChart(state.state);
+        }
+    }
+});
+
 function getLineStyle(standard=true, label=null){
     if (standard) return {"color": "black", "size": 4};
     else return {"color": "black", "size": 4, middleLabel: label, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"arc"};
@@ -241,6 +251,8 @@ function drawChart(state){
         oldLines[i].remove();
     }
     
+    if (state.length === 0) { document.getElementById("addStartBtn").classList.remove("disabled"); }
+    
     let conditionalEncountered = false;
     let conditionalData = [];
     for (let i = 0; i < state.length; i++){
@@ -320,8 +332,8 @@ function openFormPopup(popupClass, subclass=null){
                 selectBoxCode += `<option value=${key}>${key}</option>`;
             });
             selectBoxCode += selectBoxCodePost;
-            popup.appendChild(parser.parseFromString(selectBoxCode, 'text/html').body.firstChild);
-            document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "initial";
+            document.getElementById("retrieve-data-form-group").appendChild(parser.parseFromString(selectBoxCode, 'text/html').body.firstChild);
+            document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "block";
             break;
         case "chart-subroutine-popup":
             break;
@@ -358,4 +370,12 @@ function addMedicalAction(){
 
 function storeDataRetrieveValue(value){
     formValues = {"dataToRetrieve": value};
+}
+
+function closeAllForms(){
+    // "chart-forloop-popup"
+    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup"];
+    popupClasses.forEach((popupClass) => {
+        document.getElementsByClassName(popupClass)[0].style.display = "none";
+    });
 }

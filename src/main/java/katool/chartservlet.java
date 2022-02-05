@@ -65,6 +65,10 @@ public class chartservlet extends HttpServlet {
                 String standardizedMapping = getStandardizedMapping();
                 response.getWriter().write(standardizedMapping);
                 break;
+            case "delete":
+                deleteItem(request);
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState) + "}");
+                break;
             default:
                 break;
         }
@@ -109,6 +113,21 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    private void deleteItem(HttpServletRequest request) throws IOException{
+        String id = request.getParameter("id");
+        Integer itemIndex = findIndexOf(id);
+        maintainMaxDequeSize("undo");
+        undoStack.addFirst(currentState);
+        ChartItem oldItem = currentState.get(itemIndex);
+        currentState.remove(currentState.get(itemIndex));
+        try {
+            ChartItem itemToBeAltered = currentState.get(itemIndex);
+            itemToBeAltered.setPrevItemId(oldItem.getPrevItemId());
+            currentState.set(itemIndex, itemToBeAltered);
+        } catch (Exception e){}
+        
+    }
+    
     private void updateState(HttpServletRequest request) throws IOException{
         String id = request.getParameter("id");
         String type = request.getParameter("type");
@@ -130,7 +149,7 @@ public class chartservlet extends HttpServlet {
         }
         
         
-        if (isMultipart.equals("true") && finalMultipart.equals("true")){ //allow for conditionals
+        if ((isMultipart.equals("true") && finalMultipart.equals("true")) || (isMultipart.equals("false"))){ //allow for conditionals
             maintainMaxDequeSize("undo");
             undoStack.addFirst(currentState);
         }
