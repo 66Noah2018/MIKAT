@@ -39,13 +39,13 @@
             <div class="content-holder">
                 <div class="section" id="section-model">
                     <div class="group">
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" id="undoBtn" disabled>
                                 <span class="icon">
                                     <span class="mif-undo"></span>
                                 </span>
                                 <span class="caption">Undo</span>
                             </button>
-                            <button class="ribbon-button">
+                            <button class="ribbon-button" id="redoBtn"disabled>
                                 <span class="icon">
                                     <span class="mif-redo"></span>
                                 </span>
@@ -76,7 +76,7 @@
                                 <span class="icon">
                                     <span class="far fa-stop-circle"></span>
                                 </span>
-                                <span class="caption">Stop</span>
+                                <span class="caption">End</span>
                             </button>
                             <button class="ribbon-button" onclick="openFormPopup('chart-subroutine-popup')">
                                 <span class="icon">
@@ -100,7 +100,7 @@
                                 <span class="icon">
                                     <span class="fas fa-file-medical"></span>
                                 </span>
-                                <span class="caption">Retrieve medical data</span>
+                                <span class="caption">Retrieve Medical Data</span>
                             </button>
                         <span class="title">Components</span>
                     </div>
@@ -259,10 +259,10 @@
         
         <div class="chart-item-popup" onsubmit="addMedicalAction()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="basic-chartitem-form">
+            <form id="basic-chartitem-form" class=".custom-validation">
                 <div class="form-group">
                     <label>Message</label>
-                    <input type="text" name="message" id="medical-action-input">
+                    <input type="text" name="message" id="medical-action-input" required>
                 </div>
                 <div class="form-group">
                     <button class="button">OK</button>
@@ -275,7 +275,7 @@
             <form id="forloop-form">
                 <div class="form-group">
                     <label>Condition</label>
-                    <input type="text" name="condition">
+                    <input type="text" name="condition""value="">
                 </div>
                 <div class="form-group">
                     <label>First action in loop</label>
@@ -285,32 +285,29 @@
                 </div>
             </form>
         </div>-->
-        <div class="chart-conditional-popup" onsubmit="getFormValuesConditional()">
+        <div class="chart-conditional-popup" onsubmit="processFormConditional()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="conditional-form">
+            <form id="conditional-form" class=".custom-validation">
                 <div class="form-group">
-                    <label id="data-label">Data</label>
-                    <select data-role="select" id="conditional-data"></select>
-                </div>
-                <div class="form-group">
+                    <label>Variable</label>
+                    <div id="conditional-variable"></div>
+                    
                     <label>Condition 1</label>
-                    <input type="text" id="condition1">
+                    <input type="text" name="condition1" id="condition1" required>
                     
                     <label>Statement 1</label>
-                    <select data-role="select" id="conditional-statement1"></select>
+                    <div id="conditional-statement1"></div>
                     
-                    <label>Caption for statement 1</label>
-                    <input type="text" id="statement1-caption">
+                    <div id="conditional-form-group-pos"></div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="condition2-form-group">
                     <label>Condition 2</label>
-                    <input type="text" id="condition2">
+                    <input type="text" name="condition2" id="condition2" required value="">
                     
                     <label>Statement 2</label>
-                    <select data-role="select" id="conditional-statement2"></select>
+                    <div id="conditional-statement2"></div>
                     
-                    <label>Caption for statement 2</label>
-                    <input type="text" id="statement2-caption">
+                    <div id="conditional-form-group-neg"></div>
                 </div>
                 <div class="form-group">
                     <button class="button">OK</button>
@@ -319,10 +316,9 @@
         </div>
         <div class="chart-retrieve-data-popup">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="retrieve-data-form" onsubmit="getFormValueRetrieve()">
+            <form id="retrieve-data-form" onsubmit="getFormValueRetrieve()" class=".custom-validation">
                 <div class="form-group" id="retrieve-data-form-group">
                     <label>Data to retrieve</label>
-                    <!--<select data-role="select" id="data-retrieve-select" data-add-empty-value="true"></select>-->
                 </div>
                 <div class="form-group">
                     <button class="button">OK</button>
@@ -331,10 +327,10 @@
         </div>
         <div class="chart-subroutine-popup">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="subroutine-form">
+            <form id="subroutine-form" class=".custom-validation">
                 <div class="form-group">
                     <label>Select file to embed</label>
-                    <input type="file" data-role="file" onSelect="processEmbedFile(files)" data-button-title="Choose file">
+                    <input type="file" data-role="file" onSelect="processEmbedFile(files, null)" data-button-title="Choose file" required>
                 </div>
                 <div class="form-group">
                     <button class="button">OK</button>

@@ -18,7 +18,8 @@ const flowchartImageCodes = {
     newPrescription: "<span class='fas fa-prescription-bottle-alt flow-icon'></span>",
     addDiagnosis: "<span class='fas fa-diagnoses flow-icon'></span>",
     newVaccination: "<span class='fas fa-syringe flow-icon'></span>",
-    addNotes: "<span class='fas fa-pencil-alt flow-icon'></span>"
+    addNotes: "<span class='fas fa-pencil-alt flow-icon'></span>",
+    questionMark: "<span class='mif-icon mif-3x'></span>"
 };
 
 let lines = [];
@@ -32,9 +33,36 @@ let maxX = 0;
 let highestX = 0;
 let formValues = null;
 let medicalActionToAdd = null;
+const chartItemTypesBasic = {
+    end: "End",
+    subroutine: "Add Subroutine",
+    conditional: "If-Else",
+    retrievedata: "Retrieve Medical Data"
+};
+const chartItemMedicalActions = {
+    newProcedure: "New Procedure",
+    orderLabs: "Order Labs",
+    newPrescription: "New Prescription",
+    addDiagnosis: "Add Diagnosis",
+    newVaccination: "New Vaccination",
+    addNotes: "Add Medical Notes"
+};
+let conditionalPosValue = null;
+let conditionalNegValue = null;
+let conditionalVarValue = null;
+const selectBoxCodePost = '</select>';
+let retrievedData = null;
+const clickToDefine = "Double-click to define";
+let elementToDefine = null;
 
 window.addEventListener('load', function () {
-  addStart();
+    maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
+    let state = JSON.parse(servletRequest("./chartservlet?function=state")).state;
+    if (state.length > 0){
+        drawChart(state);
+    } else {
+        addStart();
+    }
 });
 
 document.addEventListener('keydown', function(event) {
@@ -89,17 +117,24 @@ function openErrorStatusbar(context){
     }
 }
 
-function updateState(newItemArray, isConditional = false){
+function updateState(newItemArray, isConditional = false){//conditional not added?
     if (newItemArray === null) { return; }
     let state = null;
+    let result = null;
+    let undoAvailable = null;
     if (!isConditional){
-        state = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}`)).state;
+        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}`));
     } else {
         servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&isMultipart=true`);
         servletRequest(`./chartservlet?function=update&id=${newItemArray[1].id}&type=${newItemArray[1].type}&prevItemId=${newItemArray[1].prevItemId}&caption=${newItemArray[1].caption}&condition=${newItemArray[1].condition}&isMultipart=true`);
-        state = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&condition=${newItemArray[2].condition}&isMultipart=true&finalMultipart=true`));
+        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&condition=${newItemArray[2].condition}&isMultipart=true&finalMultipart=true`));
     }
+    state = result.state;
+    undoAvailable = (result.undo>0)?true:false;
     drawChart(state);
+    if (undoAvailable){
+        document.getElementById("undoBtn").classList.remove("disabled");
+    }
 }
 
 function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false){
@@ -136,7 +171,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     if (coordinates.y > lowestY) { lowestY = coordinates.y; }
     if (coordinates.x > highestX) { highestX = coordinates.x; }
     if (stepType === "end") { coordinates = {x: Math.min(highestX + 120, maxX - 90), y: lastIconCoordinates.y + 90}; }
-    let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
+    let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" ondblclick="defineElement(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
     let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;
     let target = document.getElementsByClassName("chartarea")[0];
     newStep.style.top = coordinates.y;
@@ -160,15 +195,14 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     return {id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption};
 }
 
-function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, prevId){
+function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, stepIdPos, stepIdNeg, prevId){
     const iconCode = flowchartImageCodes[stepType];
-    const iconCodePos = flowchartImageCodes[stepTypePos];
-    const iconCodeNeg = flowchartImageCodes[stepTypeNeg];
     
     if (stepType === "start" && startIcon !== null){
         return;
     }
     const prevIcon = document.getElementById(prevId);
+
     let lastIconCoordinates = {x: -90, y: 10};
     if (prevId !== -1){
         const prevIcon = document.getElementById(prevId);
@@ -178,9 +212,9 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, s
         if (lastIconCoordinates.x > highestX) { highestX = lastIconCoordinates.x; }
     }
     let target = document.getElementsByClassName("chartarea")[0];
-    
+
     // add first icon (conditional)
-    let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
+    let newIcon = `<div id="${stepId}" class="flow-icon-div" onclick="setSelectedItem(this.id)" ondblclick="defineElement(this.id)" selectable> ${iconCode} <p class="icon-font">${iconCaption}</p></div>`;
     let newStep = parser.parseFromString(newIcon, 'text/html').body.firstChild;  
     newStep.style.top = lastIconCoordinates.y;
     newStep.style.left = lastIconCoordinates.x + 120;
@@ -191,12 +225,10 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, s
     let line = new LeaderLine(prevIcon.children[0], document.getElementById(stepId).children[0], getLineStyle());
     lines.push(line);
     
-    let stepIdPos = -1;
-    let stepIdNeg = -1;
     // option 1: no end nodes
     if (stepTypePos !== "end" && stepTypeNeg !== "end"){
-        stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
-        stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
+        addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
+        addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
     } else if (stepTypePos === "end") {
         // option 2: positive node is end node
         if (endIconId !== -1){
@@ -210,12 +242,12 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, s
             lines.push(line);
             linesToEnd.push(line);
         } else {
-            stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
+            addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
         }
         // add step for neg
-        stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
-    } else if (stepTypeNeg === "end"){
-        stepIdPos = addNewStep(iconCodePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
+        stepIdNeg = addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
+    } else if (stepTypeNeg === "end"){ // negative node is end node
+        addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(false, posValue));
         if (endIconId !== -1){
             let endNode = document.getElementById(endIconId);
             endNode.style.left = highestX + 120; // move node
@@ -226,7 +258,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, s
             lines.push(line);
             linesToEnd.push(line);
         } else {
-            stepIdNeg = addNewStep(iconCodeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
+            addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(false, negValue), true);
         }
     }
     
@@ -260,15 +292,15 @@ function drawChart(state){
         if (item.type === "start") { addNewStep(item.id, item.type, item.caption, -1); }
         else if (item.type === "conditional"){
             conditionalEncountered = true;
-            conditionalData.append(item);
-        }
-        else {
+            conditionalData.push(item);
+        } else {
             if (conditionalEncountered){
-                if (length(conditionalData) < 3){
-                    conditionalData.append(item);
-                } else {
-                    conditionalEncountered = false;
-                    addConditionalStep(item.id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[2].condition, conditionalData[1].type, conditionalData[2].type, conditionalData[0].prevItemId);
+                if (conditionalData.length < 3){
+                    conditionalData.push(item);
+                    if (conditionalData.length === 3){
+                        conditionalEncountered = false;
+                        addConditionalStep(conditionalData[0].id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[2].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);
+                    }
                 }
             } else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(), false); }
         }
@@ -276,7 +308,6 @@ function drawChart(state){
 }
 
 function addStart(){ 
-    maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
     let newItem = addNewStep(getRandomId(), "start", "Start", -1, getLineStyle());
     updateState([newItem], false);
 }
@@ -286,22 +317,11 @@ function addStop(){
     updateState([newItem], false);
 }
 
-function addSubroutine() { 
-    // select project using java, read in project. use projectname as caption for subroutine
-    let newItem = addNewStep(getRandomId(), "subroutine", "", ); 
-    updateState([newItem], false);
+function addLoop(){
+    //popup: start new or end existing loop
+     let newItem = addNewStep("loop", "");
+     updateState([newItem], false);
 }
-
-function addIfElse(){
-    // create popup to select variable and set values. select next action for both flows
-    let newItemArray = addConditionalStep(getRandomId(), "conditional", "");
-    updateState(newItemArray, true);
-}
-
-//function addLoop(){
-//    //popup: start new or end existing loop
-//     addNewStep("loop", "");
-//}
 
 function setSelectedItem(id){
     if (selectedItemId !== -1){
@@ -315,24 +335,200 @@ function setSelectedItem(id){
 
 // form-related functions
 
-function openFormPopup(popupClass, subclass=null){
-    let selectBoxCode = '<select data-role="select" id="data-retrieve-select" data-add-empty-value="true" data-on-item-select="storeDataRetrieveValue(this.value)">';
-    const selectBoxCodePost = '</select>';
+function defineElement(id){
+    let chartItem = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${id}`)).chartItem;
+    if (chartItem.type === "start" || chartItem.type === "end"){
+        Metro.notify.create("Cannot edit properties of start and end elements", "Warning: cannot edit", {animation: 'easeOutBounce', cls: "edit-notify"});
+    } else {
+        elementToDefine = chartItem;
+        switch(chartItem.type){
+            case "subroutine":
+                break;
+            case "conditional":
+                break;
+            case "loop":
+                break;
+            case "retrievedata":
+                break;
+            case "newProcedure":
+                //fallthrough
+            case "orderLabs":
+                //fallthrough
+            case "newPrescription":
+                //fallthrough
+            case "addDiagnosis":
+                //fallthrough
+            case "newVaccination":
+                //fallthrough
+            case "addNotes":
+                openFormPopup("chart-item-popup", chartItem.type, {caption: chartItem.caption});
+                break; //action
+            case "questionMark":
+                break;
+        }
+    }
+}
+
+function conditionalPosForm(value){
+    conditionalPosValue = value;
+    document.getElementById("conditional-form-group-pos").innerHTML = "";
+    const captionCode = '<div style="display: -webkit-inline-box"><label>Caption for statement 1</label> <input type="text" name="statement1-caption" id="statement1-caption" required></div>';
+    const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
+    const selectSubroutineCode = `<div style="display: -webkit-inline-box"><label>Select file</label><input type="file" data-role="file" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'pos')" required></div>`;
+    const ifElseCode = "<div id='if-else-specify-later'><i>Specify later</i></div>";
+    switch (value){
+        case "end": 
+            break;
+        case "subroutine":
+            document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
+            break;
+        case "retrievedata":
+            const code = getRetrieveDataSelectBox("statement1-caption");
+            const newChild = `<div style="display: -webkit-inline-box"><label>Data to retrieve</label>${code}</div>`;
+            document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
+            break;
+        case "conditional":
+            // place branch icon + double click to specify?
+            document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
+            break;
+        case "newProcedure":
+            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            break;
+        case "orderLabs":
+            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            break;
+        case "newPrescription":
+            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            break;
+        case "addDiagnosis":
+            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            break;
+        case "newVaccination":
+            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            break;
+        case "addNotes":
+            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            break;
+        default: 
+            break;
+    }
+}
+
+function conditionalNegForm(value){
+    conditionalNegValue = value;
+    document.getElementById("conditional-form-group-neg").innerHTML = "";
+    const captionCode = '<div style="display: -webkit-inline-box"><label>Caption for statement 2</label><input type="text" name="statement2-caption" id="statement2-caption" required></div>';
+    const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
+    const selectSubroutineCode = `<div style="display: -webkit-inline-box"><label>Select file</label><input type="file" data-role="file" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'neg')" required></div>`;
+    const ifElseCode = "<div id='if-else-specify-later'><i>Specify later</i></div>";
+    switch (value){
+        case "end": 
+            break;
+        case "subroutine":
+            document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
+            break;
+        case "retrievedata":
+            const code = getRetrieveDataSelectBox("statement2-caption");
+            const newChild = `<div style="display: -webkit-inline-box"><label>Data to retrieve</label>${code}</div>`;
+            document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
+            break;
+        case "conditional":
+            document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
+            break;
+        case "newProcedure":
+            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            break;
+        case "orderLabs":
+            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            break;
+        case "newPrescription":
+            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            break;
+        case "addDiagnosis":
+            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            break;
+        case "newVaccination":
+            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            break;
+        case "addNotes":
+            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            break;
+        default:
+            break;
+    }
+}
+
+function getRetrieveDataSelectBox(name){
+    let selectBoxCodeRetrieve = null;
+    if (name){
+        selectBoxCodeRetrieve = `<select data-role="select" id="data-retrieve-select" name="${name}" data-add-empty-value="true" required>`;
+    } else {
+        selectBoxCodeRetrieve = `<select data-role="select" id="data-retrieve-select" data-add-empty-value="true" required>`;
+    }
+    const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
+    Object.keys(values).forEach((key) => {
+        selectBoxCodeRetrieve += `<option value=${key}>${key}</option>`;
+    });
+    selectBoxCodeRetrieve += selectBoxCodePost;
+    return selectBoxCodeRetrieve;
+}
+
+function openFormPopup(popupClass, subclass=null, values=null){
+    document.getElementById("condition1").value = "";
+    document.getElementById("condition2").value = "";
+    document.getElementById("conditional-form-group-pos").innerHTML = "";
+    document.getElementById("conditional-form-group-neg").innerHTML = "";
+    document.getElementById("conditional-variable").innerHTML = "";
+    
+    let selectBoxCodeConditionalPos = '<select data-role="select" name="data-conditional-pos" id="data-conditional-pos" data-add-empty-value="true" data-on-change="conditionalPosForm(this.value)" required>';
+    let selectBoxCodeConditionalNeg = '<select data-role="select" name="data-conditional-neg" id="data-conditional-neg" data-add-empty-value="true" data-on-change="conditionalNegForm(this.value)" required>';
+    
     let popup = document.getElementsByClassName(popupClass)[0];
     switch (popupClass){
         case "chart-item-popup":
+            if (values!==null){
+                document.getElementById("medical-action-input").value = values.caption;
+            }
             medicalActionToAdd = subclass;
-            document.getElementsByClassName("chart-item-popup")[0].style.display = "initial";
+            popup.style.display = "initial";
             break;
-        case "chart-conditional-popup":
+        case "chart-conditional-popup": //let last field for every row depend on choice in 2nd field --> maybe new popup on submit?
+            let selectBoxCode = getRetrieveDataSelectBox("data-conditional-var");
+            document.getElementById("conditional-variable").appendChild(parser.parseFromString(selectBoxCode, 'text/html').body.firstChild);
+            
+            selectBoxCodeConditionalPos += "<optgroup label='Components'>";
+            selectBoxCodeConditionalNeg += "<optgroup label='Components'>";
+            Object.keys(chartItemTypesBasic).forEach((key) => {
+                selectBoxCodeConditionalPos += `<option value=${key}>${chartItemTypesBasic[key]}</option>`;
+                selectBoxCodeConditionalNeg += `<option value=${key}>${chartItemTypesBasic[key]}</option>`;
+            });
+            selectBoxCodeConditionalPos += "</optgroup><optgroup label='Medical Actions'>";
+            selectBoxCodeConditionalNeg += "</optgroup><optgroup label='Medical Actions'>";
+            Object.keys(chartItemMedicalActions).forEach((key) => {
+                selectBoxCodeConditionalPos += `<option value=${key}>${chartItemMedicalActions[key]}</option>`;
+                selectBoxCodeConditionalNeg += `<option value=${key}>${chartItemMedicalActions[key]}</option>`;
+            });
+            selectBoxCodeConditionalPos += "</optgroup>" + selectBoxCodePost;
+            selectBoxCodeConditionalNeg += "</optgroup>" + selectBoxCodePost;
+            
+            document.getElementById("conditional-statement1").innerHTML = "";
+            document.getElementById("conditional-statement2").innerHTML = "";
+            document.getElementById("conditional-statement1").appendChild(parser.parseFromString(selectBoxCodeConditionalPos, 'text/html').body.firstChild);
+            document.getElementById("conditional-statement2").appendChild(parser.parseFromString(selectBoxCodeConditionalNeg, 'text/html').body.firstChild);
+            
+            if (values !== null){
+                document.getElementById("data-retrieve-select").value = values.variable;
+                document.getElementById("condition1").value = values.condition1;
+                document.getElementById("condition2").value = values.condition2;
+                document.getElementById("data-conditional-pos").value = values.conditionalPos;
+                document.getElementById("data-conditional-neg").value = values.conditionalNeg;
+            }
+            
+            popup.style.display = "initial";
             break;
         case "chart-retrieve-data-popup":
-            const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
-            Object.keys(values).forEach((key) => {
-                selectBoxCode += `<option value=${key}>${key}</option>`;
-            });
-            selectBoxCode += selectBoxCodePost;
-            document.getElementById("retrieve-data-form-group").appendChild(parser.parseFromString(selectBoxCode, 'text/html').body.firstChild);
+            const code = getRetrieveDataSelectBox(null);
+            document.getElementById("retrieve-data-form-group").appendChild(parser.parseFromString(code, 'text/html').body.firstChild);
             document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "block";
             break;
         case "chart-subroutine-popup":
@@ -355,21 +551,27 @@ function getFormValueStandard(){
     formValues = {"caption": formdata.get("caption")};
 }
 
-function processEmbedFile(files){
-    console.log(files[0]);
+function processEmbedFile(files, location){
+    if (location === "pos"){
+        conditionalPosEmbed = files[0];
+    } else if (location === "neg"){
+        conditionalNegEmbed = files[0];
+    } else {}
 }
 
 function addMedicalAction(){
     event.preventDefault();
     const message = document.getElementById("medical-action-input").value;
     document.getElementById("medical-action-input").value = '';
-    let newItem = addNewStep(getRandomId(), medicalActionToAdd, message, selectedItemId, getLineStyle());
+    let newItem = null;
+    if (elementToDefine === null){
+        newItem = addNewStep(getRandomId(), medicalActionToAdd, message, selectedItemId, getLineStyle());
+    } else {
+        newItem = elementToDefine;
+        newItem.caption = message;
+    }
     document.getElementsByClassName("chart-item-popup")[0].style.display = "none";
     updateState([newItem], false);
-}
-
-function storeDataRetrieveValue(value){
-    formValues = {"dataToRetrieve": value};
 }
 
 function closeAllForms(){
@@ -378,4 +580,55 @@ function closeAllForms(){
     popupClasses.forEach((popupClass) => {
         document.getElementsByClassName(popupClass)[0].style.display = "none";
     });
+}
+
+function processFormConditional(){
+    event.preventDefault();
+    
+    //get data
+    let formdata = new FormData(document.getElementById("conditional-form"));
+    let variable = formdata.get("data-conditional-var");
+    let statement1Caption = null;
+    let statement2Caption = null;
+    if (conditionalPosValue === "subroutine" && conditionalNegValue === "subroutine"){
+        statement1Caption = conditionalPosEmbed;
+        statement2Caption = conditionalNegEmbed;
+    } else if (conditionalPosValue === "subroutine"){
+        statement1Caption = conditionalPosEmbed;
+        statement2Caption = formdata.get("statement2-caption");
+    } else if (conditionalNegValue === "subroutine"){
+        statement2Caption = conditionalNegEmbed;
+        statement1Caption = formdata.get("statement1-caption");
+    } else {
+        statement1Caption = formdata.get("statement1-caption");
+        statement2Caption = formdata.get("statement2-caption");
+    }
+    let condition1 = formdata.get("condition1");
+    let conditionalStatement1 = formdata.get("data-conditional-pos");
+    let condition2 = formdata.get("condition2");
+    let conditionalStatement2 = formdata.get("data-conditional-neg");
+    
+    // process
+    if (conditionalPosValue === "subroutine"){
+        statement1Caption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${conditionalPosEmbed.name}`)).mlmname; //let backend know of new file to be included
+    }
+    if (conditionalNegValue === "subroutine"){
+        statement2Caption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${conditionalNegEmbed.name}`)).mlmname;
+    }
+    
+    if (conditionalPosValue === "end") {statement1Caption = "Stop"; }
+    if (conditionalNegValue === "end") {statement2Caption = "Stop"; }
+    
+    let newSteps = null;
+    if (conditionalPosValue === "conditional" && conditionalNegValue === "conditional"){
+        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition1, condition2, conditionalPosValue, clickToDefine, conditionalNegValue, clickToDefine, getRandomId(), getRandomId(), selectedItemId);
+    } else if (conditionalPosValue === "conditional"){
+        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition1, condition2, conditionalPosValue, clickToDefine, conditionalNegValue, statement2Caption, getRandomId(), getRandomId(), selectedItemId);
+    } else if (conditionalNegValue === "conditional"){
+        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition1, condition2, conditionalPosValue, statement1Caption, conditionalNegValue, clickToDefine, getRandomId(), getRandomId(), selectedItemId);
+    } else {
+        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition1, condition2, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, getRandomId(), getRandomId(), selectedItemId);
+    }
+    document.getElementsByClassName("chart-conditional-popup")[0].style.display = "none";
+    updateState(newSteps, true);
 }

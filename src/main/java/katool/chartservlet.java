@@ -5,24 +5,44 @@
  */
 package katool;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Scanner;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
+import org.javatuples.Pair;
 
 /**
  *
  * @author RLvan
  */
 public class chartservlet extends HttpServlet {
+    
+    // !!!! change directory! ask for working dir!
 
     private LinkedList<ChartItem> currentState = new LinkedList<>();
     private Deque<LinkedList<ChartItem>> undoStack = new LinkedList();
     private Deque<LinkedList<ChartItem>> redoStack = new LinkedList();
     private final Integer MAX_DEQUE_SIZE = 10;
+    private String workingDir = "C:\\Users\\RLvan\\OneDrive\\Documenten\\MI\\SRP";
+    private final String settingsFileName = "mikat_settings.json";
+    private JsonNode settings = null; // {prevOpened:[{},{},{}]}
+    private ArrayList<JsonNode> dependencies = null; // [{dependency: ..., fileLocation: ..., date: ...},{}]
+    private ArrayList<Pair<String, JsonNode>> loadedDependencies = null;
     
     
     /**
@@ -69,6 +89,23 @@ public class chartservlet extends HttpServlet {
                 deleteItem(request);
                 response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState) + "}");
                 break;
+            case "file":
+                String mlmname = selectFile(request);
+                response.getWriter().write("{\"mlmname\":\"" + mlmname + "\"}");
+                break;
+            case "open":
+                openProject(request);
+                break;
+            case "save":
+                saveProject(request);
+                break;
+            case "state":
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState) + "}");
+                break;
+            case "getElement":
+                ChartItem element = getElementById(request);
+                response.getWriter().write("{\"chartItem\":" + JSONEncoder.encodeItem(element) + "}");
+                break;
             default:
                 break;
         }
@@ -113,6 +150,174 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    private ChartItem getElementById(HttpServletRequest request){
+        String id = request.getParameter("id");
+        ChartItem element = null;
+        for (ChartItem chartItem : currentState){
+            if (chartItem.getId().equals(id)) { 
+                element = chartItem;
+                break;
+            }
+        }
+        return element;
+    }
+    
+    private boolean checkFileValidity(JsonNode project){
+        // check whether file was created by this program and contains the correct 'keys'
+        JsonNode maintenance = project.get("maintenance");
+        JsonNode library = project.get("library");
+        JsonNode knowledge = project.get("knowledge");
+        JsonNode projectDependencies = project.get("dependencies");
+        if (maintenance == null || library == null || knowledge == null || projectDependencies == null) { return false; }
+        if (!maintenance.isNull()){
+            if (maintenance.hasNonNull("title") && 
+                    maintenance.hasNonNull("mlmname") &&
+                    maintenance.hasNonNull("arden") &&
+                    maintenance.hasNonNull("version") &&
+                    maintenance.hasNonNull("institution") &&
+                    maintenance.hasNonNull("author") &&
+                    maintenance.hasNonNull("specialist") &&
+                    maintenance.hasNonNull("date") &&
+                    maintenance.hasNonNull("validation")){
+                if (!"production".equals(maintenance.get("validation").asText()) &&
+                        !"research".equals(maintenance.get("validation").asText()) &&
+                        !"testing".equals(maintenance.get("validation").asText()) &&
+                        !"expired".equals(maintenance.get("validation").asText())) {
+                    return false;
+                } else { // if we get here the maintenance section is complete
+                    if (!library.isNull()){
+                        if (library.hasNonNull("purpose") &&
+                                library.hasNonNull("explanation") &&
+                                library.hasNonNull("keywords")){
+                            if (!knowledge.isNull()) {
+                                if (knowledge.hasNonNull("type") &&
+                                        knowledge.hasNonNull("data") &&
+                                        knowledge.hasNonNull("evoke") &&
+                                        knowledge.hasNonNull("logic") &&
+                                        knowledge.hasNonNull("action")){
+                                    // we made it through the MLM required fields
+                                    // from now on: fields that are required by MIKAT and mark this project as a MIKAT project
+                                    if (!projectDependencies.isNull()) { // minimum is an empty JsonArray
+                                        return true;
+                                    } else { return false; }
+                                } else { return false; }
+                            } else { return false; }
+                        } else { return false; }
+                    } else { return false; }
+                }
+            } else { return false; }
+        }
+        return false;
+    }
+    
+    private void saveProject(HttpServletRequest request){
+        String projectFile = request.getParameter("fileLocation");
+        
+    }
+    
+    private void loadSettings() throws FileNotFoundException, JsonProcessingException{
+        File root = new File("C:\\");
+        File settingsFile = null;
+        String settingsString = "";
+        try{
+            boolean recursive = true;
+            Collection files = FileUtils.listFiles(root, null, recursive);
+            for (Iterator iterator = files.iterator(); iterator.hasNext();){
+                File file = (File) iterator.next();
+                if (file.getName().equals(settingsFileName)){
+                    settingsFile = file;
+                }
+            }
+        } catch (Exception e) {
+            // create new settings file
+        }
+        
+        Scanner fileReader = new Scanner(settingsFile);
+        while (fileReader.hasNextLine()){
+            settingsString += fileReader.nextLine();   
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        settings = mapper.readTree(settingsString);
+    }
+    
+    private void openProject(HttpServletRequest request) throws IOException{ //open project
+        loadSettings();
+        String fileName = request.getParameter("fileName");
+        String path = null;
+        File projectFile = null;
+        String projectString = "";
+        JsonNode project = null;
+        if (!fileName.startsWith("C:\\")){
+            File root = new File(workingDir);
+            try{
+                boolean recursive = true;
+                Collection files = FileUtils.listFiles(root, null, recursive);
+                for (Iterator iterator = files.iterator(); iterator.hasNext();) {
+                    File file = (File) iterator.next();
+                    if (file.getName().equals(fileName)){
+                        path = file.getAbsolutePath();
+                        projectFile = file;
+                    }
+                } 
+            }catch (Exception e){}
+        } else {
+            path = fileName;
+            projectFile = new File(path); 
+        }
+        
+        Scanner fileReader = new Scanner(projectFile);
+        while (fileReader.hasNextLine()){
+            projectString += fileReader.nextLine();   
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        project = mapper.readTree(projectString);
+        if (checkFileValidity(project)){
+            dependencies.add(project.get("dependencies"));
+            settings = project.get("settings");
+            currentState = JSONDecoder.decodeChart(project.get("state").toString());
+        }
+        
+    }
+    
+    private String selectFile(HttpServletRequest request) throws IOException{
+        String fileName = request.getParameter("name");
+        File root = new File(workingDir);
+        String path = null;
+        File selectedFile = null;
+        String selectedFileString = "";
+        JsonNode selectedFileContents = null;
+        String mlmname = null;
+        try {
+            boolean recursive = true;
+            Collection files = FileUtils.listFiles(root, null, recursive);
+            for (Iterator iterator = files.iterator(); iterator.hasNext();) {
+                File file = (File) iterator.next();
+                if (file.getName().equals(fileName)){
+                    path = file.getAbsolutePath();
+                    selectedFile = file;
+                    Scanner fileReader = new Scanner(selectedFile);
+                    while (fileReader.hasNextLine()){
+                        selectedFileString += fileReader.nextLine();
+                    }
+                    ObjectMapper mapper = new ObjectMapper();
+                    selectedFileContents = mapper.readTree(selectedFileString);
+                    if (checkFileValidity(selectedFileContents)){
+                        String title = selectedFileContents.at("/maintenance/title").asText();
+                        mlmname = selectedFileContents.at("/maintenance/mlmname").asText();
+                        List<Pair<String,String>> newItems = new ArrayList<>();
+                        newItems.add(new Pair<>("dependency", title));
+                        newItems.add(new Pair<>("fileLocation", path));
+                        newItems.add(new Pair<>("date", new Date().toString()));
+                        JsonNode newDependency = JsonTools.createNode(newItems);
+                        dependencies.add(newDependency);
+                        loadedDependencies.add(new Pair<>(title, selectedFileContents));
+                    }
+                }
+            } 
+        } catch (Exception e){}  
+        return mlmname;
+    }
+    
     private void deleteItem(HttpServletRequest request) throws IOException{
         String id = request.getParameter("id");
         Integer itemIndex = findIndexOf(id);
@@ -161,18 +366,15 @@ public class chartservlet extends HttpServlet {
         }
         if (itemIndex > -1){ // item already exists, replace
             currentState.set(itemIndex, newItem);
-        } else if (prevIdIndex < 0) {
+        } else if (isMultipart.equals("true") && finalMultipart.equals("true")){ //item is last item in conditional
+            currentState.add(prevIdIndex + 2, newItem);
+        } else if (prevIdIndex == (currentState.size()-1)){ // prevItemId equals id of last item in currentState
             currentState.addLast(newItem);
-        } else {
-            currentState.add(prevIdIndex + 1, newItem);
-            try{
-                ChartItem nextItem = currentState.get(prevIdIndex + 2);
-                nextItem.setPrevItemId(id);
-                currentState.set(prevIdIndex + 2, nextItem);
-            } catch (Exception e){
-                System.out.println("No next object to refer to");
-            }
-            
+        } else { // insert between existing items
+            currentState.add(prevIdIndex + 1, newItem); // insert after prevId item
+            ChartItem nextItem = currentState.get(prevIdIndex + 2); // we have to change the prevItemId of the next item
+            nextItem.setPrevItemId(newItem.getId());
+            currentState.set(prevIdIndex + 2, nextItem);
         }
     }
     
