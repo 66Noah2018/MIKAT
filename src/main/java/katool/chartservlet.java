@@ -318,19 +318,36 @@ public class chartservlet extends HttpServlet {
         return mlmname;
     }
     
+    private void removeConditional(String id){
+        Integer itemIndex = findIndexOf(id);
+        currentState.remove(currentState.get(itemIndex));
+        for (ChartItem item : currentState){
+            if (item.getPrevItemId().equals(id)){
+                if (item.getType().equals("conditional")){
+                    removeConditional(item.getId());
+                } else {
+                    currentState.remove(item);
+                }
+            }
+        }
+    }
+    
     private void deleteItem(HttpServletRequest request) throws IOException{
         String id = request.getParameter("id");
         Integer itemIndex = findIndexOf(id);
         maintainMaxDequeSize("undo");
         undoStack.addFirst(currentState);
         ChartItem oldItem = currentState.get(itemIndex);
-        currentState.remove(currentState.get(itemIndex));
+        if (oldItem.getType().equals("conditional")) { removeConditional(oldItem.getId()); }
+        else { 
+            currentState.remove(currentState.get(itemIndex));
+        }
+        
         try {
             ChartItem itemToBeAltered = currentState.get(itemIndex);
             itemToBeAltered.setPrevItemId(oldItem.getPrevItemId());
             currentState.set(itemIndex, itemToBeAltered);
         } catch (Exception e){}
-        
     }
     
     private void updateState(HttpServletRequest request) throws IOException{
@@ -372,10 +389,26 @@ public class chartservlet extends HttpServlet {
             currentState.addLast(newItem);
         } else { // insert between existing items
             currentState.add(prevIdIndex + 1, newItem); // insert after prevId item
-            ChartItem nextItem = currentState.get(prevIdIndex + 2); // we have to change the prevItemId of the next item
-            nextItem.setPrevItemId(newItem.getId());
-            currentState.set(prevIdIndex + 2, nextItem);
+            if ((isMultipart.equals("false")) || (prevIdIndex == (currentState.size()-2))) {
+                Integer nextItemIndex = nextElementIndex(id);
+                if (nextItemIndex > 0) {
+                    ChartItem nextItem = currentState.get(nextItemIndex); // we have to change the prevItemId of the next item
+                nextItem.setPrevItemId(newItem.getId());
+                currentState.set(nextItemIndex, nextItem);
+                }
+            }
         }
+    }
+    
+    private Integer nextElementIndex(String id){
+        Integer nextIndex = -1;
+        for (Integer index = 0; index < currentState.size(); index++){
+            if (id.equals(currentState.get(index).getPrevItemId())){
+                nextIndex = index;
+                break;
+            }
+        }
+        return nextIndex;
     }
     
     private Integer undo(){

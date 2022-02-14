@@ -19,7 +19,7 @@ const flowchartImageCodes = {
     addDiagnosis: "<span class='fas fa-diagnoses flow-icon'></span>",
     newVaccination: "<span class='fas fa-syringe flow-icon'></span>",
     addNotes: "<span class='fas fa-pencil-alt flow-icon'></span>",
-    questionMark: "<span class='mif-icon mif-3x'></span>"
+    questionMark: "<span class='mif-question mif-3x flow-icon'></span>"
 };
 
 let lines = [];
@@ -67,11 +67,7 @@ window.addEventListener('load', function () {
 
 document.addEventListener('keydown', function(event) {
     if (event.keyCode === 46){
-        if (selectedItemId !== -1){
-            let state = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${selectedItemId}`));
-            selectedItemId = -1;
-            drawChart(state.state);
-        }
+        if (selectedItemId !== -1){ deleteItem(selectedItemId); }
     }
 });
 
@@ -131,14 +127,16 @@ function updateState(newItemArray, isConditional = false){//conditional not adde
     }
     state = result.state;
     undoAvailable = (result.undo>0)?true:false;
+    console.log(state)
     drawChart(state);
     if (undoAvailable){
         document.getElementById("undoBtn").classList.remove("disabled");
     }
 }
 
-function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false){
+function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false, condition=null){
     const iconCode = flowchartImageCodes[stepType];
+    if (condition !== null && condition !== 'null') { options.middleLabel=condition; }
     if (stepType === "end" && endIconId !== -1) {
         endElement = document.getElementById(endIconId);
         let newX = Math.min(highestX + 120, maxX - 90);
@@ -192,7 +190,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     }
     if (stepType === "end"){ endIconId = stepId; } // do not disable, click again links to existing btn
     
-    return {id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption};
+    return {id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption, condition: condition};
 }
 
 function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, stepIdPos, stepIdNeg, prevId){
@@ -262,7 +260,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, negValue, s
         }
     }
     
-    return [{id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption},
+    return [{id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption, condition: null},
         {id:stepIdPos, type:stepTypePos, prevItemId: stepId, caption: iconCaptionPos, condition: posValue},
         {id:stepIdNeg, type:stepTypeNeg, prevItemId: stepId, caption: iconCaptionNeg, condition: negValue}];
 }
@@ -286,25 +284,46 @@ function drawChart(state){
     if (state.length === 0) { document.getElementById("addStartBtn").classList.remove("disabled"); }
     
     let conditionalEncountered = false;
-    let conditionalData = [];
+
+    let conditionalIds = [];
     for (let i = 0; i < state.length; i++){
-        const item = state[i];
-        if (item.type === "start") { addNewStep(item.id, item.type, item.caption, -1); }
-        else if (item.type === "conditional"){
-            conditionalEncountered = true;
-            conditionalData.push(item);
-        } else {
-            if (conditionalEncountered){
-                if (conditionalData.length < 3){
-                    conditionalData.push(item);
-                    if (conditionalData.length === 3){
-                        conditionalEncountered = false;
-                        addConditionalStep(conditionalData[0].id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[2].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);
-                    }
-                }
+        const item = state[[i]];
+        if (!conditionalIds.includes(item.prevItemId)) {
+            if (item.type === "start") { addNewStep(item.id, item.type, item.caption, -1, condition = item.condition); }
+            else if (item.type === "conditional"){
+                let conditionalData = [item];
+                conditionalIds.push(item.id);
+                state.forEach((nextItem) => {
+                    if (nextItem.prevItemId === item.id) { conditionalData.push(nextItem); }
+                });
+                if (conditionalData.length < 3) { 
+                    console.error("conditional incomplete!");
+                    continue;
+                } else {
+                    addConditionalStep(conditionalData[0].id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[2].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);   
+                } 
             } else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(), false); }
         }
     }
+
+//    for (let i = 0; i < state.length; i++){
+//        const item = state[i];
+//        if (item.type === "start") { addNewStep(item.id, item.type, item.caption, -1, condition = item.condition); }
+//        else if (item.type === "conditional"){
+//            conditionalEncountered = true;
+//            conditionalData.push(item);
+//        } else {
+//            if (conditionalEncountered){
+//                if (conditionalData.length < 3){
+//                    conditionalData.push(item);
+//                    if (conditionalData.length === 3){
+//                        conditionalEncountered = false;
+//                        addConditionalStep(conditionalData[0].id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[2].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);
+//                    }
+//                }
+//            } else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(), false); }
+//        }
+//    }
 }
 
 function addStart(){ 
@@ -330,6 +349,22 @@ function setSelectedItem(id){
     if (selectedItemId !== id){
         selectedItemId = id;
         document.getElementById(selectedItemId).classList.add("highlight");
+    }
+}
+
+function deleteItem(id){
+    let item = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${id}`)).chartItem;
+    if (item.type === "start") {
+        Metro.notify.create("Cannot delete start element", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
+        return;
+    }
+    selectedItemId = -1;
+    if (item.condition !== null && item.condition !== 'null'){ // this is part of a conditional! we cannot delete it, so replace with questionmark + click to define
+        let newItem = {id: item.id, type: "questionMark", prevId: item.prevItemId, caption: clickToDefine, condition: item.condition};
+        updateState([newItem], false);
+    } else {
+       let state = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${id}`)); 
+       drawChart(state.state);
     }
 }
 
@@ -542,7 +577,10 @@ function servletRequest(url){
     const http = new XMLHttpRequest();
     http.open("GET", url, false);
     http.send();
-    return http.responseText;
+    if (http.readyState === 4 && http.status === 200) {
+        return http.responseText;
+    }
+    
 }
 
 function getFormValueStandard(){
