@@ -321,15 +321,13 @@ public class chartservlet extends HttpServlet {
     private void removeConditional(String id){
         Integer itemIndex = findIndexOf(id);
         currentState.remove(currentState.get(itemIndex));
-        for (ChartItem item : currentState){
-            if (item.getPrevItemId().equals(id)){
-                if (item.getType().equals("conditional")){
-                    removeConditional(item.getId());
-                } else {
-                    currentState.remove(item);
-                }
+        currentState.stream().filter(item -> (item.getPrevItemId().equals(id))).forEachOrdered(item -> {
+            if (item.getType().equals("conditional")){
+                removeConditional(item.getId());
+            } else {
+                currentState.remove(item);
             }
-        }
+        });
     }
     
     private void deleteItem(HttpServletRequest request) throws IOException{
