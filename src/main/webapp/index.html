@@ -288,23 +288,36 @@
         <div class="chart-conditional-popup" onsubmit="processFormConditional()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
             <form id="conditional-form" class=".custom-validation">
+                <div class="form-group" id="input-labels">
+                    <label id="var">Variable</label>
+                    <label id="condition-label">Condition</label>
+                    <label id="specify">Specify</label>
+                </div>
                 <div class="form-group">
-                    <label>Variable</label>
+                    <label>If</label>
                     <div id="conditional-variable"></div>
                     
-                    <label>Condition 1</label>
-                    <input type="text" name="condition1" id="condition1" required>
+                    <div id="condition-prefix">
+                        <select data-role="select" name="condition-prefix" data-add-empty-value="true">
+                        <option value="equals">=</option>
+                        <option value="smaller-than"><</option>
+                        <option value="bigger-than">></option>
+                        <option value="equal-smaller-than"><=</option>
+                        <option value="equal-bigger-than">>=</option>
+                        <option value="does-not-equal">&#8800</option>
+                        <option value="is-in">Is in</option>
+                        <option value="is-not-in">Is not in</option>
+                    </select>
+                    </div>
+                    <input type="text" name="condition1" id="condition" required>
                     
-                    <label>Statement 1</label>
+                    <label>Then</label>
                     <div id="conditional-statement1"></div>
                     
                     <div id="conditional-form-group-pos"></div>
                 </div>
-                <div class="form-group" id="condition2-form-group">
-                    <label>Condition 2</label>
-                    <input type="text" name="condition2" id="condition2" required value="">
-                    
-                    <label>Statement 2</label>
+                <div class="form-group" id="condition2-form-group">                  
+                    <label>Else</label>
                     <div id="conditional-statement2"></div>
                     
                     <div id="conditional-form-group-neg"></div>

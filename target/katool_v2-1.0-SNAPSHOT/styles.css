@@ -286,10 +286,10 @@ table{
 .chart-conditional-popup{
     position: absolute;
     top: 175px;
-    left: calc(50vw - 620px);
+    left: calc(50vw - 525px);
     background-color: var(--menu-bg-color);
-    width: 1240px;
-    height: 180px;
+    width: 1050px;
+    height: 240px;
     border: solid 1px var(--statusbar-bg-color);
     z-index: 2;
     display: none;
@@ -316,6 +316,19 @@ table{
 .chart-conditional-popup label{
     line-height: 35px;
     margin-left: 10px;
+}
+
+.chart-conditional-popup #var{
+    margin-left: 32px;
+}
+
+.chart-conditional-popup #condition-label{
+    margin-left: 152px;
+}
+
+.chart-conditional-popup #specify{
+    display: none;
+    margin-left: 456px;
 }
 
 #data-label{
@@ -374,7 +387,7 @@ table{
 
 #condition2-form-group{
     width: fit-content;
-    margin-left: 277px;
+        margin-left: 507px;
 }
 
 #if-else-specify-later{
@@ -384,4 +397,8 @@ table{
 
 .edit-notify{
     background-color: orange;
+}
+
+#condition-prefix .select {
+    width: 100px !important;
 }

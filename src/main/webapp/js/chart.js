@@ -407,7 +407,8 @@ function defineElement(id){
 function conditionalPosForm(value){
     conditionalPosValue = value;
     document.getElementById("conditional-form-group-pos").innerHTML = "";
-    const captionCode = '<div style="display: -webkit-inline-box"><label>Caption for statement 1</label> <input type="text" name="statement1-caption" id="statement1-caption" required></div>';
+    document.getElementById("specify").style.display = "none";
+    const captionCode = '<div style="display: -webkit-inline-box"><input type="text" name="statement1-caption" id="statement1-caption" required></div>';
     const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
     const selectSubroutineCode = `<div style="display: -webkit-inline-box"><label>Select file</label><input type="file" data-role="file" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'pos')" required></div>`;
     const ifElseCode = "<div id='if-else-specify-later'><i>Specify later</i></div>";
@@ -419,7 +420,7 @@ function conditionalPosForm(value){
             break;
         case "retrievedata":
             const code = getRetrieveDataSelectBox("statement1-caption");
-            const newChild = `<div style="display: -webkit-inline-box"><label>Data to retrieve</label>${code}</div>`;
+            const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
             document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
             break;
         case "conditional":
@@ -427,22 +428,18 @@ function conditionalPosForm(value){
             document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
             break;
         case "newProcedure":
-            document.getElementById("conditional-form-group-pos").appendChild(caption);
-            break;
+            // fallthrough
         case "orderLabs":
-            document.getElementById("conditional-form-group-pos").appendChild(caption);
-            break;
+            // fallthrough
         case "newPrescription":
-            document.getElementById("conditional-form-group-pos").appendChild(caption);
-            break;
+            // fallthrough
         case "addDiagnosis":
-            document.getElementById("conditional-form-group-pos").appendChild(caption);
-            break;
+            // fallthrough
         case "newVaccination":
-            document.getElementById("conditional-form-group-pos").appendChild(caption);
-            break;
+            // fallthrough
         case "addNotes":
             document.getElementById("conditional-form-group-pos").appendChild(caption);
+            document.getElementById("specify").style.display = "inline";
             break;
         default: 
             break;
@@ -452,7 +449,8 @@ function conditionalPosForm(value){
 function conditionalNegForm(value){
     conditionalNegValue = value;
     document.getElementById("conditional-form-group-neg").innerHTML = "";
-    const captionCode = '<div style="display: -webkit-inline-box"><label>Caption for statement 2</label><input type="text" name="statement2-caption" id="statement2-caption" required></div>';
+    document.getElementById("specify").style.display = "none";
+    const captionCode = '<div style="display: -webkit-inline-box"><input type="text" name="statement2-caption" id="statement2-caption" required></div>';
     const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
     const selectSubroutineCode = `<div style="display: -webkit-inline-box"><label>Select file</label><input type="file" data-role="file" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'neg')" required></div>`;
     const ifElseCode = "<div id='if-else-specify-later'><i>Specify later</i></div>";
@@ -464,29 +462,25 @@ function conditionalNegForm(value){
             break;
         case "retrievedata":
             const code = getRetrieveDataSelectBox("statement2-caption");
-            const newChild = `<div style="display: -webkit-inline-box"><label>Data to retrieve</label>${code}</div>`;
+            const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
             document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
             break;
         case "conditional":
             document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
             break;
         case "newProcedure":
-            document.getElementById("conditional-form-group-neg").appendChild(caption);
-            break;
+            // fallthrough
         case "orderLabs":
-            document.getElementById("conditional-form-group-neg").appendChild(caption);
-            break;
+            // fallthrough
         case "newPrescription":
-            document.getElementById("conditional-form-group-neg").appendChild(caption);
-            break;
+            // fallthrough
         case "addDiagnosis":
-            document.getElementById("conditional-form-group-neg").appendChild(caption);
-            break;
+            // fallthrough
         case "newVaccination":
-            document.getElementById("conditional-form-group-neg").appendChild(caption);
-            break;
+            // fallthrough
         case "addNotes":
             document.getElementById("conditional-form-group-neg").appendChild(caption);
+            document.getElementById("specify").style.display = "inline";
             break;
         default:
             break;
@@ -509,11 +503,11 @@ function getRetrieveDataSelectBox(name){
 }
 
 function openFormPopup(popupClass, subclass=null, values=null){
-    document.getElementById("condition1").value = "";
-    document.getElementById("condition2").value = "";
+    document.getElementById("condition").value = "";
     document.getElementById("conditional-form-group-pos").innerHTML = "";
     document.getElementById("conditional-form-group-neg").innerHTML = "";
     document.getElementById("conditional-variable").innerHTML = "";
+    document.getElementById("specify").style.display = "none";
     
     let selectBoxCodeConditionalPos = '<select data-role="select" name="data-conditional-pos" id="data-conditional-pos" data-add-empty-value="true" data-on-change="conditionalPosForm(this.value)" required>';
     let selectBoxCodeConditionalNeg = '<select data-role="select" name="data-conditional-neg" id="data-conditional-neg" data-add-empty-value="true" data-on-change="conditionalNegForm(this.value)" required>';
@@ -553,8 +547,7 @@ function openFormPopup(popupClass, subclass=null, values=null){
             
             if (values !== null){
                 document.getElementById("data-retrieve-select").value = values.variable;
-                document.getElementById("condition1").value = values.condition1;
-                document.getElementById("condition2").value = values.condition2;
+                document.getElementById("condition").value = values.condition;
                 document.getElementById("data-conditional-pos").value = values.conditionalPos;
                 document.getElementById("data-conditional-neg").value = values.conditionalNeg;
             }
