@@ -34,15 +34,16 @@ public class chartservlet extends HttpServlet {
     
     // !!!! change directory! ask for working dir!
 
-    private LinkedList<ChartItem> currentState = new LinkedList<>();
-    private Deque<LinkedList<ChartItem>> undoStack = new LinkedList();
-    private Deque<LinkedList<ChartItem>> redoStack = new LinkedList();
+    private Pair<LinkedList<ChartItem>, ArrayList<String>> currentState = new Pair(new LinkedList<>(), new ArrayList<>());
+    private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> undoStack = new LinkedList<>();
+    private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> redoStack = new LinkedList<>();
     private final Integer MAX_DEQUE_SIZE = 10;
     private String workingDir = "C:\\Users\\RLvan\\OneDrive\\Documenten\\MI\\SRP";
     private final String settingsFileName = "mikat_settings.json";
     private JsonNode settings = null; // {prevOpened:[{},{},{}]}
     private ArrayList<JsonNode> dependencies = null; // [{dependency: ..., fileLocation: ..., date: ...},{}]
     private ArrayList<Pair<String, JsonNode>> loadedDependencies = null;
+    private String conditionalId = null;
     
     
     /**
@@ -59,23 +60,23 @@ public class chartservlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         switch(request.getParameter("function")){
-            case "update": //no response, because this is merely a backend save. the changes are already processed at the frontend
+            case "update":
                 updateState(request);
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + "}");
                 break;
             case "undo":
                 Integer undoSize = undo();
-                response.getWriter().write("{'state': " + JSONEncoder.encodeChart(currentState) + ", 'size':" + undoSize + "}");
+                response.getWriter().write("{\"state\": " + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + ", \"size\":" + undoSize + "}");
                 break;
             case "redo":
                 Integer redoSize = redo();
-                response.getWriter().write("{'state':" + JSONEncoder.encodeChart(currentState) + ", 'size':" + redoSize + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + ", \"size\":" + redoSize + "}");
                 break;
             case "undoSize":
-                response.getWriter().write("{'size':" + undoStack.size() + "}");
+                response.getWriter().write("{\"size\":" + undoStack.size() + "}");
                 break;                
             case "redoSize":
-                response.getWriter().write("{'size':" + redoStack.size() + "}");
+                response.getWriter().write("{\"size\":" + redoStack.size() + "}");
                 break;
             case "localmap":
                 String localMapping = getLocalMapping();
@@ -87,7 +88,7 @@ public class chartservlet extends HttpServlet {
                 break;
             case "delete":
                 deleteItem(request);
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + "}");
                 break;
             case "file":
                 String mlmname = selectFile(request);
@@ -100,12 +101,23 @@ public class chartservlet extends HttpServlet {
                 saveProject(request);
                 break;
             case "state":
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + "}");
                 break;
             case "getElement":
                 ChartItem element = getElementById(request);
                 response.getWriter().write("{\"chartItem\":" + JSONEncoder.encodeItem(element) + "}");
                 break;
+            case "endline":
+                updateEndlineList(request);
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + "}");
+                break;
+            case "hasNext":
+                Boolean result = itemHasNext(request);
+                response.getWriter().write("{\"hasNext\":" + result + "}");
+                break;
+            case "getConditionalActions":
+                LinkedList<ChartItem> nextItems = getConditionalItems(request);
+                response.getWriter().write("{\"items\":" + JSONEncoder.encodeChart(nextItems) + "}");
             default:
                 break;
         }
@@ -150,10 +162,56 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    private LinkedList<ChartItem> getConditionalItems(HttpServletRequest request){
+        String id = request.getParameter("id");
+        System.out.println(id);
+        LinkedList<ChartItem> nextItems = new LinkedList<>();
+        for (ChartItem element : currentState.getValue0()) {
+            if (id.equals(element.getPrevItemId())) { System.out.println(element.getType()); nextItems.add(element); }
+        }
+        return nextItems;
+    }
+    
+    private Boolean itemHasNext(HttpServletRequest request){
+        String id = request.getParameter("id");
+        Boolean nextItem = false;
+        for (ChartItem element : currentState.getValue0()) {
+            if (id.equals(element.getPrevItemId())) { nextItem = true; }
+        }
+        return nextItem;
+    }
+    
+    private Boolean nextIsEnd(String id){
+        ChartItem nextItem = null;
+        for (ChartItem element : currentState.getValue0()) {
+            if (id.equals(element.getPrevItemId())) { nextItem = element; }
+        }
+        if (nextItem != null) {
+            return nextItem.getType().equals("end");
+        } else { return false; }
+    }
+    
+    private void updateEndlineList(HttpServletRequest request){
+        String id = request.getParameter("id");
+        if (!currentState.getValue1().contains(id)) {
+            maintainMaxDequeSize("undo");
+            undoStack.addFirst(deepCopyCurrentState(currentState));
+            currentState.getValue1().add(id);
+        }
+    }
+    
+    private void removeEndline(String id) {
+        if (currentState.getValue1().contains(id)){
+            maintainMaxDequeSize("undo");
+            undoStack.addFirst(deepCopyCurrentState(currentState));
+            currentState.getValue1().remove(id);
+        }
+    }
+    
     private ChartItem getElementById(HttpServletRequest request){
         String id = request.getParameter("id");
         ChartItem element = null;
-        for (ChartItem chartItem : currentState){
+        for (ChartItem chartItem : currentState.getValue0()){
             if (chartItem.getId().equals(id)) { 
                 element = chartItem;
                 break;
@@ -274,7 +332,7 @@ public class chartservlet extends HttpServlet {
         if (checkFileValidity(project)){
             dependencies.add(project.get("dependencies"));
             settings = project.get("settings");
-            currentState = JSONDecoder.decodeChart(project.get("state").toString());
+            currentState = currentState.setAt0(JSONDecoder.decodeChart(project.get("state").toString()));
         }
         
     }
@@ -320,32 +378,38 @@ public class chartservlet extends HttpServlet {
     
     private void removeConditional(String id){
         Integer itemIndex = findIndexOf(id);
-        currentState.remove(currentState.get(itemIndex));
-        currentState.stream().filter(item -> (item.getPrevItemId().equals(id))).forEachOrdered(item -> {
-            if (item.getType().equals("conditional")){
-                removeConditional(item.getId());
-            } else {
-                currentState.remove(item);
-            }
-        });
+        currentState.getValue0().remove(currentState.getValue0().get(itemIndex));
+        for (Iterator<ChartItem> iterator = currentState.getValue0().iterator(); iterator.hasNext(); ) {
+            ChartItem item = iterator.next();
+            if (item.getPrevItemId().equals(id)) { iterator.remove(); }
+            removeEndline(item.getId());
+        }
+        removeEndline(id);
     }
     
     private void deleteItem(HttpServletRequest request) throws IOException{
         String id = request.getParameter("id");
         Integer itemIndex = findIndexOf(id);
         maintainMaxDequeSize("undo");
-        undoStack.addFirst(currentState);
-        ChartItem oldItem = currentState.get(itemIndex);
+        undoStack.addFirst(deepCopyCurrentState(currentState));
+        ChartItem oldItem = currentState.getValue0().get(itemIndex);
         if (oldItem.getType().equals("conditional")) { removeConditional(oldItem.getId()); }
         else { 
-            currentState.remove(currentState.get(itemIndex));
+            currentState.getValue0().remove(oldItem);
         }
         
-        try {
-            ChartItem itemToBeAltered = currentState.get(itemIndex);
+        Integer nextIndex = nextElementIndex(id);
+        if (nextIndex > -1){
+            ChartItem itemToBeAltered = currentState.getValue0().get(nextIndex);
             itemToBeAltered.setPrevItemId(oldItem.getPrevItemId());
-            currentState.set(itemIndex, itemToBeAltered);
-        } catch (Exception e){}
+            currentState.getValue0().set(nextIndex, itemToBeAltered);
+        }
+            
+        if (oldItem.getType().equals("end")){
+            currentState = new Pair(currentState.getValue0(), new ArrayList<>());
+        } else {
+           removeEndline(id); 
+        }
     }
     
     private void updateState(HttpServletRequest request) throws IOException{
@@ -356,52 +420,81 @@ public class chartservlet extends HttpServlet {
         String condition = request.getParameter("condition");
         String isMultipart = request.getParameter("isMultipart");
         String finalMultipart = request.getParameter("finalMultipart");
+        String firstMultipart = request.getParameter("firstMultipart");
+
+        if (currentState.getValue1().contains(prevItemId)){ //deal with endlines
+            removeEndline(prevItemId);
+            currentState.getValue1().add(id);
+        }
         
         if (isMultipart == null) { isMultipart = "false"; }
         if (finalMultipart == null) { finalMultipart = "false"; }
+        if (firstMultipart == null) { firstMultipart = "false"; }
         
-        Integer itemIndex = findIndexOf(id);
-        Integer prevIdIndex = findPrevIdIndex(prevItemId);
+        
+        
         ChartItem newItem = new ChartItem(id, type, prevItemId, caption);
+        if (condition != null && !condition.equals("null")) { newItem = new ChartItem(id, type, prevItemId, caption, condition); }
         
-        if (condition != null){
-            newItem = new ChartItem (id, type, prevItemId, caption, condition);
+        if (nextIsEnd(prevItemId)){
+            Integer endIndex = nextElementIndex(prevItemId);
+            ChartItem endItem = currentState.getValue0().get(endIndex);
+            endItem.setPrevItemId(id);
+            currentState.getValue0().set(endIndex, endItem);
         }
         
-        
-        if ((isMultipart.equals("true") && finalMultipart.equals("true")) || (isMultipart.equals("false"))){ //allow for conditionals
-            maintainMaxDequeSize("undo");
-            undoStack.addFirst(currentState);
-        }
-        
+        Integer index = findIndexOf(id);
         if (type.equals("start")) {
             clearAllStacks();
-            currentState.add(newItem);
-            return;
-        }
-        if (itemIndex > -1){ // item already exists, replace
-            currentState.set(itemIndex, newItem);
-        } else if (isMultipart.equals("true") && finalMultipart.equals("true")){ //item is last item in conditional
-            currentState.add(prevIdIndex + 2, newItem);
-        } else if (prevIdIndex == (currentState.size()-1)){ // prevItemId equals id of last item in currentState
-            currentState.addLast(newItem);
-        } else { // insert between existing items
-            currentState.add(prevIdIndex + 1, newItem); // insert after prevId item
-            if ((isMultipart.equals("false")) || (prevIdIndex == (currentState.size()-2))) {
-                Integer nextItemIndex = nextElementIndex(id);
-                if (nextItemIndex > 0) {
-                    ChartItem nextItem = currentState.get(nextItemIndex); // we have to change the prevItemId of the next item
-                nextItem.setPrevItemId(newItem.getId());
-                currentState.set(nextItemIndex, nextItem);
+            currentState.getValue0().add(newItem);
+        } else if (index > 0) { // replace
+            maintainMaxDequeSize("undo");
+            undoStack.addFirst(deepCopyCurrentState(currentState));
+            currentState.getValue0().set(index, newItem);
+        } else if (isMultipart.equals("true")){ // conditional
+            if (firstMultipart.equals("true")) { 
+                maintainMaxDequeSize("undo");
+                undoStack.addFirst(deepCopyCurrentState(currentState));
+                conditionalId = id;
+            }
+            
+            Integer prevItemIndex = findPrevIdIndex(prevItemId);
+            if (finalMultipart.equals("false")){ // add first two
+                if (prevItemIndex >= currentState.getValue0().size() - 1){ currentState.getValue0().addLast(newItem); } 
+                else { currentState.getValue0().add(prevItemIndex + 1, newItem); }
+            } else { // add last and change previd of next item
+                if (prevItemIndex >= currentState.getValue0().size() - 2){
+                    currentState.getValue0().addLast(newItem);
+                } else {
+                    currentState.getValue0().add(prevItemIndex + 2, newItem);
+                    Integer nextIndex = nextElementIndex(conditionalId);
+                    ChartItem nextItem = currentState.getValue0().get(nextIndex);
+                    nextItem.setPrevItemId(conditionalId);
+                    currentState.getValue0().set(nextIndex, nextItem);
                 }
+            }
+        } else { // standard
+            maintainMaxDequeSize("undo");
+            undoStack.addFirst(deepCopyCurrentState(currentState));
+            System.out.println(undoStack.peek().getValue0());
+            
+            Integer prevItemIndex = findPrevIdIndex(prevItemId);
+            if (prevItemIndex >= currentState.getValue0().size() - 2){
+                currentState.getValue0().addLast(newItem);
+            } else {
+                currentState.getValue0().add(prevItemIndex + 1, newItem);
+                Integer nextIndex = nextElementIndex(prevItemId);
+                ChartItem nextItem = currentState.getValue0().get(nextIndex);
+                nextItem.setPrevItemId(id);
+                currentState.getValue0().set(nextIndex, nextItem);
             }
         }
     }
     
     private Integer nextElementIndex(String id){
         Integer nextIndex = -1;
-        for (Integer index = 0; index < currentState.size(); index++){
-            if (id.equals(currentState.get(index).getPrevItemId())){
+        for (Integer index = 0; index < currentState.getValue0().size(); index++){
+            if (id.equals(currentState.getValue0().get(index).getPrevItemId())){
                 nextIndex = index;
                 break;
             }
@@ -409,17 +502,17 @@ public class chartservlet extends HttpServlet {
         return nextIndex;
     }
     
-    private Integer undo(){
+    private Integer undo() throws JsonProcessingException{
         maintainMaxDequeSize("undo");
-        redoStack.addFirst(currentState);
-        currentState = undoStack.removeFirst();
+        redoStack.addFirst(deepCopyCurrentState(currentState));
+        currentState = deepCopyCurrentState(undoStack.removeFirst());
         return undoStack.size();
     }
     
     private Integer redo(){
         maintainMaxDequeSize("redo");
-        undoStack.addFirst(currentState);
-        currentState = redoStack.removeFirst();
+        undoStack.addFirst(deepCopyCurrentState(currentState));
+        currentState = deepCopyCurrentState(redoStack.removeFirst());
         return redoStack.size();
     }
     
@@ -442,8 +535,8 @@ public class chartservlet extends HttpServlet {
     
     private Integer findIndexOf(String id){
         Integer itemIndex = -1; // -1 = does not exist
-        for (Integer index = 0; index < currentState.size(); index++){
-            if (id.equals(currentState.get(index).getId())){
+        for (Integer index = 0; index < currentState.getValue0().size(); index++){
+            if (id.equals(currentState.getValue0().get(index).getId())){
                 itemIndex = index;
                 break;
             }
@@ -453,8 +546,8 @@ public class chartservlet extends HttpServlet {
     
     private Integer findPrevIdIndex(String prevId){
         Integer prevItemIndex = -1;
-        for (Integer index = 0; index < currentState.size(); index++){
-            if (prevId.equals(currentState.get(index).getId())){
+        for (Integer index = 0; index < currentState.getValue0().size(); index++){
+            if (prevId.equals(currentState.getValue0().get(index).getId())){
                 prevItemIndex = index;
                 break;
             }
@@ -471,8 +564,50 @@ public class chartservlet extends HttpServlet {
     }
     
     private void clearAllStacks(){
-        currentState.clear();
+        currentState = new Pair(new LinkedList<>(), new ArrayList<>());
         undoStack.clear();
         redoStack.clear();
     }
+    
+    private String ALToString(ArrayList<String> input){
+        if (input.size() > 0){
+            String result = "[";
+            for (String item : input) {
+                result += "\"" + item + "\",";
+            }
+            result = result.substring(0, result.length() - 1);
+            result += "]";
+            return result;
+        } else { return "[]"; }
+    }
+    
+    private Pair<LinkedList<ChartItem>, ArrayList<String>> deepCopyCurrentState(Pair<LinkedList<ChartItem>, ArrayList<String>> state) {
+        LinkedList<ChartItem> stateCopy = new LinkedList<>();
+        ArrayList<String> endLinesCopy = new ArrayList<>();
+        
+        for (ChartItem item : state.getValue0()){
+            ChartItem itemCopy = null;
+            try {
+                itemCopy = new ChartItem(item.getId(), item.getType(), item.getPrevItemId(), item.getCaption(), item.getCondition());
+            } catch (Exception e) {
+                itemCopy = new ChartItem(item.getId(), item.getType(), item.getPrevItemId(), item.getCaption());
+            }
+            stateCopy.addLast(itemCopy);
+        }
+        
+        for (String line : state.getValue1()){
+            endLinesCopy.add(line);
+        }
+        
+        return new Pair(stateCopy, endLinesCopy);
+    }
+    
+    private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> deepCopyDeque(Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> deque){
+        Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> dequeCopy = new LinkedList<>();
+        for (Pair<LinkedList<ChartItem>, ArrayList<String>> item : deque){
+            dequeCopy.addLast(deepCopyCurrentState(item));
+        }
+        return dequeCopy;
+    }
 }
+

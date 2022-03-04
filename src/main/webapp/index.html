@@ -26,8 +26,9 @@
         <script src="js/test.js"></script>
         <!-- LeaderLine -->
         <script src="./node_modules/leader-line/leader-line.min.js"></script>
+        <script> m4q.global(); </script>
     </head>
-    <body>
+    <body onresize="redrawLines()">
         <!-- navigation and sidebar -->
         <nav data-role="ribbonmenu">
             <ul class="tabs-holder">
@@ -39,13 +40,13 @@
             <div class="content-holder">
                 <div class="section" id="section-model">
                     <div class="group">
-                            <button class="ribbon-button" id="undoBtn" disabled>
+                            <button class="ribbon-button" id="undoBtn" onclick="undo()" disabled>
                                 <span class="icon">
                                     <span class="mif-undo"></span>
                                 </span>
                                 <span class="caption">Undo</span>
                             </button>
-                            <button class="ribbon-button" id="redoBtn"disabled>
+                            <button class="ribbon-button" id="redoBtn" onclick="redo()" disabled>
                                 <span class="icon">
                                     <span class="mif-redo"></span>
                                 </span>
@@ -287,45 +288,7 @@
         </div>-->
         <div class="chart-conditional-popup" onsubmit="processFormConditional()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="conditional-form" class=".custom-validation">
-                <div class="form-group" id="input-labels">
-                    <label id="var">Variable</label>
-                    <label id="condition-label">Condition</label>
-                    <label id="specify">Specify</label>
-                </div>
-                <div class="form-group">
-                    <label>If</label>
-                    <div id="conditional-variable"></div>
-                    
-                    <div id="condition-prefix">
-                        <select data-role="select" name="condition-prefix" data-add-empty-value="true">
-                        <option value="equals">=</option>
-                        <option value="smaller-than"><</option>
-                        <option value="bigger-than">></option>
-                        <option value="equal-smaller-than"><=</option>
-                        <option value="equal-bigger-than">>=</option>
-                        <option value="does-not-equal">&#8800</option>
-                        <option value="is-in">Is in</option>
-                        <option value="is-not-in">Is not in</option>
-                    </select>
-                    </div>
-                    <input type="text" name="condition1" id="condition" required>
-                    
-                    <label>Then</label>
-                    <div id="conditional-statement1"></div>
-                    
-                    <div id="conditional-form-group-pos"></div>
-                </div>
-                <div class="form-group" id="condition2-form-group">                  
-                    <label>Else</label>
-                    <div id="conditional-statement2"></div>
-                    
-                    <div id="conditional-form-group-neg"></div>
-                </div>
-                <div class="form-group">
-                    <button class="button">OK</button>
-                </div>
-            </form>
+            <form id="conditional-form" class=".custom-validation"></form>
         </div>
         <div class="chart-retrieve-data-popup">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
@@ -340,13 +303,25 @@
         </div>
         <div class="chart-subroutine-popup">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="subroutine-form" class=".custom-validation">
+            <form id="subroutine-form" onsubmit="processSubroutine()" class=".custom-validation">
                 <div class="form-group">
                     <label>Select file to embed</label>
-                    <input type="file" data-role="file" onSelect="processEmbedFile(files, null)" data-button-title="Choose file" required>
+                    <input type="file" accept="application/json" data-role="file" onSelect="processEmbedFile(files, null)" data-button-title="<span class='mif-folder'></span>" required>
                 </div>
                 <div class="form-group">
-                    <button class="button">OK</button>
+                    <button class="button" type="submit">OK</button>
+                </div>
+            </form>
+        </div>
+        <div class="questionmark-popup">
+            <i class="fa fa-times" onclick="closeAllForms()"></i>
+            <form id="questionmark-form" onclick="processQuestionmarkForm()" class=".custom-validation">
+                <div class="form-group">
+                    <label>Select component or medical action</label>
+                    <div id="questionmark-popup-select"></div>
+                </div>
+                <div class="form-group submit-button-group">
+                    <button class="button" type="submit">OK</button>
                 </div>
             </form>
         </div>
