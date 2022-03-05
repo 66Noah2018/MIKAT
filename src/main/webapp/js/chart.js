@@ -51,7 +51,7 @@ let conditionalPosValue = null;
 let conditionalNegValue = null;
 let conditionalVarValue = null;
 const selectBoxCodePost = '</select>';
-let retrievedData = null;
+let retrievedData = {"singulars":[], "plurals":[]};
 const clickToDefine = "Double-click to define";
 let elementToDefine = null;
 let conditionalNextElements = null;
@@ -133,7 +133,6 @@ function updateState(newItemArray, isConditional = false){
         result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&isMultipart=true&finalMultipart=true`));
     }
     drawChart(result.state, result.endLines);
-    console.log(result)
 }
 
 function updateEndLinesList(id){
@@ -146,6 +145,15 @@ function updateEndLinesList(id){
 }
 
 function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false, condition=null){
+    if (stepType === "retrievedata") { 
+        const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
+        if (Object.keys(values.singulars).includes(iconCaption)) {
+            retrievedData.singulars.includes(iconCaption)?null:retrievedData.singulars.push(iconCaption); 
+        } else { // if not singular, then plural as there are no other options
+            retrievedData.plurals.includes(iconCaption)?null:retrievedData.plurals.push(iconCaption);
+        }
+    }
+    
     if (prevId !== -1 && prevId === endIconId) { 
         Metro.notify.create("Cannot add element after end", "Warning: cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
         return;
@@ -304,7 +312,7 @@ function drawChart(state, endlines){ // add lines for endLineList
     selectedItemId = -1;
     prevId = -1;
     document.getElementsByClassName("chartarea")[0].innerHTML = '';
-    console.log(state)
+    console.log(state, endlines)
     
     let undoResult = JSON.parse(servletRequest("./chartservlet?function=undoSize")).size;
     let redoResult = JSON.parse(servletRequest("./chartservlet?function=redoSize")).size;
@@ -340,10 +348,12 @@ function drawChart(state, endlines){ // add lines for endLineList
                 if (conditionalData.length < 3) { 
                     console.error("conditional incomplete!");
                     continue;
-                } else {
+                } 
+                else {
                     addConditionalStep(conditionalData[0].id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);   
                 } 
-            } else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
+            } 
+            else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
         }
     }
     
@@ -354,13 +364,9 @@ function drawChart(state, endlines){ // add lines for endLineList
             addNewStep(getRandomId(), "end", "End", endlines[0], getLineStyle("end"));
         }
         let endIcon = document.getElementById(endIconId);
-        console.log(endlines)
         endlines.forEach((id) => {
             if (id !== endIconId) {
                 let prevIcon = document.getElementById(id);
-                console.log(id)
-                console.log(prevIcon)
-                console.log(endIcon)
                 let line = new LeaderLine(prevIcon.children[0], endIcon.children[0], getLineStyle("end"));
                 lines.push(line);
                 linesToEnd.push(line);
@@ -482,6 +488,7 @@ function defineElement(id){
             case "loop":
                 break;
             case "retrievedata":
+                openFormPopup("chart-retrieve-data-popup", null, chartItem);
                 break;
             case "newProcedure":
                 //fallthrough
@@ -616,10 +623,17 @@ function getRetrieveDataSelectBox(name, value=null){
         selectBoxCodeRetrieve = `<select data-role="select" id="data-retrieve-select" data-add-empty-value="true" required>`;
     }
     const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
-    Object.keys(values).forEach((key) => {
+    const singulars = Object.keys(values.singulars).filter((el) => !retrievedData.singulars.includes(el));
+    const plurals = Object.keys(values.plurals).filter((el) => !retrievedData.plurals.includes(el));
+    selectBoxCodeRetrieve += '<optgroup label="Singular values">';
+    singulars.forEach((key) => {
         selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
     });
-    selectBoxCodeRetrieve += selectBoxCodePost;
+    selectBoxCodeRetrieve += '</optgroup><optgroup label="Value sets">';
+    plurals.forEach((key) => {
+        selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
+    });
+    selectBoxCodeRetrieve += '</optgroup>' + selectBoxCodePost;
     return selectBoxCodeRetrieve;
 }
 
@@ -630,10 +644,11 @@ function initConditionalPopup(conditionalElement=null){
     let actionNeg = null;
     let actionPosVal = null;
     let actionNegVal = null;
+    let variable = null;
     if (conditionalElement!==null) { 
+        variable = conditionalElement.caption;
         conditionalNextElements = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${conditionalElement.id}`)).items;
         let matches = conditionalNextElements[0].condition.match(/(=|<=|>=|<|>|&#8800|is-in|is-not-in)\s(.+)/);
-        console.log(conditionalNextElements)
         conditionPrefix = matches[1];
         conditionText = matches[2];
         actionPos = conditionalNextElements[0].type;
@@ -642,7 +657,12 @@ function initConditionalPopup(conditionalElement=null){
         actionNegVal = conditionalNextElements[1].caption;
     }
     let target = document.getElementById("conditional-form");
-    let selectVarCode = getRetrieveDataSelectBox("data-conditional-var", conditionalElement?conditionalElement.caption:null);
+    let selectVarCode = '<select data-role="select" name="data-conditional-var" id="data-retrieve-select" data-add-empty-value="true" required><optgroup label="Singular values">';
+    retrievedData.singulars.forEach((el) => { selectVarCode += `<option value=${el} ${variable===el?"selected":""}>${el}</option>`; });
+    selectVarCode += '</optgroup><optgroup label="Value sets">';
+    retrievedData.plurals.forEach((el) => { selectVarCode += `<option value=${el} ${variable===el?"selected":""}>${el}</option>`; });
+    selectVarCode += '</optgroup></select>';
+            
     // selectboxes for actions
     let selectBoxCodeConditionalPos = '<select data-role="select" name="data-conditional-pos" id="data-conditional-pos" data-add-empty-value="true" data-on-change="conditionalPosForm(this.value)" required>';
     let selectBoxCodeConditionalNeg = '<select data-role="select" name="data-conditional-neg" id="data-conditional-neg" data-add-empty-value="true" data-on-change="conditionalNegForm(this.value)" required>';
@@ -723,7 +743,7 @@ function openFormPopup(popupClass, subclass=null, values=null){
             popup.style.display = "initial";
             break;
         case "chart-retrieve-data-popup": // this is a file select, for security reasons it is impossible to add a file programmatically
-            const code = getRetrieveDataSelectBox(null);
+            const code = getRetrieveDataSelectBox(null, values?values.caption:null);
             document.getElementById("retrieve-data-form-group").innerHTML = "<label>Data to retrieve</label>";
             document.getElementById("retrieve-data-form-group").appendChild(parser.parseFromString(code, 'text/html').body.firstChild);
             document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "block";
@@ -809,7 +829,6 @@ function processFormConditional(){
     let conditionPrefix = formdata.get("condition-prefix");
     let conditionValue = formdata.get("condition");
     const condition = conditionPrefix + " " + conditionValue;
-    let ifThen = formdata.get("data-conditional-pos");
     
     // process
     if (conditionalPosValue === "subroutine"){
@@ -824,17 +843,22 @@ function processFormConditional(){
     
     let newSteps = null;
     
+    const firstId = elementToDefine?elementToDefine.id:getRandomId();
+    const posId = conditionalNextElements?conditionalNextElements[0].id:getRandomId();
+    const negId = conditionalNextElements?conditionalNextElements[1].id:getRandomId();
+    const prevId = elementToDefine?elementToDefine.prevItemId:selectedItemId;
+    
     if (conditionalPosValue === "conditional" && conditionalNegValue === "conditional"){
-        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, clickToDefine, getRandomId(), getRandomId(), selectedItemId);
-    } 
+        newSteps = addConditionalStep(firstId, "conditional", variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, clickToDefine, posId, negId, prevId);
+    }
     else if (conditionalPosValue === "conditional"){
-        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, statement2Caption, getRandomId(), getRandomId(), selectedItemId);
+        newSteps = addConditionalStep(firstId, "conditional", variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, statement2Caption, posId, negId, prevId);
     } 
     else if (conditionalNegValue === "conditional"){
-        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, clickToDefine, getRandomId(), getRandomId(), selectedItemId);
+        newSteps = addConditionalStep(firstId, "conditional", variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, clickToDefine, posId, negId, prevId);
     } 
     else {
-        newSteps = addConditionalStep(getRandomId(), "conditional", variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, getRandomId(), getRandomId(), selectedItemId);
+        newSteps = addConditionalStep(firstId, "conditional", variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, posId, negId, prevId);
     }
     document.getElementsByClassName("chart-conditional-popup")[0].style.display = "none";
     updateState(newSteps, true);
@@ -876,4 +900,18 @@ function processQuestionmarkForm(){
             openFormPopup("chart-item-popup", value, elementToDefine);
             break;
     }
+}
+
+function getFormValueRetrieve(){
+    event.preventDefault();
+    const value = document.getElementById("data-retrieve-select").value;
+    if (elementToDefine) {
+        elementToDefine.caption = value;
+        updateState([elementToDefine]);
+    } 
+    else {
+        let newStep = addNewStep(getRandomId(), "retrievedata", value, selectedItemId, getLineStyle("retrievedata"));
+        updateState([newStep]);
+    }
+    closeAllForms();
 }

@@ -556,11 +556,11 @@ public class chartservlet extends HttpServlet {
     }
     
     private String getLocalMapping(){
-        return "{\"test1\":\"test1query\", \"test2\": \"test2query\", \"test3\":\"test3query\"}";
+        return "{\"singulars\":{\"test1\":\"test1query\", \"test2\": \"test2query\", \"test3\":\"test3query\"}, \"plurals\": {\"plural1\":\"plural1query\", \"plural2\":\"plural2query\", \"plural3\":\"plural3query\"}}";
     }
     
     private String getStandardizedMapping(){
-        return "{\"standardtest1\":\"test1\", \"standardtest2\":\"test2\", \"standardtest3\":\"test3\"}";
+        return "{\"singulars\":{\"standardtest1\":\"test1\", \"standardtest2\":\"test2\", \"standardtest3\":\"test3\"}, \"plurals\": {\"standardplural1\":\"plural1\", \"standardplural2\":\"plural2\", \"standardplural3\":\"plural3\")}";
     }
     
     private void clearAllStacks(){
