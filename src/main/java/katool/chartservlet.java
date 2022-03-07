@@ -164,10 +164,9 @@ public class chartservlet extends HttpServlet {
 
     private LinkedList<ChartItem> getConditionalItems(HttpServletRequest request){
         String id = request.getParameter("id");
-        System.out.println(id);
         LinkedList<ChartItem> nextItems = new LinkedList<>();
         for (ChartItem element : currentState.getValue0()) {
-            if (id.equals(element.getPrevItemId())) { System.out.println(element.getType()); nextItems.add(element); }
+            if (id.equals(element.getPrevItemId())) { nextItems.add(element); }
         }
         return nextItems;
     }
@@ -431,8 +430,6 @@ public class chartservlet extends HttpServlet {
         if (finalMultipart == null) { finalMultipart = "false"; }
         if (firstMultipart == null) { firstMultipart = "false"; }
         
-        
-        
         ChartItem newItem = new ChartItem(id, type, prevItemId, caption);
         if (condition != null && !condition.equals("null")) { newItem = new ChartItem(id, type, prevItemId, caption, condition); }
         
@@ -476,7 +473,6 @@ public class chartservlet extends HttpServlet {
         } else { // standard
             maintainMaxDequeSize("undo");
             undoStack.addFirst(deepCopyCurrentState(currentState));
-            System.out.println(undoStack.peek().getValue0());
             
             Integer prevItemIndex = findPrevIdIndex(prevItemId);
             if (prevItemIndex >= currentState.getValue0().size() - 2){
@@ -494,7 +490,7 @@ public class chartservlet extends HttpServlet {
     private Integer nextElementIndex(String id){
         Integer nextIndex = -1;
         for (Integer index = 0; index < currentState.getValue0().size(); index++){
-            if (id.equals(currentState.getValue0().get(index).getPrevItemId())){
+            if (currentState.getValue0().get(index).getPrevItemId().equals(id)){
                 nextIndex = index;
                 break;
             }

@@ -127,7 +127,8 @@ function updateState(newItemArray, isConditional = false){
     let result = null;
     if (!isConditional){
         result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&condition=${newItemArray[0].condition}`));
-    } else {
+    } 
+    else {
         servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&isMultipart=true&firstMultipart=true`);
         servletRequest(`./chartservlet?function=update&id=${newItemArray[1].id}&type=${newItemArray[1].type}&prevItemId=${newItemArray[1].prevItemId}&caption=${newItemArray[1].caption}&condition=${newItemArray[1].condition}&isMultipart=true`);
         result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&isMultipart=true&finalMultipart=true`));
@@ -179,6 +180,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     let lastIconCoordinates = {x: -90, y: 10};
     if (prevId !== -1){
         const prevIcon = document.getElementById(prevId);
+        console.log(prevId)
         prevX = prevIcon.style.left;
         prevY = prevIcon.style.top;
         lastIconCoordinates = {x: parseInt(prevX.substring(0, prevX.length - 2)), y: parseInt(prevY.substring(0, prevY.length - 2))};
@@ -352,12 +354,15 @@ function drawChart(state, endlines){ // add lines for endLineList
                 else {
                     addConditionalStep(conditionalData[0].id, "conditional", conditionalData[0].caption, conditionalData[1].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);   
                 } 
-            } 
+                conditionalData.shift();
+                conditionalData = conditionalData.filter((item) => { return item.type === "conditional"; });
+                console.log(conditionalData)
+            }
             else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
         }
     }
-    
-    if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type)); } // find way to allow for new lines to end
+    console.log("only end left", endElement)
+    if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type)); }
     
     if (endlines.length > 0) {
         if (endIconId === -1){
@@ -387,7 +392,8 @@ function addStart(){
 
 function addStop(){ 
     const itemHasNext = JSON.parse(servletRequest(`./chartservlet?function=hasNext&id=${selectedItemId}`)).hasNext;
-    if (itemHasNext){
+    if (itemHasNext)
+    {
         Metro.notify.create("Cannot add insert between elements", "Warning: cannot insert end", {animation: 'easeOutBounce', cls: "edit-notify"});
     } else {
         let newItem = addNewStep(getRandomId(), "end", "End", selectedItemId, getLineStyle("end")); 
@@ -645,7 +651,7 @@ function initConditionalPopup(conditionalElement=null){
     let actionPosVal = null;
     let actionNegVal = null;
     let variable = null;
-    if (conditionalElement!==null) { 
+    if (conditionalElement!==null && conditionalElement.caption !== clickToDefine) { 
         variable = conditionalElement.caption;
         conditionalNextElements = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${conditionalElement.id}`)).items;
         let matches = conditionalNextElements[0].condition.match(/(=|<=|>=|<|>|&#8800|is-in|is-not-in)\s(.+)/);
@@ -743,7 +749,7 @@ function openFormPopup(popupClass, subclass=null, values=null){
             popup.style.display = "initial";
             break;
         case "chart-retrieve-data-popup": // this is a file select, for security reasons it is impossible to add a file programmatically
-            const code = getRetrieveDataSelectBox(null, values?values.caption:null);
+            const code = getRetrieveDataSelectBox("retrieve-data-select-box", values?values.caption:null);
             document.getElementById("retrieve-data-form-group").innerHTML = "<label>Data to retrieve</label>";
             document.getElementById("retrieve-data-form-group").appendChild(parser.parseFromString(code, 'text/html').body.firstChild);
             document.getElementsByClassName("chart-retrieve-data-popup")[0].style.display = "block";
@@ -904,7 +910,8 @@ function processQuestionmarkForm(){
 
 function getFormValueRetrieve(){
     event.preventDefault();
-    const value = document.getElementById("data-retrieve-select").value;
+    let formdata = new FormData(document.getElementById("retrieve-data-form"));
+    const value = formdata.get("retrieve-data-select-box");
     if (elementToDefine) {
         elementToDefine.caption = value;
         updateState([elementToDefine]);
