@@ -478,8 +478,8 @@ public class chartservlet extends HttpServlet {
             if (prevItemIndex >= currentState.getValue0().size() - 2){
                 currentState.getValue0().addLast(newItem);
             } else {
+                Integer nextIndex = nextElementIndex(prevItemId) + 1; // because we still have to insert
                 currentState.getValue0().add(prevItemIndex + 1, newItem);
-                Integer nextIndex = nextElementIndex(prevItemId);
                 ChartItem nextItem = currentState.getValue0().get(nextIndex);
                 nextItem.setPrevItemId(id);
                 currentState.getValue0().set(nextIndex, nextItem);
@@ -490,7 +490,7 @@ public class chartservlet extends HttpServlet {
     private Integer nextElementIndex(String id){
         Integer nextIndex = -1;
         for (Integer index = 0; index < currentState.getValue0().size(); index++){
-            if (currentState.getValue0().get(index).getPrevItemId().equals(id)){
+            if ((currentState.getValue0().get(index).getPrevItemId()).equals(id)){
                 nextIndex = index;
                 break;
             }
