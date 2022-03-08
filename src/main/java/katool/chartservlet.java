@@ -66,7 +66,7 @@ public class chartservlet extends HttpServlet {
                 break;
             case "undo":
                 Integer undoSize = undo();
-                response.getWriter().write("{\"state\": " + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + ", \"size\":" + undoSize + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + ", \"size\":" + undoSize + "}");
                 break;
             case "redo":
                 Integer redoSize = redo();

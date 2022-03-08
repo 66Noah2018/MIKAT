@@ -57,6 +57,7 @@ public class chartservletTest {
     public void tearDown() {
     }
 
+    // Test for adding Start
     @org.junit.jupiter.api.Test
     public void testAddStart() throws IOException, Exception{
         String expectedResponse = "{\"state\":[{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null}], \"endLines\":[]}";
@@ -69,6 +70,8 @@ public class chartservletTest {
         
         assertEquals(expectedResponse, response.getContent());
     }
+    
+    // Tests for update (add multiple, insert)
     
     @org.junit.jupiter.api.Test
     public void testAddFourElements() throws IOException, Exception{
@@ -88,26 +91,7 @@ public class chartservletTest {
         response.parse(tester.getResponses(request.generate()));
         assertEquals(expectedResponse, response.getContent());
     }
-    
-    @org.junit.jupiter.api.Test
-    public void testRemoveSecondOfFourElements() throws IOException, Exception{
-        String expectedResponse = "{\"state\":["
-                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
-                + "{\"id\":\"a333\",\"type\":\"orderLabs\",\"prevItemId\":\"a111\",\"caption\":\"Labs\",\"condition\":null},"
-                + "{\"id\":\"a0\",\"type\":\"end\",\"prevItemId\":\"a333\",\"caption\":\"End\",\"condition\":null}"
-                + "], \"endLines\":[]}";
-        
-        HttpTester request = new HttpTester();
-        request.setMethod("GET");
-        request.setVersion("HTTP/1.0");
-        
-        addFourElements(request);
-        request.setURI("/katool?function=delete&id=a222");
-        HttpTester response = new HttpTester();
-        response.parse(tester.getResponses(request.generate()));
-        assertEquals(expectedResponse, response.getContent());
-    }
-    
+
     @org.junit.jupiter.api.Test
     public void testInsertAfterSecondElement() throws IOException, Exception{
         String expectedResponse = "{\"state\":["
@@ -128,6 +112,102 @@ public class chartservletTest {
         response.parse(tester.getResponses(request.generate()));
         assertEquals(expectedResponse, response.getContent());
     }
+    
+    // Test for undo
+    @org.junit.jupiter.api.Test
+    public void testUndo() throws IOException, Exception{
+        String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a222\",\"type\":\"newProcedure\",\"prevItemId\":\"a111\",\"caption\":\"Procedure\",\"condition\":null},"
+                + "{\"id\":\"a333\",\"type\":\"orderLabs\",\"prevItemId\":\"a222\",\"caption\":\"Labs\",\"condition\":null}"
+                + "], \"endLines\":[], \"size\":2}";
+        
+        HttpTester request = new HttpTester();
+        request.setMethod("GET");
+        request.setVersion("HTTP/1.0");
+        
+        addFourElements(request);
+        request.setURI("/katool?function=undo");
+        
+        HttpTester response = new HttpTester();
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    // Test for redo
+    //TODO: why does this throw NoSuchElementException at chartservlet:511 removeFirst()?
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.Disabled
+    public void testRedo() throws IOException, Exception{
+        String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a222\",\"type\":\"newProcedure\",\"prevItemId\":\"a111\",\"caption\":\"Procedure\",\"condition\":null},"
+                + "{\"id\":\"a333\",\"type\":\"orderLabs\",\"prevItemId\":\"a222\",\"caption\":\"Labs\",\"condition\":null},"
+                + "{\"id\":\"a0\",\"type\":\"end\",\"prevItemId\":\"a333\",\"caption\":\"End\",\"condition\":null}"
+                + "], \"endLines\":[], \"size\":0}";
+        
+        HttpTester request = new HttpTester();
+        request.setMethod("GET");
+        request.setVersion("HTTP/1.0");
+        
+        addFourElements(request);
+        request.setURI("/katool?function=undo");
+        request.setURI("/katool?function=redo");
+        
+        HttpTester response = new HttpTester();
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    // Tests for undoSize
+    //TODO: write tests
+    
+    // Tests for redoSize
+    //TODO: write tests
+    
+    //Tests for localmap and standardmap?
+    
+    // Tests for delete
+    @org.junit.jupiter.api.Test
+    public void testRemoveSecondOfFourElements() throws IOException, Exception{
+        String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a333\",\"type\":\"orderLabs\",\"prevItemId\":\"a111\",\"caption\":\"Labs\",\"condition\":null},"
+                + "{\"id\":\"a0\",\"type\":\"end\",\"prevItemId\":\"a333\",\"caption\":\"End\",\"condition\":null}"
+                + "], \"endLines\":[]}";
+        
+        HttpTester request = new HttpTester();
+        request.setMethod("GET");
+        request.setVersion("HTTP/1.0");
+        
+        addFourElements(request);
+        request.setURI("/katool?function=delete&id=a222");
+        HttpTester response = new HttpTester();
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    //TODO: add tests for removing end when one element to end and when multiple lines to end
+    
+    // Tests for file?
+    
+    // Tests for open?
+    
+    // Tests for save?
+    
+    // Test for state
+    //TODO: write test
+    
+    // Tests for getElement
+    //TODO: write tests
+    
+    // Tests for endline
+    //TODO: write tests
+    
+    // Tests for hasNext
+    //TODO: write tests
+    
+    // Tests for getConditionalActions
+    //TODO: write tests
     
     // helper functions
     private String chartItemToURLString(ChartItem item) {
