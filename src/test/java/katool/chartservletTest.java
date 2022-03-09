@@ -140,7 +140,6 @@ public class chartservletTest {
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void testAddSingleConditionalMultipleEnd() throws IOException, Exception{
         String expectedResponse = "{\"state\":["
                 + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
@@ -181,7 +180,6 @@ public class chartservletTest {
     }  
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void testAddDoubleConditionalMultipleEnd() throws IOException, Exception {
         String expectedResponse = "{\"state\":["
                 + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
@@ -302,7 +300,8 @@ public class chartservletTest {
                 + "{\"id\":\"a2\",\"type\":\"retrievedata\",\"prevItemId\":\"a111\",\"caption\":\"Test1\",\"condition\":null},"
                 + "{\"id\":\"a1\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Test1\",\"condition\":null},"
                 + "{\"id\":\"a10\",\"type\":\"addNotes\",\"prevItemId\":\"a1\",\"caption\":\"Notes\",\"condition\":\"<10\"},"
-                + "{\"id\":\"a3\",\"type\":\"retrievedata\",\"prevItemId\":\"a1\",\"caption\":\"Test2\",\"condition\":null}"
+                + "{\"id\":\"a3\",\"type\":\"retrievedata\",\"prevItemId\":\"a1\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a21\",\"type\":\"addDiagnosis\",\"prevItemId\":\"a3\",\"caption\":\"Diagnosis\",\"condition\":null}"
                 + "], \"endLines\":[]}";
         
         addSingleConditionalMultipleEnd(request);
@@ -540,10 +539,10 @@ public class chartservletTest {
     private void addSingleConditionalMultipleEnd(HttpTester request) throws IOException, Exception{
         addSingleConditionalSingleEnd(request);
         
-        request.setURI("/katool?fuction=update&" + chartItemToURLString(new ChartItem("a21", "addDiagnosis", "a3", "Diagnosis", null)));
+        request.setURI("/katool?function=update&" + chartItemToURLString(new ChartItem("a21", "addDiagnosis", "a3", "Diagnosis", null)));
         tester.getResponses(request.generate());
         
-        request.setURI("/chartservlet?function=endline&id=a21");
+        request.setURI("/katool?function=endline&id=a21");
         tester.getResponses(request.generate());
     }
     
@@ -563,7 +562,8 @@ public class chartservletTest {
     private void addDoubleConditionalMultipleEnd(HttpTester request) throws IOException, Exception{
         addDoubleConditionalSingleEnd(request);
         
-        request.setURI("/chartservlet?function=endline&id=a13");
+        request.setURI("/katool?function=endline&id=a13");
         tester.getResponses(request.generate());
+        
     }
 }
