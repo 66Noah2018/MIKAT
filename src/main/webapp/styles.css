@@ -419,7 +419,17 @@ table{
 
 #condition2-form-group{
     width: fit-content;
-    margin-left: 507px;
+}
+
+.condition-error {
+    width: 340px;
+    margin-left: 20px;
+    color: red;
+    visibility: hidden;
+}
+
+.condition2-else {
+    margin-left: 157px !important;
 }
 
 #if-else-specify-later{
