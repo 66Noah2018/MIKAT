@@ -10,8 +10,8 @@ const flowchartImageCodes = {
     start: "<span class='far fa-play-circle flow-icon'></span>",
     end: "<span class='far fa-stop-circle flow-icon'></span>",
     subroutine: "<span class='mif-link mif-3x'></span>",
-    conditional: "<span class='mif-flow-branch mif-3x'></span>",
-    loop: "<span class='mif-loop mif-3x'></span>",
+    conditional: "<span class='mif-flow-branch mif-3x flow-icon'></span>",
+    loop: "<span class='mif-loop mif-3x flow-icon'></span>",
     retrievedata: "<span class='fas fa-file-medical flow-icon'></span>",
     newProcedure:"<span class='fas fa-procedures flow-icon'></span>",
     orderLabs: "<span class='fas fa-microscope flow-icon'></span>",
@@ -126,7 +126,9 @@ function updateState(newItemArray, isConditional = false){
     if (newItemArray === null) { return; }
     let result = null;
     if (!isConditional){
-        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&condition=${newItemArray[0].condition}`));
+        newItemArray.forEach((item) => {
+            result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${item.id}&type=${item.type}&prevItemId=${item.prevItemId}&caption=${item.caption}&condition=${item.condition}`));
+        });
     } 
     else {
         servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&isMultipart=true&firstMultipart=true`);
@@ -180,7 +182,6 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     let lastIconCoordinates = {x: -90, y: 10};
     if (prevId !== -1){
         const prevIcon = document.getElementById(prevId);
-        console.log(prevId)
         prevX = prevIcon.style.left;
         prevY = prevIcon.style.top;
         lastIconCoordinates = {x: parseInt(prevX.substring(0, prevX.length - 2)), y: parseInt(prevY.substring(0, prevY.length - 2))};
@@ -356,12 +357,10 @@ function drawChart(state, endlines){ // add lines for endLineList
                 } 
                 conditionalData.shift();
                 conditionalData = conditionalData.filter((item) => { return item.type === "conditional"; });
-                console.log(conditionalData)
             }
             else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
         }
     }
-    console.log("only end left", endElement)
     if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type)); }
     
     if (endlines.length > 0) {
@@ -425,28 +424,37 @@ function deleteItem(id){
         return;
     }
     
-    // option 1: the item to be deleted is not a conditional, nor part of it
-    if (item.type !== "conditional" && JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${item.prevItemId}`)).chartItem.type !== "conditional") {
+    if (item.type === "loop" && !item.caption.startsWith("End for") && JSON.parse(servletRequest(`./chartservlet?function=loopHasEnd&caption=${item.caption}`)).hasEnd === true){
+        console.log(JSON.parse(servletRequest(`./chartservlet?function=loopHasEnd&caption=${item.caption}`)).caption)
+        console.log("notify")
+        Metro.notify.create("Cannot delete for loop with defined end", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
+        return;
+    }
+    // option 2: the item to be deleted is not a conditional, nor part of it
+    else if (item.type !== "conditional" && JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${item.prevItemId}`)).chartItem.type !== "conditional") {
         let result = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${id}`));
         drawChart(result.state, result.endLines);
         return;
-    } // option 2: the item is the first child of an if or an else branch
+    } // option 3: the item is the first child of an if or an else branch
     else if (item.type !== "conditional") {
         let newItem = {id: item.id, type: "questionMark", prevItemId: item.prevItemId, caption: clickToDefine, condition: item.condition}; 
         updateState([newItem], false);
         return;
-    // option 3: the item is a conditional
-    } else {
-        // option 3a: at least one of the conditional's branches is not undefined
-        if (state.some((element) => {
+    // option 4: the item is a conditional
+    } 
+    else {
+        // option 4a: at least one of the conditional's branches is not undefined
+        if (state.some((element) => 
+        {
             if (element.prevItemId === id) {
                 return element.type !== "questionMark";
             }
         })) {
             Metro.notify.create("Cannot delete if-else with defined child node(s)", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
             return;
-        // option 3b: both branches are undefined
-        } else {
+        // option 4b: both branches are undefined
+        } 
+        else {
             let result = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${id}`));
             drawChart(result.state, result.endLines);
         }
@@ -492,6 +500,7 @@ function defineElement(id){
             case "conditional":
                 openFormPopup("chart-conditional-popup", null, chartItem);
             case "loop":
+                openFormPopup("chart-forloop-popup", null, chartItem);
                 break;
             case "retrievedata":
                 openFormPopup("chart-retrieve-data-popup", null, chartItem);
@@ -534,29 +543,30 @@ function redefineQuestionmark(chartItem){
 }
 
 function conditionalPosForm(value){
+    let target = document.getElementById("conditional-form-group-pos");
     conditionalPosValue = value;
     const val = conditionalNextElements?conditionalNextElements[0].caption:null;
-    document.getElementById("conditional-form-group-pos").innerHTML = "";
+    target.innerHTML = "";
     const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="statement1-caption" id="statement1-caption" ${val?"value=\""+val+"\"":""} required></div>`;
     const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
     const selectSubroutineCode = `<div style="display: -webkit-inline-box"><input type="file" accept="application/json" ${val?"value=\""+val+"\"":""} data-role="file" id="subroutine-conditional-pos-input" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'pos')" required></div>`;
     const ifElseCode = "<div id='if-else-specify-later'><i>Specify later</i></div>";
     switch (value){
-        case "end": 
+        case "end":
             break;
         case "subroutine":
-            document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
+            target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
             if (conditionalNextElements !== null) document.getElementById("subroutine-conditional-pos-input").value = conditionalNextElements[0].caption;
             break;
         case "retrievedata":
             const code = getRetrieveDataSelectBox("statement1-caption", val);
             const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
-            document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
+            target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
             if (conditionalNextElements !== null) $("#conditional-form-group-pos #data-retrieve-select").value = conditionalNextElements[0].caption;
             break;
         case "conditional":
             // place branch icon + double click to specify?
-            document.getElementById("conditional-form-group-pos").appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
+            target.appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
             break;
         case "newProcedure":
             // fallthrough
@@ -569,7 +579,7 @@ function conditionalPosForm(value){
         case "newVaccination":
             // fallthrough
         case "addNotes":
-            document.getElementById("conditional-form-group-pos").appendChild(caption);
+            target.appendChild(caption);
             if (conditionalNextElements !== null) document.getElementById("statement1-caption").innerHTML = conditionalNextElements[0].caption;
             break;
         default: 
@@ -580,7 +590,8 @@ function conditionalPosForm(value){
 function conditionalNegForm(value){
     conditionalNegValue = value;
     const val = conditionalNextElements?conditionalNextElements[1].caption:null;
-    document.getElementById("conditional-form-group-neg").innerHTML = "";
+    let target = document.getElementById("conditional-form-group-neg");
+    target.innerHTML = "";
     const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="statement2-caption" id="statement2-caption" ${val?"value=\""+val+"\"":""} required></div>`;
     const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
     const selectSubroutineCode = `<div style="display: -webkit-inline-box"><input type="file" accept="application/json" ${val?"value=\""+val+"\"":""} data-role="file" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'neg')" required></div>`;
@@ -589,17 +600,17 @@ function conditionalNegForm(value){
         case "end": 
             break;
         case "subroutine":
-            document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
+            target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
             if (conditionalNextElements !== null) document.getElementById("subroutine-conditional-neg-input").value = conditionalNextElements[1].caption;
             break;
         case "retrievedata":
             const code = getRetrieveDataSelectBox("statement2-caption", val);
             const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
-            document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
-            if (conditionalNextElements !== null) document.getElementById("conditional-form-group-neg").getElementById("data-retrieve-select").value = conditionalNextElements[1].caption;
+            target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
+            if (conditionalNextElements !== null) target.getElementById("data-retrieve-select").value = conditionalNextElements[1].caption;
             break;
         case "conditional":
-            document.getElementById("conditional-form-group-neg").appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
+            target.appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
             break;
         case "newProcedure":
             // fallthrough
@@ -612,7 +623,7 @@ function conditionalNegForm(value){
         case "newVaccination":
             // fallthrough
         case "addNotes":
-            document.getElementById("conditional-form-group-neg").appendChild(caption);
+            target.appendChild(caption);
             if (conditionalNextElements !== null) document.getElementById("statement2-caption").innerHTML = conditionalNextElements[1].caption;
             break;
         default:
@@ -620,7 +631,7 @@ function conditionalNegForm(value){
     }
 }
 
-function getRetrieveDataSelectBox(name, value=null){
+function getRetrieveDataSelectBox(name, value=null, setsOnly = false){
     let selectBoxCodeRetrieve = null;
     if (name){
         selectBoxCodeRetrieve = `<select data-role="select" id="data-retrieve-select" name="${name}" data-add-empty-value="true" required>`;
@@ -631,11 +642,20 @@ function getRetrieveDataSelectBox(name, value=null){
     const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
     const singulars = Object.keys(values.singulars).filter((el) => !retrievedData.singulars.includes(el));
     const plurals = Object.keys(values.plurals).filter((el) => !retrievedData.plurals.includes(el));
-    selectBoxCodeRetrieve += '<optgroup label="Singular values">';
-    singulars.forEach((key) => {
-        selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
-    });
-    selectBoxCodeRetrieve += '</optgroup><optgroup label="Value sets">';
+    if (value) {
+        if (retrievedData.singulars.includes(value)) { singulars.push(value); }
+        else { plurals.push(value); }
+    }
+    singulars.sort();
+    plurals.sort();
+    if (!setsOnly) {
+        selectBoxCodeRetrieve += '<optgroup label="Singular values">';
+        singulars.forEach((key) => {
+            selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
+        });
+        selectBoxCodeRetrieve += '</optgroup>';
+    }
+    selectBoxCodeRetrieve += '<optgroup label="Value sets">';
     plurals.forEach((key) => {
         selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
     });
@@ -757,6 +777,34 @@ function openFormPopup(popupClass, subclass=null, values=null){
         case "chart-subroutine-popup":
             document.getElementsByClassName("chart-subroutine-popup")[0].style.display = "block";
             break;
+        case "chart-forloop-popup":
+            document.getElementsByClassName("for-loop-value-set-div")[0].innerHTML = "";
+            document.getElementsByClassName("for-loop-first-action-div")[0].innerHTML = "";
+            let actionType = null;
+            if (values) {
+                let nextItem = JSON.parse(servletRequest(`./chartservlet?function=getNext&id=${values.id}`)).nextItem;
+                actionType = nextItem?nextItem.type:null;
+            }
+            let valueSetCode = '<select data-role="select" name="for-loop-variable-select-box" id="for-loop-variable-select-box" data-add-empty-value="true" required><optgroup label="Value sets">';
+            retrievedData.plurals.forEach((el) => { valueSetCode += `<option value=${el} ${values.caption===el?"selected":""}>${el}</option>`; });
+            valueSetCode += '</optgroup></select>';
+            
+            let selectBoxCodeActions = '<select data-role="select" name="data-loop-action" id="data-loop-action" data-add-empty-value="true" data-on-change="setLoopAction(this.value)" required>';
+            selectBoxCodeActions += "<optgroup label='Components'>";
+            Object.keys(chartItemTypesBasic).slice(1).forEach((key) => {
+                selectBoxCodeActions += `<option value=${key} ${key===actionType?"selected":""}>${chartItemTypesBasic[key]}</option>`;
+            });
+            selectBoxCodeActions += "</optgroup><optgroup label='Medical Actions'>";
+            Object.keys(chartItemMedicalActions).forEach((key) => {
+                selectBoxCodeActions += `<option value=${key} ${key===actionType?"selected":""}>${chartItemMedicalActions[key]}</option>`;
+            });
+            selectBoxCodeActions += "</optgroup>" + selectBoxCodePost;
+
+            document.getElementsByClassName("for-loop-value-set-div")[0].appendChild(parser.parseFromString(valueSetCode, 'text/html').body.firstChild);
+            document.getElementsByClassName("for-loop-first-action-div")[0].appendChild(parser.parseFromString(selectBoxCodeActions, 'text/html').body.firstChild);
+            if (values) {setLoopAction(actionType); }
+            document.getElementsByClassName("chart-forloop-popup")[0].style.display = "block";
+            break;
         default:
             break;
     }
@@ -800,11 +848,12 @@ function addMedicalAction(){
     }
     document.getElementsByClassName("chart-item-popup")[0].style.display = "none";
     updateState([newItem], false);
+    elementToDefine = null;
 }
 
 function closeAllForms(){
     // "chart-forloop-popup"
-    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup"];
+    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup", "chart-forloop-popup"];
     popupClasses.forEach((popupClass) => {
         document.getElementsByClassName(popupClass)[0].style.display = "none";
     });
@@ -872,6 +921,7 @@ function processFormConditional(){
         updateEndLinesList(id);
     });
     conditionalNextElements = null;
+    elementToDefine = null;
 }
 
 function processSubroutine(){
@@ -920,5 +970,108 @@ function getFormValueRetrieve(){
         let newStep = addNewStep(getRandomId(), "retrievedata", value, selectedItemId, getLineStyle("retrievedata"));
         updateState([newStep]);
     }
+    elementToDefine = null;
     closeAllForms();
+}
+
+function processFormForloop(){
+    event.preventDefault();
+    const formdata = new FormData(document.getElementById("forloop-form"));
+    const valueSet = formdata.get("for-loop-variable-select-box");
+    const action = formdata.get("data-loop-action");
+    let firstAction = null;
+    let loopElement = null;   
+    
+    if (elementToDefine){
+        elementToDefine.caption = valueSet;
+        loopElement = elementToDefine;
+        firstAction = JSON.parse(servletRequest(`./chartservlet?function=getNext&id=${elementToDefine.id}`)).nextItem;
+        firstAction.type = action;
+    } else {
+        loopElement = {id: getRandomId(), type: "loop", prevItemId: selectedItemId, caption: valueSet, condition: null};
+        firstAction = {id: getRandomId(), type: action, prevItemId: loopElement.id, caption: "", condition: null};
+    }
+    
+    if (firstAction === "subroutine") { 
+        const subroutineCaption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${fileToEmbed.name}`)).mlmname;
+        firstAction.caption = subroutineCaption;
+        updateState([
+            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
+            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
+        ]);
+    }
+    else if (firstAction === "conditional") {
+        updateState([addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition)]);
+        const conditionalItems = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${firstAction.id}`)).items;
+        updateState(addConditionalStep(firstAction.id, "conditional", firstAction.caption, null, 
+            conditionalItems?conditionalItems[0].type:"questionMark", conditionalItems?conditionalItems[0].caption:clickToDefine, 
+            conditionalItems?conditionalItems[1].type:"questionMark", conditionalItems?conditionalItems[0].caption:clickToDefine, 
+            conditionalItems?conditionalItems[0].id:getRandomId(), conditionalItems?conditionalItems[1].id:getRandomId(), loopElement.id));
+    } 
+    else if (firstAction === "retrievedata") {
+        firstAction.caption = document.getElementById("first-action-caption").value;
+        updateState([
+            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
+            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
+        ]);
+    } else { //medicalAction
+        firstAction.caption = document.getElementById("first-action-caption").value;
+        updateState([
+            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
+            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
+        ]);
+    }
+    elementToDefine = null;
+    closeAllForms();
+}
+
+function setLoopAction(value){
+    document.getElementsByClassName("for-loop-first-action-details-div")[0].innerHTML = "";
+    let target = document.getElementsByClassName("for-loop-first-action-details-div")[0];
+    let result = elementToDefine?JSON.parse(servletRequest(`./chartservlet?function=getNext&id=${elementToDefine.id}`)).nextItem:null;
+    const val = result?result.caption:null;
+    target.innerHTML = "";
+    const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="first-action-caption" id="first-action-caption" ${val?"value=\""+val+"\"":""} required></div>`;
+    const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
+    const selectSubroutineCode = `<div style="display: -webkit-inline-box"><input type="file" accept="application/json" ${val?"value=\""+val+"\"":""} data-role="file" id="subroutine-loop-input" data-button-title="<span class='mif-folder'></span>" onSelect="processEmbedFile(files, 'loop')" required></div>`;
+    const ifElseCode = "<div id='if-else-specify-later'><i>Specify later</i></div>";
+    switch (value){
+        case "end":
+            break;
+        case "subroutine":
+            target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
+            if (conditionalNextElements !== null) document.getElementById("subroutine-loop-input").value = val;
+            break;
+        case "retrievedata":
+            const code = getRetrieveDataSelectBox("first-action-caption", val);
+            const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
+            target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
+            if (val !== null) $("#for-loop-first-action-details-div #data-retrieve-select").value = val;
+            break;
+        case "conditional":
+            // place branch icon + double click to specify?
+            target.appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
+            break;
+        case "newProcedure":
+            // fallthrough
+        case "orderLabs":
+            // fallthrough
+        case "newPrescription":
+            // fallthrough
+        case "addDiagnosis":
+            // fallthrough
+        case "newVaccination":
+            // fallthrough
+        case "addNotes":
+            target.appendChild(caption);
+            if (val !== null) document.getElementById("first-action-caption").innerHTML = val;
+            break;
+        default: 
+            break;
+    }
+}
+
+function endForLoop(){
+    let caption = JSON.parse(servletRequest(`./chartservlet?function=getClosestLoopStart&prevItemId=${selectedItemId}`)).caption;
+    updateState([addNewStep(getRandomId(), "loop", "End for " + caption, selectedItemId, getLineStyle("loop"), null)]);
 }

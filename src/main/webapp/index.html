@@ -91,12 +91,24 @@
                                 </span>
                                 <span class="caption">If-Else</span>
                             </button>
-                            <button class="ribbon-button" onclick="addLoop()" disabled>
+                            <div class="ribbon-split-button">
+                                <button class="ribbon-main">
+                                    <span class="icon">
+                                        <span class="mif-loop"></span>
+                                    </span>
+                                </button>
+                                <span class="ribbon-split dropdown-toggle"><span class="caption">For loop</span></span>
+                                <ul class="ribbon-dropdown" data-role="dropdown" data-duration="100">
+                                    <li onclick="openFormPopup('chart-forloop-popup')">For loop</li>
+                                    <li onclick="endForLoop()">End for loop</li>
+                                </ul>
+                            </div>
+<!--                            <button class="ribbon-button" onclick="addLoop()" disabled>
                                 <span class="icon">
                                     <span class="mif-loop"></span>
                                 </span>
                                 <span class="caption">For loop</span>
-                            </button>
+                            </button>-->
                             <button class="ribbon-button" onclick="openFormPopup('chart-retrieve-data-popup')">
                                 <span class="icon">
                                     <span class="fas fa-file-medical"></span>
@@ -271,21 +283,27 @@
             </form>
         </div>
         
-<!--        <div class="chart-forloop-popup" onsubmit="getFormValuesForloop()">
+        <div class="chart-forloop-popup" onsubmit="processFormForloop()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
             <form id="forloop-form">
                 <div class="form-group">
-                    <label>Condition</label>
-                    <input type="text" name="condition""value="">
+                    <label>Value set</label>
+                    <div class="for-loop-value-set-div"></div>
+                </div>
+                <div class="form-group" id="input-labels">
+                    <label id="action-loop">First action in loop</label>
+                    <label id="action-loop-specify">Specify</label>
+                </div>
+                <div class="form-group for-loop-action-content">
+                    <div class="for-loop-first-action-div"></div>
+                    <div class="for-loop-first-action-details-div"></div>
                 </div>
                 <div class="form-group">
-                    <label>First action in loop</label>
-                    <select data-role="select">
-                        <option value=""
-                    </select>
+                    <button class="button">OK</button>
                 </div>
             </form>
-        </div>-->
+        </div>
+        
         <div class="chart-conditional-popup" onsubmit="processFormConditional()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
             <form id="conditional-form" class=".custom-validation"></form>

@@ -118,6 +118,18 @@ public class chartservlet extends HttpServlet {
             case "getConditionalActions":
                 LinkedList<ChartItem> nextItems = getConditionalItems(request);
                 response.getWriter().write("{\"items\":" + JSONEncoder.encodeChart(nextItems) + "}");
+                break;
+            case "getNext":
+                ChartItem nextItem = getNextItem(request);
+                response.getWriter().write("{\"nextItem\":" + JSONEncoder.encodeItem(nextItem) + "}");
+                break;
+            case "getClosestLoopStart":
+                String caption = getClosestLoopStart(request);
+                response.getWriter().write("{\"caption\":\"" + caption + "\"}");
+                break;
+            case "loopHasEnd":
+                Boolean hasEnd = loopHasEnd(request);
+                response.getWriter().write("{\"hasEnd\":" + hasEnd + "}");
             default:
                 break;
         }
@@ -162,6 +174,40 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    private Boolean loopHasEnd(HttpServletRequest request) {
+        Boolean hasEnd = false;
+        String caption = request.getParameter("caption");
+        for (ChartItem item : currentState.getValue0()){
+            if (item.getCaption().equals("End for " + caption)) {
+                hasEnd = true;
+                break;
+            }
+        }
+        return hasEnd;
+    }
+    
+    private String getClosestLoopStart(HttpServletRequest request){
+        String caption = null;
+        String prevItemId = request.getParameter("prevItemId");
+        for (ChartItem item : currentState.getValue0()){
+            if (item.getType().equals("loop") && !item.getCaption().startsWith("End for")) { caption = item.getCaption(); }
+            if (item.getId().equals(prevItemId)){ break; }
+        }
+        return caption;
+    }
+    
+    private ChartItem getNextItem(HttpServletRequest request){
+        String id = request.getParameter("id");
+        ChartItem nextItem = null;
+        for (ChartItem item : currentState.getValue0()) {
+            if (item.getPrevItemId().equals(id)) {
+                nextItem = item;
+                break;
+            }
+        } 
+        return nextItem;
+    }
+    
     private LinkedList<ChartItem> getConditionalItems(HttpServletRequest request){
         String id = request.getParameter("id");
         LinkedList<ChartItem> nextItems = new LinkedList<>();

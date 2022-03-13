@@ -212,6 +212,10 @@ a{
     margin: 0 auto;
 }
 
+.mif-3x{
+    font-size: 40px !important;
+}
+
 .flow-icon-div p{
     margin: 0;
     text-align: center;
@@ -299,7 +303,7 @@ table{
     margin-left: 10px;
 }
 
-.chart-conditional-popup .select{
+.chart-conditional-popup .select, .chart-forloop-popup .select{
     width: 200px;
     margin-left: 10px;
 }
@@ -378,7 +382,7 @@ table{
     display: none;
 }
 
-.chart-retrieve-data-popup .form-group, .chart-subroutine-popup .form-group{
+.chart-retrieve-data-popup .form-group, .chart-subroutine-popup .form-group, .chart-forloop-popup .form-group{
     display: initial;
 }
 
@@ -397,7 +401,7 @@ table{
     display: block;
 }
 
-.chart-retrieve-data-popup button, .chart-subroutine-popup button, .questionmark-popup button{
+.chart-retrieve-data-popup button, .chart-subroutine-popup button, .questionmark-popup button, .chart-forloop-popup button {
     margin-top: 10px;
     float: right;
 }
@@ -444,4 +448,54 @@ table{
 #conditional-submit-btn{
     float: right;
     margin-left: auto;
+}
+
+.ribbon-dropdown li {
+    padding-left: 0 !important;
+}
+
+.ribbon-dropdown {
+    width: 150% !important;
+    margin-left: -25% !important;
+}
+
+.ribbon-split-button{
+    padding-top: 2px;
+}
+
+.ribbon-split .caption {
+    font-family: Arial;
+}
+
+.chart-forloop-popup {
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 225px);
+    background-color: var(--menu-bg-color);
+    width: 490px;
+    height: 210px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-forloop-popup form {
+    width: 440px;
+    margin-left: auto;
+    margin-right: auto; 
+    margin-top: 20px;
+}
+
+.for-loop-action-content {
+    display: -webkit-inline-box !important;
+    width: 100%;
+    margin-top: 0px !important;
+}
+
+#action-loop-specify {
+    margin-left: 100px;
+}
+
+.for-loop-first-action-details-div {
+    margin-left: 10px;
 }

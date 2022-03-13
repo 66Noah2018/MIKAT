@@ -31,6 +31,12 @@ public class chartservletTest {
     private static LinkedList<ChartItem> mockConditional2;
     private static ChartItem mockRetrieveData;
     private static ChartItem mockRetrieveData2;
+    private static ChartItem mockRetrieveDataPlural;
+    private static ChartItem mockRetrieveDataPlural2;
+    private static ChartItem mockLoop;
+    private static ChartItem mockLoopFirstAction;
+    private static ChartItem mockLoop2;
+    private static ChartItem mockLoop2FirstAction;
     private static HttpTester request;
     private static HttpTester response;
     
@@ -49,6 +55,12 @@ public class chartservletTest {
         mockInsertElement = new ChartItem("a444", "addNotes", "a222", "Notes", null);
         mockRetrieveData = new ChartItem("a2", "retrievedata", "a111", "Test1", null);
         mockRetrieveData2 = new ChartItem("a3", "retrievedata", "a1", "Test2", null);
+        mockRetrieveDataPlural = new ChartItem("a4", "retrievedata", "a111", "Plural1", null);
+        mockLoop = new ChartItem("a5", "loop", "a4", "Plural1", null);
+        mockLoopFirstAction = new ChartItem("a6", "orderLabs", "a5", "Labs", null);
+        mockRetrieveDataPlural2 = new ChartItem("a8", "retrievedata", "a6", "Plural2", null);
+        mockLoop2 = new ChartItem("a9", "loop", "a8", "Plural2", null);
+        mockLoop2FirstAction = new ChartItem("a30", "addNotes", "a9", "Notes", null);
         
         mockConditional = new LinkedList<>();
         mockConditional.add(new ChartItem("a1", "conditional", "a2", "Test1", null));
@@ -404,6 +416,7 @@ public class chartservletTest {
     }
     
     // Tests for hasNext
+    
     @org.junit.jupiter.api.Test
     public void testHasNextSimple() throws IOException, Exception{
         String expectedResponse = "{\"hasNext\":true}";
@@ -492,7 +505,134 @@ public class chartservletTest {
         assertEquals(expectedResponse, response.getContent());
     }
     
-    // helper functions
+    // Tests for getNext
+    
+    @org.junit.jupiter.api.Test
+    public void testGetNext() throws IOException, Exception{
+        String expectedResponse = "{\"nextItem\":{\"id\":\"a222\",\"type\":\"newProcedure\",\"prevItemId\":\"a111\",\"caption\":\"Procedure\",\"condition\":null}}";
+        
+        addFourElements(request);
+        request.setURI("/katool?function=getNext&id=a111");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testGetNextComplex() throws IOException, Exception{
+        String expectedResponse = "{\"nextItem\":{\"id\":\"a12\",\"type\":\"newProcedure\",\"prevItemId\":\"a11\",\"caption\":\"Procedure\",\"condition\":\">=11\"}}";
+        
+        addDoubleConditionalSingleEnd(request);
+        request.setURI("/katool?function=getNext&id=a11");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testGetNextNoNext() throws IOException, Exception{
+        String expectedResponse = "{\"nextItem\":null}";
+        
+        addDoubleConditionalSingleEnd(request);
+        request.setURI("/katool?function=getNext&id=a20");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testGetNextNonexistentId() throws IOException, Exception{
+        String expectedResponse = "{\"nextItem\":null}";
+        
+        addDoubleConditionalSingleEnd(request);
+        request.setURI("/katool?function=getNext&id=a2022");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    // Tests for getClosestLoopStart
+    
+    @org.junit.jupiter.api.Test
+    public void testGetClosestLoopStartSingleLoopNoEnd() throws IOException, Exception{
+        String expectedResponse = "{\"caption\":\"Plural1\"}";
+        
+        addSingleLoopNoEnd(request);
+        request.setURI("/katool?function=getClosestLoopStart&prevItemId=a6");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testGetClosestLoopStartDoubleLoopNoEndOuterLoop() throws IOException, Exception{
+        String expectedResponse = "{\"caption\":\"Plural1\"}";
+        
+        addDoubleLoopNoEnd(request);
+        request.setURI("/katool?function=getClosestLoopStart&prevItemId=a6");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testGetClosestLoopStartDoubleLoopNoEndInnerLoop() throws IOException, Exception{
+        String expectedResponse = "{\"caption\":\"Plural2\"}";
+        
+        addDoubleLoopNoEnd(request);
+        request.setURI("/katool?function=getClosestLoopStart&prevItemId=a30");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testGetClosestLoopStartSingleLoopExpectNull() throws IOException, Exception{
+        String expectedResponse = "{\"caption\":\"null\"}";
+        
+        addSingleLoopNoEnd(request);
+        request.setURI("/katool?function=getClosestLoopStart&prevItemId=a111");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    // Tests for loopHasEnd. Cannot test for hasEnd due to bad requests (End for ... causes 400 in Jetty, but works in UI)
+    
+    @org.junit.jupiter.api.Test
+    public void testLoopHasEndSingleLoopNoEnd() throws IOException, Exception{
+        String expectedResponse = "{\"hasEnd\":false}";
+        
+        addSingleLoopNoEnd(request);
+        request.setURI("/katool?function=loopHasEnd&caption=Plural1");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testLoopHasEndDoubleLoopNoEndInner() throws IOException, Exception{
+        String expectedResponse = "{\"hasEnd\":false}";
+        
+        addDoubleLoopNoEnd(request);
+        request.setURI("/katool?function=loopHasEnd&caption=Plural2");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testLoopHasEndDoubleLoopNoEndOuter() throws IOException, Exception{
+        String expectedResponse = "{\"hasEnd\":false}";
+        
+        addDoubleLoopNoEnd(request);
+        request.setURI("/katool?function=loopHasEnd&caption=Plural1");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+
+    // Helper functions
     
     private String chartItemToURLString(ChartItem item) {
         return "id=" + item.getId() + 
@@ -565,5 +705,42 @@ public class chartservletTest {
         request.setURI("/katool?function=endline&id=a13");
         tester.getResponses(request.generate());
         
+    }
+    
+    private void addSingleLoopNoEnd(HttpTester request) throws IOException, Exception {
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockStart));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockRetrieveDataPlural));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockLoop));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockLoopFirstAction));
+        tester.getResponses(request.generate());
+    }
+    
+    private void addDoubleLoopNoEnd(HttpTester request) throws IOException, Exception{
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockStart));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockRetrieveDataPlural));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockLoop));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockLoopFirstAction));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockRetrieveDataPlural2));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockLoop2));
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockLoop2FirstAction));
+        tester.getResponses(request.generate());
     }
 }
