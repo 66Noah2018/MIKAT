@@ -437,16 +437,18 @@ function deleteItem(id){
         Metro.notify.create("Cannot delete start element", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
         return;
     }
-    
+    // option 1: the item is a loop
     if (item.type === elements.loop && !item.caption.startsWith("End for") && JSON.parse(servletRequest(`./chartservlet?function=loopHasEnd&caption=${item.caption}`)).hasEnd === true){
-        console.log(JSON.parse(servletRequest(`./chartservlet?function=loopHasEnd&caption=${item.caption}`)).caption)
-        console.log("notify")
         Metro.notify.create("Cannot delete for loop with defined end", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
         return;
     }
     // option 2: the item to be deleted is not a conditional, nor part of it
     else if (item.type !== elements.conditional && JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${item.prevItemId}`)).chartItem.type !== elements.conditional) {
         let result = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${id}`));
+        if (item.type === elements.retrievedata) {
+            retrievedData.singulars = retrievedData.singulars.filter(el => el !== item.caption);
+            retrievedData.plurals = retrievedData.plurals.filter(el => el !== item.caption)
+        }
         drawChart(result.state, result.endLines);
         return;
     } // option 3: the item is the first child of an if or an else branch
