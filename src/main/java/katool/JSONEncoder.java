@@ -2,6 +2,8 @@ package katool;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /*
@@ -22,9 +24,13 @@ public class JSONEncoder {
         return result;
     }
 
-    public static String encodeChart(List<ChartItem> chart) throws JsonProcessingException {
+    public static String encodeChart(LinkedList<ChartItem> chart) throws JsonProcessingException {
+        List<ChartItem> chartList = new ArrayList();
+        chart.forEach(item -> {
+            chartList.add(item);
+        });
         ObjectMapper objectMapper = new ObjectMapper();
-        String result = objectMapper.writeValueAsString(chart);
+        String result = objectMapper.writeValueAsString(chartList);
         
         return result;
     }

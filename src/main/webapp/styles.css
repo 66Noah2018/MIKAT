@@ -202,10 +202,18 @@ a{
 .flow-icon-div{
     position: absolute;
     cursor: pointer;
+    width: fit-content;
+    max-width: 60px;
 }
 
 .flow-icon{
     font-size: 50px;
+    display: table;
+    margin: 0 auto;
+}
+
+.mif-3x{
+    font-size: 40px !important;
 }
 
 .flow-icon-div p{
@@ -250,4 +258,254 @@ a{
 table{
     table-layout: fixed;
     width: 100%;
+}
+
+.chart-item-popup{
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 105px);
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--menu-bg-color);
+    width: 210px;
+    height: 130px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-item-popup form{
+    width: 180px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5px;
+}
+
+.chart-item-popup button{
+    margin-left: auto;
+    float: right;
+}
+
+.chart-conditional-popup{
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 525px);
+    background-color: var(--menu-bg-color);
+    width: 1050px;
+    height: 240px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-conditional-popup input{
+    width: 150px;
+    margin-left: 10px;
+}
+
+.chart-conditional-popup .select, .chart-forloop-popup .select{
+    width: 200px;
+    margin-left: 10px;
+}
+
+.form-group+.form-group, .form-group{
+    display: -webkit-box;
+}
+
+.chart-conditional-popup form{
+    margin: 20px;
+}
+
+.chart-conditional-popup label{
+    line-height: 35px;
+    margin-left: 10px;
+}
+
+.chart-conditional-popup #var{
+    margin-left: 32px;
+}
+
+.chart-conditional-popup #condition-label{
+    margin-left: 152px;
+}
+
+.chart-conditional-popup #specify{
+    display: inline;
+    margin-left: 456px;
+}
+
+#data-label{
+    margin-right: 49px;
+}
+
+.select-focus-trigger{
+    display: none;
+}
+
+.questionmark-popup {
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 150px);
+    background-color: var(--menu-bg-color);
+    width: 300px;
+    height: 140px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.questionmark-popup form{
+    width: 270px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5px;
+}
+
+.questionmark-popup label{
+    line-height: 35px;
+}
+
+.questionmark-popup .form-group{
+    display: inline-block;
+    margin-top: 0;
+}
+
+.chart-retrieve-data-popup, .chart-subroutine-popup{
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 105px);
+    background-color: var(--menu-bg-color);
+    width: 210px;
+    height: 130px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-retrieve-data-popup .form-group, .chart-subroutine-popup .form-group, .chart-forloop-popup .form-group{
+    display: initial;
+}
+
+.chart-retrieve-data-popup form, .chart-subroutine-popup form{
+    width: 180px;
+    margin-left: auto;
+    margin-right: auto; 
+    margin-top: 5px;
+}
+
+.chart-retrieve-data-popup label, .chart-subroutine-popup label{
+    line-height: 35px;
+}
+
+.chart-item-popup .form-group{
+    display: block;
+}
+
+.chart-retrieve-data-popup button, .chart-subroutine-popup button, .questionmark-popup button, .chart-forloop-popup button {
+    margin-top: 10px;
+    float: right;
+}
+
+.fa-times{
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    color: red;
+}
+
+#conditional-form-group-pos .file, #conditional-form-group-neg .file{
+    width: 200px;
+}
+
+#condition2-form-group{
+    width: fit-content;
+}
+
+.condition-error {
+    width: 340px;
+    margin-left: 20px;
+    color: red;
+    visibility: hidden;
+}
+
+.condition2-else {
+    margin-left: 157px !important;
+}
+
+#if-else-specify-later{
+    line-height: 35px;
+    margin-left: 10px;
+}
+
+.edit-notify{
+    background-color: orange;
+}
+
+#condition-prefix-div .select {
+    width: 100px !important;
+}
+
+.option-list {
+    max-height: 2000px !important; /*default is 200px, this is not enough*/
+}
+
+.submit-button-group {
+    float: right;
+    margin-right: 15px;
+    margin-top: 0px !important;
+}
+
+#conditional-submit-btn{
+    float: right;
+    margin-left: auto;
+}
+
+.ribbon-dropdown li {
+    padding-left: 0 !important;
+}
+
+.ribbon-dropdown {
+    width: 150% !important;
+    margin-left: -25% !important;
+}
+
+.ribbon-split-button{
+    padding-top: 2px;
+}
+
+.ribbon-split .caption {
+    font-family: Arial;
+}
+
+.chart-forloop-popup {
+    position: absolute;
+    top: 175px;
+    left: calc(50vw - 225px);
+    background-color: var(--menu-bg-color);
+    width: 490px;
+    height: 210px;
+    border: solid 1px var(--statusbar-bg-color);
+    z-index: 2;
+    display: none;
+}
+
+.chart-forloop-popup form {
+    width: 440px;
+    margin-left: auto;
+    margin-right: auto; 
+    margin-top: 20px;
+}
+
+.for-loop-action-content {
+    display: -webkit-inline-box !important;
+    width: 100%;
+    margin-top: 0px !important;
+}
+
+#action-loop-specify {
+    margin-left: 100px;
+}
+
+.for-loop-first-action-details-div {
+    margin-left: 10px;
 }
