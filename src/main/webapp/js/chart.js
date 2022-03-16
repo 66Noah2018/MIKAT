@@ -68,7 +68,8 @@ const elements = {
     newPrescription: "newPrescription",
     addDiagnosis: "addDiagnosis",
     newVaccination: "newVaccination",
-    addNotes: "addNotes"
+    addNotes: "addNotes",
+    questionMark: "questionMark"
 };
 
 window.addEventListener('load', function () {
@@ -120,7 +121,8 @@ function openStatusbarDbl(){
     if (statusbarExpanded){
         document.getElementById("statusbar").style.bottom = "0px";
         document.getElementById("error-warning-list").style.display = "none";
-    } else {
+    } 
+    else {
         document.getElementById("statusbar").style.bottom = "225px";
         document.getElementById("error-warning-list").style.display = "block";
     }
@@ -396,6 +398,8 @@ function drawChart(state, endlines){
             line.position();
         });
     }
+    
+    showErrorsWarning(state);
 }
 
 function addStart(){ 
@@ -656,8 +660,14 @@ function getRetrieveDataSelectBox(name, value=null, setsOnly = false){
         selectBoxCodeRetrieve = `<select data-role="select" id="data-retrieve-select" data-add-empty-value="true" required>`;
     }
     const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
-    const singulars = Object.keys(values.singulars).filter((el) => !retrievedData.singulars.includes(el));
-    const plurals = Object.keys(values.plurals).filter((el) => !retrievedData.plurals.includes(el));
+    let singulars = [];
+    let plurals = [];
+    if (values.singulars) {
+        singulars = Object.keys(values.singulars).filter((el) => !retrievedData.singulars.includes(el));
+    }
+    if (values.plurals) { 
+       plurals = Object.keys(values.plurals).filter((el) => !retrievedData.plurals.includes(el)); 
+    }
     if (value) {
         if (retrievedData.singulars.includes(value)) { singulars.push(value); }
         else { plurals.push(value); }
@@ -806,7 +816,7 @@ function openFormPopup(popupClass, subclass=null, values=null){
                 actionType = nextItem?nextItem.type:null;
             }
             let valueSetCode = '<select data-role="select" name="for-loop-variable-select-box" id="for-loop-variable-select-box" data-add-empty-value="true" required><optgroup label="Value sets">';
-            retrievedData.plurals.forEach((el) => { valueSetCode += `<option value=${el} ${values.caption===el?"selected":""}>${el}</option>`; });
+            retrievedData.plurals.forEach((el) => { valueSetCode += `<option value=${el} ${values?(vales.caption===el?"selected":""):""}>${el}</option>`; });
             valueSetCode += '</optgroup></select>';
             
             let selectBoxCodeActions = '<select data-role="select" name="data-loop-action" id="data-loop-action" data-add-empty-value="true" data-on-change="setLoopAction(this.value)" required>';
@@ -872,7 +882,6 @@ function addMedicalAction(){
 }
 
 function closeAllForms(){
-    // "chart-forloop-popup"
     const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup", "chart-forloop-popup"];
     popupClasses.forEach((popupClass) => {
         document.getElementsByClassName(popupClass)[0].style.display = "none";
@@ -1104,4 +1113,79 @@ function setLoopAction(value){
 function endForLoop(){
     let caption = JSON.parse(servletRequest(`./chartservlet?function=getClosestLoopStart&prevItemId=${selectedItemId}`)).caption;
     updateState([addNewStep(getRandomId(), elements.loop, "End for " + caption, selectedItemId, getLineStyle(elements.loop), null)]);
+}
+
+function showErrorsWarning(state){
+    const warningIcon = "<span class='mif-warning'></span>";
+    const errorIcon = "<span class='mif-cancel'></span>";
+    let errorViewCode = '<ul data-role="listview" data-view="list" id="error-warning-list">';
+    let errorViewPostCode = '</ul>';
+    let warnings= [];
+    let errors = [];
+    state.forEach((item) => {
+        switch(item.type){
+            case "conditional":
+                // retrievedData
+                if (!retrievedData.singulars.includes(item.caption) && !retrievedData.plurals.includes(item.caption)) { errors.push(`Conditional uses data ${item.caption}, but ${item.caption} is not retrieved`); }
+                else {
+                    let dataFound = false;
+                    let i = 0;
+                    while (i < state.length && state[i].id !== item.id && !dataFound) {
+                        if (state[i].caption === item.caption) { dataFound = true; }
+                        i++;
+                    }
+                    if (!dataFound) { errors.push(`Conditional uses data ${item.caption}, but at that point ${item.caption} has not yet been retrieved`); }
+                }
+                
+                // branches
+                let branches = state.filter((el) => el.prevItemId === item.id);
+                if (branches[0].type === "questionMark" && branches[1].type === "questionMark") { errors.push(`Conditional with caption ${item.caption} has no actions on either the if or else branch`); }
+                else if (branches[0].type === "questionMark") { warnings.push(`Conditional with caption ${item.caption} has no actions on the if branch`); }
+                else if (branches[1].type === "questionMark") { warnings.push(`Conditional with caption ${item.caption} has no actions on the else branch`); }
+                break;
+            case "loop":
+                if (!item.caption.startsWith("End for")) {
+                    // retrievedData
+                    if (!retrievedData.singulars.includes(item.caption) && !retrievedData.plurals.includes(item.caption)) { errors.push(`For loop uses data ${item.caption}, but ${item.caption} is not retrieved`); }
+                    else {
+                        let dataFound = false;
+                        let i = 0;
+                        while (i < state.length && state[i].id !== item.id && !dataFound) {
+                            if (state[i].caption === item.caption) { dataFound = true; }
+                            i++;
+                        }
+                        if (!dataFound) { errors.push(`For loop uses data ${item.caption}, but at that point ${item.caption} has not yet been retrieved`); }
+                    }
+
+                    // action
+                    let action = state.filter((el) => el.prevItemId === item.id);
+                    if (action.length < 1) { errors.push(`For loop with caption ${item.caption} has no actions`); }
+
+                    // no end
+                    let hasEnd = JSON.parse(servletRequest(`./chartservlet?function=loopHasEnd&caption=${item.caption}`)).hasEnd;
+                    if (!hasEnd) {
+                        errors.push(`For loop with caption ${item.caption} has no end`); 
+                    }
+                }
+                break;
+            case "retrievedata":
+                let elements = state.filter((el) => (el.caption === item.caption && el.id !== item.id));
+                if (elements.length < 1) { warnings.push(`Retrieved data ${item.caption} is unused`); }
+                break;
+        }
+    });
+    
+    let target = document.getElementById("error-view");
+    target.innerHTML = null;
+    errors.forEach((error) => {
+        errorViewCode += `<li data-icon="${errorIcon}" data-caption="${error}"></li>`;
+    });
+    warnings.forEach((warning) => {
+        errorViewCode += `<li data-icon="${warningIcon}" data-caption="${warning}"></li>`;
+    });
+    errorViewCode += errorViewPostCode;
+    
+    target.appendChild(parser.parseFromString(errorViewCode, 'text/html').body.firstChild);
+    openStatusbarDbl();
+    openStatusbarDbl(); // reload statusbar;
 }

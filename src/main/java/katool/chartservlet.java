@@ -138,6 +138,7 @@ public class chartservlet extends HttpServlet {
             case "loopHasEnd":
                 Boolean hasEnd = loopHasEnd(request);
                 response.getWriter().write("{\"hasEnd\":" + hasEnd + "}");
+                break;
             case "updateLocalMapping":
                 updateLocalMapping(request);
                 break;
@@ -193,7 +194,7 @@ public class chartservlet extends HttpServlet {
         System.out.println(mapping);
         String fileLocation = workingDir + localMappingsFileLocation;
         FileWriter file = new FileWriter(fileLocation);
-        file.write("mapping:" + mapping);
+        file.write(mapping);
         file.close();
         localMapping = mapping;
     }
