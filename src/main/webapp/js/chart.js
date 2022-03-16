@@ -1186,6 +1186,8 @@ function showErrorsWarning(state){
     errorViewCode += errorViewPostCode;
     
     target.appendChild(parser.parseFromString(errorViewCode, 'text/html').body.firstChild);
+    document.getElementById("badge-warnings").innerText = warnings.length;
+    document.getElementById("badge-errors").innerText = errors.length;
     openStatusbarDbl();
     openStatusbarDbl(); // reload statusbar;
 }

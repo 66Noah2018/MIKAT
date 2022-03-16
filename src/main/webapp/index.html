@@ -250,16 +250,12 @@
         <div id="statusbar" class="bottom-bar">
             <!-- add: https://metroui.org.ua/notify.html -->
             <div class="bar-content">
-                <button class="button primary square issue-info-btn warnings-btn" ondblclick="openErrorStatusbarDbl()"><span class="badge">9</span><span class="mif-warning mif-2x"></span></button>
-                <button class="button primary square issue-info-btn errors-btn" ondblclick="openErrorStatusbarDbl()"><span class="badge">1</span><span class="mif-cancel mif-2x"></span></button>
+                <button class="button primary square issue-info-btn warnings-btn" ondblclick="openErrorStatusbarDbl()"><span class="badge" id="badge-warnings">0</span><span class="mif-warning mif-2x"></span></button>
+                <button class="button primary square issue-info-btn errors-btn" ondblclick="openErrorStatusbarDbl()"><span class="badge" id="badge-errors">0</span><span class="mif-cancel mif-2x"></span></button>
                 <button class="button primary square issue-info-btn" onclick="openErrorStatusbar(this)"><span class="mif-expand-less mif-2x"></span></button>
             </div>
         </div>
         <div id="error-view" class="error-view">
-<!--            <ul data-role="listview" data-view="list" id="error-warning-list">
-                <li data-icon="<span class='mif-warning'></span>" data-caption="warning1"></li>
-                <li data-icon="<span class='mif-cancel'></span>" data-caption="error1"></li>
-            </ul>-->
         </div>
         
         <div class="dialog" id="generate-testcases-load">
