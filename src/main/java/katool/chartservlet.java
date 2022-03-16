@@ -8,9 +8,15 @@ package katool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -31,19 +37,21 @@ import org.javatuples.Pair;
  * @author RLvan
  */
 public class chartservlet extends HttpServlet {
-    
-    // !!!! change directory! ask for working dir!
 
     private Pair<LinkedList<ChartItem>, ArrayList<String>> currentState = new Pair(new LinkedList<>(), new ArrayList<>());
     private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> undoStack = new LinkedList<>();
     private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> redoStack = new LinkedList<>();
     private final Integer MAX_DEQUE_SIZE = 10;
-    private String workingDir = "C:\\Users\\RLvan\\OneDrive\\Documenten\\MI\\SRP";
     private final String settingsFileName = "mikat_settings.json";
     private JsonNode settings = null; // {prevOpened:[{},{},{}]}
     private ArrayList<JsonNode> dependencies = null; // [{dependency: ..., fileLocation: ..., date: ...},{}]
     private ArrayList<Pair<String, JsonNode>> loadedDependencies = null;
     private String conditionalId = null;
+    private String localMappingsFileLocation = "localMapping.json";
+    private String standardizedMappingsFileLocation = "standardizedMapping.json";
+    private final String workingDir = "C:\\Users\\RLvan\\OneDrive\\Documenten\\MI\\SRP\\Test files\\";
+    private String localMapping = "{}";
+    private String standardizedMapping = "{}";
     
     
     /**
@@ -130,6 +138,12 @@ public class chartservlet extends HttpServlet {
             case "loopHasEnd":
                 Boolean hasEnd = loopHasEnd(request);
                 response.getWriter().write("{\"hasEnd\":" + hasEnd + "}");
+            case "updateLocalMapping":
+                updateLocalMapping(request);
+                break;
+            case "updateStandardizedMapping":
+                updateStandardizedMapping(request);
+                break;
             default:
                 break;
         }
@@ -174,6 +188,25 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    private void updateLocalMapping(HttpServletRequest request) throws IOException{
+        String mapping = getBody(request);
+        System.out.println(mapping);
+        String fileLocation = workingDir + localMappingsFileLocation;
+        FileWriter file = new FileWriter(fileLocation);
+        file.write("mapping:" + mapping);
+        file.close();
+        localMapping = mapping;
+    }
+    
+    private void updateStandardizedMapping(HttpServletRequest request) throws IOException{
+        String mapping = getBody(request);
+        String fileLocation = workingDir + standardizedMappingsFileLocation;
+        FileWriter file = new FileWriter(fileLocation);
+        file.write(mapping);
+        file.close();
+        standardizedMapping = mapping;
+    }
+    
     private Boolean loopHasEnd(HttpServletRequest request) {
         Boolean hasEnd = false;
         String caption = request.getParameter("caption");
@@ -597,13 +630,25 @@ public class chartservlet extends HttpServlet {
         return prevItemIndex;
     }
     
-    private String getLocalMapping(){
-        return "{\"singulars\":{\"test1\":\"test1query\", \"test2\": \"test2query\", \"test3\":\"test3query\"}, \"plurals\": {\"plural1\":\"plural1query\", \"plural2\":\"plural2query\", \"plural3\":\"plural3query\"}}";
+    private String getLocalMapping() throws IOException{
+        if (localMapping.equals("{}")) {
+            String fileLocation = workingDir + localMappingsFileLocation;
+            localMapping = new String(Files.readAllBytes(Paths.get(fileLocation)));
+            if (localMapping.equals("")) { localMapping = "{}"; }
+        }
+        return localMapping;
     }
     
-    private String getStandardizedMapping(){
-        return "{\"singulars\":{\"standardtest1\":\"test1\", \"standardtest2\":\"test2\", \"standardtest3\":\"test3\"}, \"plurals\": {\"standardplural1\":\"plural1\", \"standardplural2\":\"plural2\", \"standardplural3\":\"plural3\")}";
+    private String getStandardizedMapping() throws IOException{
+         if (standardizedMapping.equals("{}")) {
+            String fileLocation = workingDir + standardizedMappingsFileLocation;
+            standardizedMapping = new String(Files.readAllBytes(Paths.get(fileLocation)));
+            if (standardizedMapping.equals("")) { standardizedMapping = "{}"; }
+        }
+        return standardizedMapping;
     }
+    
+    // helper functions
     
     private void clearAllStacks(){
         currentState = new Pair(new LinkedList<>(), new ArrayList<>());
@@ -650,6 +695,38 @@ public class chartservlet extends HttpServlet {
             dequeCopy.addLast(deepCopyCurrentState(item));
         }
         return dequeCopy;
+    }
+    
+    public static String getBody(HttpServletRequest request) throws IOException {
+        String body = null;
+        StringBuilder stringBuilder = new StringBuilder();
+        BufferedReader bufferedReader = null;
+        try {
+            InputStream inputStream = request.getInputStream();
+            if (inputStream != null) {
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                char[] charBuffer = new char[128];
+                int bytesRead = -1;
+                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+                    stringBuilder.append(charBuffer, 0, bytesRead);
+                }
+            } else {
+                stringBuilder.append("");
+            }
+        } catch (IOException ex) {
+            throw ex;
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException ex) {
+                    throw ex;
+                }
+            }
+        }
+
+        body = stringBuilder.toString();
+        return body;
     }
 }
 

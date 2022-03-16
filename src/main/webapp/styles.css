@@ -51,7 +51,7 @@ a{
     width: 27vh;
 }
 
-#create-project, #edit-project, #open-project{
+#create-project, #edit-project, #open-project, #mappings-div{
     height: 99vh;
     margin-left: 28vh;
     margin-top: -99.5vh;
@@ -107,6 +107,9 @@ a{
     top: calc(50vh - 102px);
     left: calc(50vw - 125px);
     background-color: var(--bg-color-dialog);
+}
+
+#generate-testcases-load, #processing-mappings-load {
     display: none;
 }
 
@@ -508,4 +511,31 @@ table{
 
 .for-loop-first-action-details-div {
     margin-left: 10px;
+}
+
+#standardized-mapping-table-singular th, #standardized-mapping-table-plural th, #database-mapping-table-singular th, #database-mapping-table-plural th,
+#standardized-mapping-table-singular td, #standardized-mapping-table-plural td, #database-mapping-table-singular td, #database-mapping-table-plural td {
+    border: 1px solid var(--statusbar-bg-color);
+}
+
+#standardized-mapping-table-singular td, #standardized-mapping-table-plural td, #database-mapping-table-singular td, #database-mapping-table-plural td {
+    padding-left: 10px;
+    height: 25px;
+}
+
+.column {
+    float: left;
+    width: 49%;
+    padding: 5px;
+    margin-right: 10px;
+}
+
+.center-header{
+    text-align: center;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+#save-db-map-changes, #save-term-map-changes {
+    float: right;
 }
