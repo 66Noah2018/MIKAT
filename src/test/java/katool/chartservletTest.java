@@ -631,7 +631,31 @@ public class chartservletTest {
         response.parse(tester.getResponses(request.generate()));
         assertEquals(expectedResponse, response.getContent());
     }
+    
+    // Tests for directoryExists
+    
+    @org.junit.jupiter.api.Test
+    public void testDirectoryExistsTrue() throws IOException, Exception{
+        String expectedResponse = "{\"directoryExists\":true}";
+        
+        request.setURI("/katool?function=directoryExists");
+        request.setContent("C:\\Users\\RLvan\\OneDrive\\Documenten\\MI\\SRP\\Test files");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
 
+    @org.junit.jupiter.api.Test
+    public void testDirectoryExistsFalse() throws IOException, Exception{
+        String expectedResponse = "{\"directoryExists\":false}";
+        
+        request.setURI("/katool?function=directoryExists");
+        request.setContent("a\\bullshit\\directory");
+        
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
     // Helper functions
     
     private String chartItemToURLString(ChartItem item) {

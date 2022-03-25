@@ -19,23 +19,25 @@ and open the template in the editor.
         <script src="../js/file.js"></script>
         <script src="../js/test.js"></script>
     </head>
-    <body>
+    <body onload="showPrevOpened()">
+        <div class="dialog" id="open-project-load">
+            <div class="dialog-title">Opening project</div>
+            <div class="dialog-content">
+                <div class="content-spinner">
+                    <span class="mif-spinner ani-pulse"></span>
+                </div>
+            </div>
+        </div>
         <div class="sidebar-div">
             <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
         </div>
         <div id="open-project">
             <h1 class="open-project">Open Project</h1>
-            <input type="file" data-role="file" accept=".xml" data-prepend="Open Project" data-button-title="<span class='mif-folder'></span>">
+            <input type="file" data-role="file" accept=".json" data-prepend="Open Project" data-button-title="<span class='mif-folder'></span>" onchange="openProject()" id="openProjectFileUpload">
             
             <h2 class="recently-opened">Recently Opened Projects</h2>
-            <ul data-role="listview" data-view="table" data-select-node="true"
-                data-structure='{"fileName": true, "lastEdited": true}' data-on-node-dblclick="openRecentProject(fileName)">
-                <li data-icon="<span class='far fa-file-alt'>"
-                    data-caption="This will be the MLM name"
-                    data-fileName="fileName"
-                    data-lastEdited="27/11/2021"
-                    id="fileName"></li>
-            </ul>
+            <div id="prevOpenedList"></div>
+            
         </div>
     </body>
 </html>

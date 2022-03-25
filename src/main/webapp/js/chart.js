@@ -74,11 +74,20 @@ const elements = {
 
 window.addEventListener('load', function () {
     maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
+    let hasProjectOpened = JSON.parse(servletRequest("./chartservlet?function=hasProjectOpened")).hasProjectOpened;
     let result = JSON.parse(servletRequest("./chartservlet?function=state"));
-    if (result.state.length > 0){
-        drawChart(result.state, result.endLines);
+    if (hasProjectOpened){
+        if (result.state.length < 1) {
+            addStart();
+        } else {
+            drawChart(result.state, result.endLines);
+        }
+        document.getElementById("section-model").classList.remove("disabled");
+        document.getElementById("section-test").classList.remove("disabled");
     } else {
-        addStart();
+        document.getElementById("section-model").classList.add("disabled");
+        document.getElementById("section-test").classList.add("disabled");
+        Metro.notify.create("No project opened. Click File -> Open Project to open a project or File -> New Project to create a project", "Warning: No project", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true});
     }
 });
 

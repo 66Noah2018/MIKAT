@@ -19,15 +19,15 @@ and open the template in the editor.
         <script src="../js/file.js"></script>
         <script src="../js/test.js"></script>
     </head>
-    <body>
+    <body onload="editProjectProperties()">
         <div class="sidebar-div">
             <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
         </div>
         
         <div id="edit-project">
-            <div data-role="wizard" data-button-mode="cycle" class="wizard-wide-fs" data-on-help-click="alert('test')" data-on-finish-click="editProject(true)">
+            <div data-role="wizard" data-button-mode="cycle" class="wizard-wide-fs" data-on-help-click="alert('test')" data-on-finish-click="editProject()">
                 <section><div class="page-content">
-                    <h2>Maintenance</h2>
+                        <h2>Maintenance</h2>
                     <form id="edit-properties-maintenance">
                         <div class="form-group">
                             <label>Title</label>
@@ -78,35 +78,7 @@ and open the template in the editor.
                         <div class="form-group error" id="validation-group"></div>
                     </form>
                 </div></section>
-                <section id="edit-properties-section"> <div class="page-content">
-                    <h2>Library</h2>
-                    <form id="edit-properties-library">
-                        <div class="form-group">
-                            <label>Purpose</label>
-                            <input type="text" class="metro-input" name="purpose" id="purpose">
-                        </div>
-                        <div class="form-group error" id="purpose-group"></div>
-                        <div class="form-group">
-                            <label>Explanation</label>
-                            <textarea data-role="textarea" name="explanation" id="explanation"></textarea>
-                        </div>
-                        <div class="form-group error" id="explanation-group"></div>
-                        <div class="form-group">To add a keyword, citation, or link, type a value and press enter</div>
-                        <div class="form-group">
-                            <label>Keywords</label>
-                            <input type="text" data-role="taginput" class="metro-input" name="keywords" id="keywords" data-tag-trigger="Enter">
-                        </div>
-                        <div class="form-group error" id="keywords-group"></div>
-                        <div class="form-group" id="citations-group">
-                            <label>Citations</label>
-                            <input type="text" data-role="taginput" class="metro-input" name="citations" id="citations" data-tag-trigger="Enter">
-                        </div>
-                        <div class="form-group" id="links-group">
-                            <label>Links</label>
-                            <input type="text" data-role="taginput" class="metro-input" name="links" id="links" data-tag-trigger="Enter">
-                        </div>
-                    </form>
-                </div></section>
+                <section id="edit-properties-section"></section>
                 <section><div class="page-content">
                     <h2>Working Directory and Mappings</h2>
                     <form id="edit-properties-dir-map">

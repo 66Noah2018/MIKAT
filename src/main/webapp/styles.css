@@ -109,7 +109,7 @@ a{
     background-color: var(--bg-color-dialog);
 }
 
-#generate-testcases-load, #processing-mappings-load {
+#generate-testcases-load, #processing-mappings-load, #open-project-load {
     display: none;
 }
 
@@ -538,4 +538,71 @@ table{
 
 #save-db-map-changes, #save-term-map-changes {
     float: right;
+}
+
+.validation {
+    width: 100px;
+}
+
+#edit-properties-maintenance input[type=text], #edit-properties-maintenance input[type=number], #edit-properties-library input[type=text], #edit-properties-library input[type=text] {
+    width: 300px;
+    margin-left: 10px;
+}
+
+#edit-properties-dir-map .input {
+    width: 40em;
+    margin-left: 10px;
+}
+
+#edit-properties-library .textarea{
+    width: 500px;
+    margin-left: 10px
+}
+
+#edit-properties-library .tag-input {
+    width: 800px;
+    margin-left: 10px;
+}
+
+#edit-properties-library .tag-input input[type=text] {
+    width: 742px;
+}
+
+.wizard>.section .page-content, .wizard>section .page-content {
+    overflow-x: auto;
+}
+
+#edit-properties-dir-map .file {
+    margin-left: 10px;
+    width: 500px;
+}
+
+#edit-properties-dir-map .dir-validity-btn{
+    margin-left: 10px;
+    width: 220px;
+}
+
+#edit-properties-dir-map button .mif-folder{
+    margin-left: 10px;
+}
+
+#selected-working-dir-edit {
+    color: red;
+    display: none;
+}
+
+#selectedLocalFile, #selectedStandardizedFile{
+    visibility: hidden;
+    margin-top: 5px;
+    margin-bottom: 25px;
+}
+
+.error {
+    color: red;
+    margin-top: 0px !important;
+}
+
+.listview.view-table .node-data {
+    padding-top: 10px;
+    padding-bottom: 10px;
 }

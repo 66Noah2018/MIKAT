@@ -8,16 +8,19 @@ package katool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
@@ -25,11 +28,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.swing.filechooser.FileSystemView;
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.surefire.shade.booter.org.apache.commons.lang3.SystemUtils;
 import org.javatuples.Pair;
 
 /**
@@ -37,21 +44,26 @@ import org.javatuples.Pair;
  * @author RLvan
  */
 public class chartservlet extends HttpServlet {
-
+    
     private Pair<LinkedList<ChartItem>, ArrayList<String>> currentState = new Pair(new LinkedList<>(), new ArrayList<>());
     private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> undoStack = new LinkedList<>();
     private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> redoStack = new LinkedList<>();
     private final Integer MAX_DEQUE_SIZE = 10;
     private final String settingsFileName = "mikat_settings.json";
-    private JsonNode settings = null; // {prevOpened:[{},{},{}]}
-    private ArrayList<JsonNode> dependencies = null; // [{dependency: ..., fileLocation: ..., date: ...},{}]
-    private ArrayList<Pair<String, JsonNode>> loadedDependencies = null;
+    private ArrayNode prevOpened = new ObjectMapper().createArrayNode();
+    private ArrayNode dependencies = new ObjectMapper().createArrayNode(); // [{dependency: ..., fileLocation: ..., date: ...},{}]
+    private ArrayList<Pair<String, JsonNode>> loadedDependencies = new ArrayList<>();
     private String conditionalId = null;
-    private String localMappingsFileLocation = "localMapping.json";
-    private String standardizedMappingsFileLocation = "standardizedMapping.json";
-    private final String workingDir = "C:\\Users\\RLvan\\OneDrive\\Documenten\\MI\\SRP\\Test files\\";
+    private String localMappingsFileLocation = null;
+    private String standardizedMappingsFileLocation = null;
+    private Path workingDir = null;
     private String localMapping = "{}";
     private String standardizedMapping = "{}";
+    private String currentPath = "";
+    private String programFilesPath = "";
+    private String rootPath = "";
+    private String settings = null;
+    private final String[] extensions = new String[]{"json"};
     
     
     /**
@@ -103,10 +115,11 @@ public class chartservlet extends HttpServlet {
                 response.getWriter().write("{\"mlmname\":\"" + mlmname + "\"}");
                 break;
             case "open":
-                openProject(request);
+                String returnValue = openProject(request);
+                response.getWriter().write("{\"response\":\"" + returnValue + "\"}");
                 break;
             case "save":
-                saveProject(request);
+                saveChanges();
                 break;
             case "state":
                 response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + ALToString(currentState.getValue1()) + "}");
@@ -144,6 +157,28 @@ public class chartservlet extends HttpServlet {
                 break;
             case "updateStandardizedMapping":
                 updateStandardizedMapping(request);
+                break;
+            case "setWorkingDirectory":
+                setWorkingDirectory(request);
+                break;
+            case "saveProject":
+                saveProject(request);
+                break;
+            case "directoryExists":
+                Boolean exists = directoryExists(request);
+                response.getWriter().write("{\"directoryExists\":" + exists + "}");
+                break;
+            case "getProjectProperties":
+                String properties = readProjectFromFile();
+                response.getWriter().write(properties);
+                break;
+            case "getPrevOpened":
+                loadSettings();
+                String prevOpenedString = prevOpened.toString();
+                response.getWriter().write(prevOpenedString);
+                break;
+            case "hasProjectOpened":
+                response.getWriter().write("{\"hasProjectOpened\":" + !currentPath.equals("") + "}");
                 break;
             default:
                 break;
@@ -189,10 +224,124 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    private String readProjectFromFile() throws IOException{
+        if (!currentPath.equals("")) {
+            String file =  new String(Files.readAllBytes(Paths.get(currentPath)));
+            String fileContent = file.substring(1, file.length());
+            if (checkFileValidity(file)){
+                return fileContent;
+            } else {
+                return "file invalid";
+            }
+        } else {
+            return "null";
+        }
+    }
+    
+    private Boolean directoryExists(HttpServletRequest request) throws IOException {
+        String folder = getBody(request).replace("\\\\", "\\").replace("\"", "");
+        Path path = Paths.get(folder);
+        return Files.exists(path);
+    }
+    
+    private void setWorkingDirectory(HttpServletRequest request) throws IOException {
+        String folder = getBody(request).replace("\"", "");
+        workingDir = Paths.get(folder);
+    }
+    
+    private void saveProject(HttpServletRequest request) throws IOException{
+        determineOS();
+        String body = getBody(request).replace("\\\"", "\"");
+        body = body.substring(0, body.length()-2);
+        body += ",\"dependencies\":" + dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + ",\"workingDirectory\":\"" + workingDir.toString().replace("\\", "\\\\") + "\"}";
+        Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
+        Matcher matcher = pattern.matcher(body);
+        Boolean matchFound = matcher.find();
+        String mlmname = "";
+        if (matchFound) { 
+            mlmname = matcher.group(1);
+            String fileLocation = workingDir + "\\" + mlmname + ".json";
+            currentPath = fileLocation;
+            FileWriter file = new FileWriter(fileLocation);
+            file.write(body);
+            file.close();
+            setMappingLocations(body);
+            
+            ObjectMapper mapper = new ObjectMapper();
+            
+            for (int i = 0; i < prevOpened.size(); i++){
+                JsonNode node = prevOpened.get(i);
+                if ((node.get("fileName").asText()).equals(mlmname)) { prevOpened.remove(i); }
+            }
+
+            updatePrevOpened(mlmname);
+            
+            
+        }
+    }
+    
+    private void setMappingLocations(String body) throws IOException{
+        localMappingsFileLocation = null;
+        standardizedMappingsFileLocation = null;
+        Pattern patternLocal = Pattern.compile("\"localMappingFile\":\"(.+)\",\"s");
+        Pattern patternStandardized = Pattern.compile("\"standardizedMappingFile\":\"(.+)\",\"d");
+        Matcher matcherLocal = patternLocal.matcher(body);
+        Matcher matcherStandardized = patternStandardized.matcher(body);
+        Boolean matchFound = matcherLocal.find();
+        if (matchFound) {
+            Iterator<File> localFileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), extensions, true);
+            while(localFileIterator.hasNext() && localMappingsFileLocation == null) {
+                File file = localFileIterator.next();
+                if (file.getName().equals(matcherLocal.group(1))) { localMappingsFileLocation = file.getPath(); }
+            }
+            if (localMappingsFileLocation == null){
+                Iterator<File> localFileIteratorC = FileUtils.iterateFiles(new File(rootPath), extensions, true);
+                while(localFileIteratorC.hasNext() && localMappingsFileLocation == null) {
+                    File file = localFileIteratorC.next();
+                    if (file.getName().equals(matcherLocal.group(1))) { localMappingsFileLocation = file.getPath(); }
+                }
+            }
+        }
+        matchFound = matcherStandardized.find();
+        if (matchFound) {
+            Iterator<File> standardizedFileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), extensions, true);
+            while(standardizedFileIterator.hasNext() && standardizedMappingsFileLocation == null) {
+                File file = standardizedFileIterator.next();
+                if (file.getName().equals(matcherStandardized.group(1))) { standardizedMappingsFileLocation = file.getPath(); }
+            }
+            if (standardizedMappingsFileLocation == null){
+                Iterator<File> standardizedFileIteratorC = FileUtils.iterateFiles(new File(rootPath), extensions, true);
+                while(standardizedFileIteratorC.hasNext() && standardizedMappingsFileLocation == null) {
+                    File file = standardizedFileIteratorC.next();
+                    if (file.getName().equals(matcherStandardized.group(1))) { standardizedMappingsFileLocation = file.getPath(); }
+                }
+            }
+        }
+    }
+    
+    private Boolean determineOS(){
+        Boolean OSDetermined = true;
+        if (programFilesPath.equals("") || rootPath.equals("")){
+            if (SystemUtils.IS_OS_WINDOWS){
+                rootPath = "C:\\";
+                programFilesPath = "C:\\Program Files";
+            } else if (SystemUtils.IS_OS_MAC){
+                rootPath = "/";
+                programFilesPath = "/Applications";
+            } else if (SystemUtils.IS_OS_LINUX){
+                rootPath = "/";
+                programFilesPath = "/opt";
+            } else {
+                OSDetermined = false;
+            }
+        }
+        if (workingDir == null) { workingDir = Paths.get(FileSystemView.getFileSystemView().getDefaultDirectory().getPath()); }
+        return OSDetermined;
+    }
+    
     private void updateLocalMapping(HttpServletRequest request) throws IOException{
         String mapping = getBody(request);
-        System.out.println(mapping);
-        String fileLocation = workingDir + localMappingsFileLocation;
+        String fileLocation = localMappingsFileLocation; //cannot assume this! need to compare to working dir to get absolute path
         FileWriter file = new FileWriter(fileLocation);
         file.write(mapping);
         file.close();
@@ -201,7 +350,7 @@ public class chartservlet extends HttpServlet {
     
     private void updateStandardizedMapping(HttpServletRequest request) throws IOException{
         String mapping = getBody(request);
-        String fileLocation = workingDir + standardizedMappingsFileLocation;
+        String fileLocation = standardizedMappingsFileLocation;
         FileWriter file = new FileWriter(fileLocation);
         file.write(mapping);
         file.close();
@@ -299,13 +448,19 @@ public class chartservlet extends HttpServlet {
         return element;
     }
     
-    private boolean checkFileValidity(JsonNode project){
+    private boolean checkFileValidity(String projectString) throws JsonProcessingException{
+        projectString = projectString.substring(1, projectString.length());
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode project = mapper.readTree(projectString);
         // check whether file was created by this program and contains the correct 'keys'
         JsonNode maintenance = project.get("maintenance");
         JsonNode library = project.get("library");
-        JsonNode knowledge = project.get("knowledge");
         JsonNode projectDependencies = project.get("dependencies");
-        if (maintenance == null || library == null || knowledge == null || projectDependencies == null) { return false; }
+        JsonNode state = project.get("state");
+        JsonNode endLines = project.get("endLines");
+        JsonNode localMappingFile = project.get("localMappingFile");
+        JsonNode standardizedMappingFile = project.get("standardizedMappingFile");
+        if (maintenance == null || library == null || projectDependencies == null || state == null || endLines == null || localMappingFile == null || standardizedMappingFile == null) { return false; }
         if (!maintenance.isNull()){
             if (maintenance.hasNonNull("title") && 
                     maintenance.hasNonNull("mlmname") &&
@@ -316,109 +471,157 @@ public class chartservlet extends HttpServlet {
                     maintenance.hasNonNull("specialist") &&
                     maintenance.hasNonNull("date") &&
                     maintenance.hasNonNull("validation")){
-                if (!"production".equals(maintenance.get("validation").asText()) &&
-                        !"research".equals(maintenance.get("validation").asText()) &&
-                        !"testing".equals(maintenance.get("validation").asText()) &&
-                        !"expired".equals(maintenance.get("validation").asText())) {
+                if (!"Production".equals(maintenance.get("validation").asText()) &&
+                        !"Research".equals(maintenance.get("validation").asText()) &&
+                        !"Testing".equals(maintenance.get("validation").asText()) &&
+                        !"Expired".equals(maintenance.get("validation").asText())) {
                     return false;
                 } else { // if we get here the maintenance section is complete
                     if (!library.isNull()){
                         if (library.hasNonNull("purpose") &&
                                 library.hasNonNull("explanation") &&
                                 library.hasNonNull("keywords")){
-                            if (!knowledge.isNull()) {
-                                if (knowledge.hasNonNull("type") &&
-                                        knowledge.hasNonNull("data") &&
-                                        knowledge.hasNonNull("evoke") &&
-                                        knowledge.hasNonNull("logic") &&
-                                        knowledge.hasNonNull("action")){
-                                    // we made it through the MLM required fields
-                                    // from now on: fields that are required by MIKAT and mark this project as a MIKAT project
-                                    if (!projectDependencies.isNull()) { // minimum is an empty JsonArray
-                                        return true;
-                                    } else { return false; }
-                                } else { return false; }
+                            // we made it through the MLM required fields
+                            // from now on: fields that are required by MIKAT and mark this project as a MIKAT project
+                            if (!projectDependencies.isNull()) { // minimum is an empty JsonArray
+                                if (!state.isNull()){
+                                    if (!endLines.isNull()){
+                                        if (!localMappingFile.isNull()){
+                                            if (!standardizedMappingFile.isNull()){
+                                                return true;
+                                            } else { return false; }
+                                        } else {return false; }
+                                    }else { return false; }
+                                }else { return false; }
                             } else { return false; }
                         } else { return false; }
                     } else { return false; }
                 }
             } else { return false; }
+        } else { return false; }
+    }
+    
+    private Boolean checkMappingFileValidity(String file) throws JsonProcessingException{
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode fileContent = mapper.readTree(file);
+        if (fileContent.get("singulars").isNull() || fileContent.get("plurals").isNull()) {
+            return false;
+        } return true;
+    }
+    
+    private void loadSettings() throws IOException{
+        if (settings == null){
+            if (rootPath == "") {
+                determineOS();
+            }
+            String fileLocation = programFilesPath + "\\" + settingsFileName;
+            Path path = Paths.get(fileLocation);
+            if (Files.exists(path)) {
+                settings = new String(Files.readAllBytes(path));
+            } else {
+                Iterator<File> localFileIteratorC = FileUtils.iterateFiles(new File(rootPath), extensions, true);
+                while(localFileIteratorC.hasNext() && fileLocation == null) {
+                    File file = localFileIteratorC.next();
+                    if (file.getName().equals(settingsFileName)) { fileLocation = file.getPath(); }
+                }
+                settings = new String(Files.readAllBytes(Paths.get(fileLocation)));
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            prevOpened = (ArrayNode) mapper.readTree(settings).get("prevOpened");
         }
-        return false;
     }
     
-    private void saveProject(HttpServletRequest request){
-        String projectFile = request.getParameter("fileLocation");
-        
-    }
-    
-    private void loadSettings() throws FileNotFoundException, JsonProcessingException{
-        File root = new File("C:\\");
-        File settingsFile = null;
-        String settingsString = "";
-        try{
-            boolean recursive = true;
-            Collection files = FileUtils.listFiles(root, null, recursive);
-            for (Iterator iterator = files.iterator(); iterator.hasNext();){
-                File file = (File) iterator.next();
-                if (file.getName().equals(settingsFileName)){
-                    settingsFile = file;
+    private String openProject(HttpServletRequest request) throws IOException{ //open project
+        Boolean determinationSuccess = determineOS();
+        if (!determinationSuccess) { return "Unsupported OS"; }
+        loadSettings();
+        String fileName = getBody(request);
+        String project = null;
+        if (fileName.contains("\\")) { 
+            fileName = fileName.replace("\\\\", "\\");
+            fileName = fileName.substring(1, fileName.length()-1); }
+        if (fileName.startsWith(rootPath)) { // fully specified path
+            project = new String(Files.readAllBytes(Paths.get(fileName)));
+            if (!checkFileValidity(project)) { return "Invalid file, not MIKAT"; }
+            currentPath = fileName;
+            fileName = fileName.split("/")[fileName.split("/").length-1];
+            
+        } else { //find file and read
+            String pathToFile = null;
+            fileName = fileName.substring(1, fileName.length()-1);
+            if (workingDir != null) {
+                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), extensions, true);
+                while (fileIterator.hasNext() && pathToFile == null) {
+                    File file = fileIterator.next();
+                    if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
                 }
             }
-        } catch (Exception e) {
-            // create new settings file
+            if (pathToFile == null) {
+                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(rootPath), extensions, true);
+                while (fileIterator.hasNext() && pathToFile == null) {
+                    File file = fileIterator.next();
+                    if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+                }
+            }
+            if (pathToFile == null) { return "Invalid file, no path"; }
+            project = new String(Files.readAllBytes(Paths.get(pathToFile)));
+            if (!checkFileValidity(project)) { return "Invalid file, not MIKAT"; }
+            currentPath = pathToFile;
         }
         
-        Scanner fileReader = new Scanner(settingsFile);
-        while (fileReader.hasNextLine()){
-            settingsString += fileReader.nextLine();   
-        }
+        
+        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\"");
+        Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
+        Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
+        Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+),\"s");
+        Matcher workingDirMatcher = workingDirPattern.matcher(project);
+        Matcher stateMatcher = statePattern.matcher(project);
+        Matcher endLinesMatcher = endLinesPattern.matcher(project);
+        Matcher dependenciesMatcher = dependenciesPattern.matcher(project);
+        
+        Boolean workingDirMatch = workingDirMatcher.find();
+        Boolean stateMatch = stateMatcher.find();
+        Boolean endLinesMatch = endLinesMatcher.find();
+        Boolean dependenciesMatch = dependenciesMatcher.find();
+        
+        if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch) { return "File is not MIKAT file"; }
+        workingDir = Paths.get(workingDirMatcher.group(1));
+        currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).split(","))));
         ObjectMapper mapper = new ObjectMapper();
-        settings = mapper.readTree(settingsString);
+        dependencies = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
+
+        fileName = fileName.split("/")[fileName.split("/").length-1];
+        for (int i = 0; i < prevOpened.size(); i++){
+            JsonNode node = prevOpened.get(i);
+            if ((node.get("fileName").asText()).equals(fileName)) { prevOpened.remove(i); }
+        }
+        
+        updatePrevOpened(fileName);
+        setMappingLocations(project);
+        return "File opened successfully";
     }
     
-    private void openProject(HttpServletRequest request) throws IOException{ //open project
-        loadSettings();
-        String fileName = request.getParameter("fileName");
-        String path = null;
-        File projectFile = null;
-        String projectString = "";
-        JsonNode project = null;
-        if (!fileName.startsWith("C:\\")){
-            File root = new File(workingDir);
-            try{
-                boolean recursive = true;
-                Collection files = FileUtils.listFiles(root, null, recursive);
-                for (Iterator iterator = files.iterator(); iterator.hasNext();) {
-                    File file = (File) iterator.next();
-                    if (file.getName().equals(fileName)){
-                        path = file.getAbsolutePath();
-                        projectFile = file;
-                    }
-                } 
-            }catch (Exception e){}
-        } else {
-            path = fileName;
-            projectFile = new File(path); 
-        }
-        
-        Scanner fileReader = new Scanner(projectFile);
-        while (fileReader.hasNextLine()){
-            projectString += fileReader.nextLine();   
-        }
+    private void updatePrevOpened(String fileName) throws IOException{
         ObjectMapper mapper = new ObjectMapper();
-        project = mapper.readTree(projectString);
-        if (checkFileValidity(project)){
-            dependencies.add(project.get("dependencies"));
-            settings = project.get("settings");
-            currentState = currentState.setAt0(JSONDecoder.decodeChart(project.get("state").toString()));
-        }
-        
+        ObjectNode projectFile = mapper.createObjectNode();
+        projectFile.put("fileName", fileName);
+        projectFile.put("path", currentPath);
+        projectFile.put("date", new Date().toString());
+        prevOpened.add(projectFile);
+        writeSettings();
+    }
+    
+    private void writeSettings() throws IOException {
+        String settingsString = "{";
+        settingsString += "\"prevOpened\":" + prevOpened.toPrettyString() + "}";
+        FileWriter settingsFile = new FileWriter(programFilesPath + "//" + settingsFileName);
+        settingsFile.write(settingsString);
+        settingsFile.close();
     }
     
     private String selectFile(HttpServletRequest request) throws IOException{
         String fileName = request.getParameter("name");
-        File root = new File(workingDir);
+        File root = new File(workingDir.toString());
         String path = null;
         File selectedFile = null;
         String selectedFileString = "";
@@ -436,23 +639,27 @@ public class chartservlet extends HttpServlet {
                     while (fileReader.hasNextLine()){
                         selectedFileString += fileReader.nextLine();
                     }
-                    ObjectMapper mapper = new ObjectMapper();
-                    selectedFileContents = mapper.readTree(selectedFileString);
-                    if (checkFileValidity(selectedFileContents)){
+                    if (checkFileValidity(selectedFileString)){
+                        ObjectMapper mapper = new ObjectMapper();
+                        selectedFileContents = mapper.readTree(selectedFileString);
                         String title = selectedFileContents.at("/maintenance/title").asText();
                         mlmname = selectedFileContents.at("/maintenance/mlmname").asText();
-                        List<Pair<String,String>> newItems = new ArrayList<>();
-                        newItems.add(new Pair<>("dependency", title));
-                        newItems.add(new Pair<>("fileLocation", path));
-                        newItems.add(new Pair<>("date", new Date().toString()));
-                        JsonNode newDependency = JsonTools.createNode(newItems);
-                        dependencies.add(newDependency);
-                        loadedDependencies.add(new Pair<>(title, selectedFileContents));
+                        addNewDependency(title, path, selectedFileContents);
                     }
                 }
             } 
         } catch (Exception e){}  
         return mlmname;
+    }
+    
+    private void addNewDependency(String dependency, String fileLocation, JsonNode dependencyContents) {
+        List<Pair<String,String>> newItems = new ArrayList<>();
+        newItems.add(new Pair<>("dependency", dependency));
+        newItems.add(new Pair<>("fileLocation", fileLocation));
+        newItems.add(new Pair<>("date", new Date().toString()));
+        JsonNode newDependency = JsonTools.createNode(newItems);
+        dependencies.add(newDependency);
+        loadedDependencies.add(new Pair<>(dependency, dependencyContents));
     }
     
     private void removeConditional(String id){
@@ -633,22 +840,39 @@ public class chartservlet extends HttpServlet {
     
     private String getLocalMapping() throws IOException{
         if (localMapping.equals("{}")) {
-            String fileLocation = workingDir + localMappingsFileLocation;
-            localMapping = new String(Files.readAllBytes(Paths.get(fileLocation)));
-            if (localMapping.equals("")) { localMapping = "{}"; }
+            localMapping = new String(Files.readAllBytes(Paths.get(localMappingsFileLocation)));
+            if (localMapping.equals("") || !checkMappingFileValidity(localMapping)) { localMapping = "{}"; }
         }
         return localMapping;
     }
     
     private String getStandardizedMapping() throws IOException{
          if (standardizedMapping.equals("{}")) {
-            String fileLocation = workingDir + standardizedMappingsFileLocation;
+            String fileLocation = standardizedMappingsFileLocation;
             standardizedMapping = new String(Files.readAllBytes(Paths.get(fileLocation)));
-            if (standardizedMapping.equals("")) { standardizedMapping = "{}"; }
+            if (standardizedMapping.equals("") || !checkMappingFileValidity(standardizedMapping)) { standardizedMapping = "{}"; }
         }
         return standardizedMapping;
     }
     
+    private void saveChanges() throws IOException {
+        String currentProject = new String(Files.readAllBytes(Paths.get(currentPath)));
+        String properties = currentProject.split(",\"dependencies\"")[0];
+        properties += ",\"dependencies\":" + dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + ",\"workingDirectory\":\"" + workingDir.toString().replace("\\", "\\\\") + "\"}";
+        Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
+        Matcher matcher = pattern.matcher(properties);
+        Boolean matchFound = matcher.find();
+        String mlmname = "";
+        if (matchFound) { 
+            mlmname = matcher.group(1);
+            String fileLocation = workingDir + "\\" + mlmname + ".json";
+            currentPath = fileLocation;
+            FileWriter file = new FileWriter(fileLocation);
+            file.write(properties);
+            file.close();
+            setMappingLocations(properties);
+        }
+    }
     // helper functions
     
     private void clearAllStacks(){
