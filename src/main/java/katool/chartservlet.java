@@ -9,24 +9,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,9 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.swing.filechooser.FileSystemView;
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.surefire.shade.booter.org.apache.commons.lang3.SystemUtils;
 import org.javatuples.Pair;
 
 /**
@@ -52,10 +44,8 @@ public class chartservlet extends HttpServlet {
     private String conditionalId = null;
     private String localMappingsFileLocation = null;
     private String standardizedMappingsFileLocation = null;
-    private Path workingDir = null;
     private String localMapping = "{}";
     private String standardizedMapping = "{}";
-    private String settings = null;
     
     
     /**
@@ -165,12 +155,26 @@ public class chartservlet extends HttpServlet {
                 response.getWriter().write(properties);
                 break;
             case "getPrevOpened":
-                loadSettings();
+                Utils.loadSettings();
                 String prevOpenedString = Utils.prevOpened.toString();
                 response.getWriter().write(prevOpenedString);
                 break;
             case "hasProjectOpened":
                 response.getWriter().write("{\"hasProjectOpened\":" + !Utils.currentPath.equals("") + "}");
+                break;
+            case "translateJS":
+                ChartTranslator.translateToJS(currentState);
+                break;
+            case "translateAS":
+                ChartTranslator.translateToArdenSyntax(currentState);
+                break;
+            case "getDefaultWorkingDirectory":
+                if (Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
+                response.getWriter().write("{\"defaultWorkingDirectory\":\"" + Utils.defaultWorkingDirectory.replace("\\", "\\\\") + "\"}");
+                break;
+            case "setDefaultWorkingDirectory":
+                Utils.defaultWorkingDirectory = Utils.getBody(request).replace("\"", "");
+                Utils.writeSettings();
                 break;
             default:
                 break;
@@ -226,7 +230,11 @@ public class chartservlet extends HttpServlet {
     
     private void setWorkingDirectory(HttpServletRequest request) throws IOException {
         String folder = Utils.getBody(request).replace("\"", "");
-        workingDir = Paths.get(folder);
+        Utils.workingDir = Paths.get(folder);
+        if (Utils.defaultWorkingDirectory == null) { 
+            Utils.defaultWorkingDirectory = folder;
+            Utils.writeSettings();
+        }
     }
     
     private void saveProject(HttpServletRequest request) throws IOException{
@@ -234,14 +242,14 @@ public class chartservlet extends HttpServlet {
         String body = Utils.getBody(request).replace("\\\"", "\"");
         body = body.substring(0, body.length()-2);
         body += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
-                ",\"workingDirectory\":\"" + workingDir.toString().replace("\\", "\\\\") + "\"}";
+                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"}";
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(body);
         Boolean matchFound = matcher.find();
         String mlmname = "";
         if (matchFound) { 
             mlmname = matcher.group(1);
-            String fileLocation = workingDir + "\\" + mlmname + ".json";
+            String fileLocation = Utils.workingDir + "\\" + mlmname + ".json";
             Utils.currentPath = fileLocation;
             FileWriter file = new FileWriter(fileLocation);
             file.write(body);
@@ -313,11 +321,7 @@ public class chartservlet extends HttpServlet {
     
     private LinkedList<ChartItem> getConditionalItems(HttpServletRequest request){
         String id = request.getParameter("id");
-        LinkedList<ChartItem> nextItems = new LinkedList<>();
-        for (ChartItem element : currentState.getValue0()) {
-            if (id.equals(element.getPrevItemId())) { nextItems.add(element); }
-        }
-        return nextItems;
+        return Utils.conditionalItems(id, currentState.getValue0());
     }
     
     private Boolean itemHasNext(HttpServletRequest request){
@@ -353,7 +357,7 @@ public class chartservlet extends HttpServlet {
     private String openProject(HttpServletRequest request) throws IOException{ //open project
         Boolean determinationSuccess = Utils.determineOS();
         if (!determinationSuccess) { return "Unsupported OS"; }
-        loadSettings();
+        Utils.loadSettings();
         String fileName = Utils.getBody(request);
         String project = null;
         if (fileName.contains("\\")) { 
@@ -368,8 +372,8 @@ public class chartservlet extends HttpServlet {
         } else { //find file and read
             String pathToFile = null;
             fileName = fileName.substring(1, fileName.length()-1);
-            if (workingDir != null) {
-                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), Utils.extensions, true);
+            if (Utils.workingDir != null) {
+                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
                 while (fileIterator.hasNext() && pathToFile == null) {
                     File file = fileIterator.next();
                     if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
@@ -404,7 +408,7 @@ public class chartservlet extends HttpServlet {
         Boolean dependenciesMatch = dependenciesMatcher.find();
         
         if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch) { return "File is not MIKAT file"; }
-        workingDir = Paths.get(workingDirMatcher.group(1));
+        Utils.workingDir = Paths.get(workingDirMatcher.group(1));
         currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).split(","))));
         ObjectMapper mapper = new ObjectMapper();
         Utils.dependencies = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
@@ -420,9 +424,9 @@ public class chartservlet extends HttpServlet {
         return "File opened successfully";
     }
         
-    private String selectFile(HttpServletRequest request) throws IOException{
+    private String selectFile(HttpServletRequest request) throws IOException{ // is this even used?
         String fileName = request.getParameter("name");
-        File root = new File(workingDir.toString());
+        File root = new File(Utils.workingDir.toString());
         String path = null;
         File selectedFile = null;
         String selectedFileString = "";
@@ -565,7 +569,7 @@ public class chartservlet extends HttpServlet {
         Matcher matcherStandardized = patternStandardized.matcher(body);
         Boolean matchFound = matcherLocal.find();
         if (matchFound) {
-            Iterator<File> localFileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), Utils.extensions, true);
+            Iterator<File> localFileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
             while(localFileIterator.hasNext() && localMappingsFileLocation == null) {
                 File file = localFileIterator.next();
                 if (file.getName().equals(matcherLocal.group(1))) { localMappingsFileLocation = file.getPath(); }
@@ -580,7 +584,7 @@ public class chartservlet extends HttpServlet {
         }
         matchFound = matcherStandardized.find();
         if (matchFound) {
-            Iterator<File> standardizedFileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), Utils.extensions, true);
+            Iterator<File> standardizedFileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
             while(standardizedFileIterator.hasNext() && standardizedMappingsFileLocation == null) {
                 File file = standardizedFileIterator.next();
                 if (file.getName().equals(matcherStandardized.group(1))) { standardizedMappingsFileLocation = file.getPath(); }
@@ -600,28 +604,6 @@ public class chartservlet extends HttpServlet {
             maintainMaxDequeSize("undo");
             undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
             currentState.getValue1().remove(id);
-        }
-    }
-    
-    private void loadSettings() throws IOException{
-        if (settings == null){
-            if (Utils.rootPath == "") {
-                Utils.determineOS();
-            }
-            String fileLocation = Utils.programFilesPath + "\\" + Utils.settingsFileName;
-            Path path = Paths.get(fileLocation);
-            if (Files.exists(path)) {
-                settings = new String(Files.readAllBytes(path));
-            } else {
-                Iterator<File> localFileIteratorC = FileUtils.iterateFiles(new File(Utils.rootPath), Utils.extensions, true);
-                while(localFileIteratorC.hasNext() && fileLocation == null) {
-                    File file = localFileIteratorC.next();
-                    if (file.getName().equals(Utils.settingsFileName)) { fileLocation = file.getPath(); }
-                }
-                settings = new String(Files.readAllBytes(Paths.get(fileLocation)));
-            }
-            ObjectMapper mapper = new ObjectMapper();
-            Utils.prevOpened = (ArrayNode) mapper.readTree(settings).get("prevOpened");
         }
     }
     
@@ -688,14 +670,14 @@ public class chartservlet extends HttpServlet {
         String currentProject = new String(Files.readAllBytes(Paths.get(Utils.currentPath)));
         String properties = currentProject.split(",\"dependencies\"")[0];
         properties += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
-                ",\"workingDirectory\":\"" + workingDir.toString().replace("\\", "\\\\") + "\"}";
+                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"}";
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(properties);
         Boolean matchFound = matcher.find();
         String mlmname = "";
         if (matchFound) { 
             mlmname = matcher.group(1);
-            String fileLocation = workingDir + "\\" + mlmname + ".json";
+            String fileLocation = Utils.workingDir + "\\" + mlmname + ".json";
             Utils.currentPath = fileLocation;
             FileWriter file = new FileWriter(fileLocation);
             file.write(properties);

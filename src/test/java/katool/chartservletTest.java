@@ -39,9 +39,6 @@ public class chartservletTest {
     private static ChartItem mockLoop2FirstAction;
     private static HttpTester request;
     private static HttpTester response;
-    
-    public chartservletTest() {
-    }
 
     @BeforeAll
     public static void setUpClass() throws Exception {

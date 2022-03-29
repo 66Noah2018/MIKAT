@@ -51,7 +51,7 @@ a{
     width: 27vh;
 }
 
-#create-project, #edit-project, #open-project, #mappings-div{
+#create-project, #edit-project, #open-project, #mappings-div, #preferences-div{
     height: 99vh;
     margin-left: 28vh;
     margin-top: -99.5vh;
@@ -444,6 +444,11 @@ table{
     background-color: orange;
 }
 
+.save-success {
+    background-color: #60a917;
+    color: white;
+}
+
 #condition-prefix-div .select {
     width: 100px !important;
 }
@@ -536,8 +541,13 @@ table{
     padding-bottom: 0;
 }
 
-#save-db-map-changes, #save-term-map-changes {
+#save-db-map-changes, #save-term-map-changes, #save-preferences-changes {
     float: right;
+}
+
+#save-preferences-changes{
+    margin-right: 10px;
+    margin-top: -50px;
 }
 
 .validation {
@@ -549,7 +559,7 @@ table{
     margin-left: 10px;
 }
 
-#edit-properties-dir-map .input {
+#edit-properties-dir-map .input, #preferences-form .input {
     width: 40em;
     margin-left: 10px;
 }
@@ -577,7 +587,7 @@ table{
     width: 500px;
 }
 
-#edit-properties-dir-map .dir-validity-btn{
+#edit-properties-dir-map .dir-validity-btn, #preferences-form .dir-validity-btn{
     margin-left: 10px;
     width: 220px;
 }

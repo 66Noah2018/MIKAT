@@ -56,6 +56,30 @@ function checkDirValidity(){
     };
 }
 
+function checkDefaultDirValidity(){
+    event.preventDefault();
+    let targetBtn = document.getElementById("checkDirBtn");
+    targetBtn.classList.remove("success");
+    targetBtn.classList.remove("alert");
+    let directory = document.getElementById("defaultWorkingDirectory").value;
+    
+    const http = new XMLHttpRequest(); // servletrequestpost doesnt work here, loading response somehow takes too long
+    http.open("POST", "../chartservlet?function=directoryExists", true);
+    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    http.send(JSON.stringify(directory));
+    http.onload = function(){ 
+        directoryExists = JSON.parse(http.responseText).directoryExists;
+        if (directoryExists && directory !== "") { 
+            targetBtn.classList.add("success"); 
+            document.getElementById("selected-working-dir-edit").style.display = 'none';
+        } 
+        else { 
+            targetBtn.classList.add("alert"); 
+            document.getElementById("selected-working-dir-edit").style.display = 'block';
+        }
+    };
+}
+
 function displayErrorMessage(formGroupId, errorMessage){
     document.getElementById(formGroupId).innerText = errorMessage;
     invalidForm = true;
@@ -282,8 +306,7 @@ function openRecentProject(file){
  * @returns {null}
  */
 function saveProject(){
-    console.log("saving...")
-    servletRequest("../chartservlet?function=save");
+    servletRequest("http://localhost:8080/katool/chartservlet?function=save");
 }
 
 /**
@@ -469,4 +492,30 @@ function showPrevOpened(){
                     id="fileName" ondblclick='openRecentProject("${item.fileName}")'></li>`;
     });
     target.appendChild(parser.parseFromString(listCode, 'text/html').body.firstChild);
+}
+
+function showDefaultWorkingDir(){
+    let defaultWorkingDirectory = JSON.parse(servletRequest("../chartservlet?function=getDefaultWorkingDirectory")).defaultWorkingDirectory;
+    document.getElementById("workingDirectory").value = defaultWorkingDirectory;
+    document.getElementById("checkDirBtn").classList.add("success");
+}
+
+function showPreferences(){
+    let defaultWorkingDirectory = JSON.parse(servletRequest("../chartservlet?function=getDefaultWorkingDirectory")).defaultWorkingDirectory.replaceAll("\\\\", "\\");
+    if (defaultWorkingDirectory !== null){
+        document.getElementById("defaultWorkingDirectory").value = defaultWorkingDirectory;
+        document.getElementById("checkDirBtn").classList.add("success");
+    }
+}
+
+function savePreferencesChanges(){
+    const defaultWorkingDir = document.getElementById("defaultWorkingDirectory").value;
+    servletRequestPost("../chartservlet?function=setDefaultWorkingDirectory", defaultWorkingDir);
+    Metro.notify.create("Preferences saved", "Success", {animation: 'easeOutBounce', cls: "save-success"})
+}
+
+function removeClassesFromDefaultDirBtn() {
+    let btn = document.getElementById("checkDirBtn");
+    btn.classList.remove("alert");
+    btn.classList.remove("success");
 }

@@ -37,7 +37,7 @@ const chartItemTypesBasic = {
     end: "End",
     subroutine: "Add Subroutine",
     conditional: "If-Else",
-    retrievedata: "Retrieve Medical Data"
+    retrievedata: "Retrieve Medical Data",
 };
 const chartItemMedicalActions = {
     newProcedure: "New Procedure",

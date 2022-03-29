@@ -19,7 +19,7 @@ and open the template in the editor.
         <script src="../js/file.js"></script>
         <script src="../js/test.js"></script>
     </head>
-    <body>
+    <body onload="showDefaultWorkingDir()">
         <div class="sidebar-div">
             <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
         </div>
@@ -112,7 +112,6 @@ and open the template in the editor.
                     <form id="edit-properties-dir-map">
                         <div class="form-group" id="working-dir-group">
                             <label>Working directory</label>
-                            <!--<input type="file" data-role="file" data-prepend="Select working directory" data-button-title="<span class='mif-folder'></span>" name="workingDirectory" id="workingDirectory" webkitdirectory mozdirectory onchange="showSelectedDir('create')">-->
                             <input type="text" data-role="input" name="workingDirectory" id="workingDirectory" onchange="removeClassesFromDirBtn()">
                             <button class="button dir-validity-btn" id="checkDirBtn" onclick="checkDirValidity()">Check directory</button>
                         </div>

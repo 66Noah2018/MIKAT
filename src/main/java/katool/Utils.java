@@ -40,12 +40,14 @@ public class Utils {
     public final static String[] extensions = new String[]{"json"};
     public static String rootPath = "";
     public static String programFilesPath = "";
-    private static Path workingDir = null;
+    public static Path workingDir = null;
     public static String currentPath = "";
     public final static String settingsFileName = "mikat_settings.json";
     public static ArrayNode prevOpened = new ObjectMapper().createArrayNode();
     public static ArrayNode dependencies = new ObjectMapper().createArrayNode(); // [{dependency: ..., fileLocation: ..., date: ...},{}]
     private static ArrayList<Pair<String, JsonNode>> loadedDependencies = new ArrayList<>();
+    public static String defaultWorkingDirectory = null;
+    private static String settings = null;
     
     public static String findAndReadFile(String fileName, String workingDir) throws IOException {
         String pathToFile = null;
@@ -186,7 +188,7 @@ public class Utils {
     
     public static void writeSettings() throws IOException {
         String settingsString = "{";
-        settingsString += "\"prevOpened\":" + prevOpened.toPrettyString() + "}";
+        settingsString += "\"prevOpened\":" + prevOpened.toPrettyString() + ",\"defaultWorkingDirectory\":" + defaultWorkingDirectory + "}";
         FileWriter settingsFile = new FileWriter(programFilesPath + "//" + settingsFileName);
         settingsFile.write(settingsString);
         settingsFile.close();
@@ -211,6 +213,10 @@ public class Utils {
             }
         }
         return nextIndex;
+    }
+    
+    public static ChartItem getNextElement(String id, LinkedList<ChartItem> state) {
+        return state.get(nextElementIndex(id, state));
     }
     
     public static Integer findIndexOf(String id, LinkedList<ChartItem> state){
@@ -306,5 +312,38 @@ public class Utils {
 
         body = stringBuilder.toString();
         return body;
+    }
+    
+    public static void loadSettings() throws IOException{
+        if (settings == null){
+            if (rootPath == "") {
+                determineOS();
+            }
+            String fileLocation = programFilesPath + "\\" + settingsFileName;
+            Path path = Paths.get(fileLocation);
+            if (Files.exists(path)) {
+                settings = new String(Files.readAllBytes(path));
+            } else {
+                Iterator<File> localFileIteratorC = FileUtils.iterateFiles(new File(rootPath), extensions, true);
+                while(localFileIteratorC.hasNext() && fileLocation == null) {
+                    File file = localFileIteratorC.next();
+                    if (file.getName().equals(settingsFileName)) { fileLocation = file.getPath(); }
+                }
+                settings = new String(Files.readAllBytes(Paths.get(fileLocation)));
+            }
+            if (fileLocation == null) { writeSettings(); }
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode settingsNode = mapper.readTree(settings);
+            prevOpened = (ArrayNode) settingsNode.get("prevOpened");
+            defaultWorkingDirectory = settingsNode.get("defaultWorkingDirectory").asText();
+        }
+    }
+    
+    public static LinkedList<ChartItem> conditionalItems(String id, LinkedList<ChartItem> state){
+        LinkedList<ChartItem> nextItems = new LinkedList<>();
+        for (ChartItem element : state) {
+            if (id.equals(element.getPrevItemId())) { nextItems.add(element); }
+        }
+        return nextItems;
     }
 }

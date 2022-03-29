@@ -127,7 +127,9 @@ function createTestCases(){}
 
 function importTestCases(){}
 
-function startTests(){}
+function startTests(){
+    servletRequest("./chartservlet?function=translateJS");
+}
 
 function stopTests(){}
 
