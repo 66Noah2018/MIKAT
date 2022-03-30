@@ -346,7 +346,7 @@ public class chartservlet extends HttpServlet {
         String id = request.getParameter("id");
         ChartItem element = null;
         for (ChartItem chartItem : currentState.getValue0()){
-            if (chartItem.getId().equals(id)) { 
+            if ((chartItem.getId()).equals(id)) { 
                 element = chartItem;
                 break;
             }
@@ -354,7 +354,7 @@ public class chartservlet extends HttpServlet {
         return element;
     }
     
-    private String openProject(HttpServletRequest request) throws IOException{ //open project
+    private String openProject(HttpServletRequest request) throws IOException{
         Boolean determinationSuccess = Utils.determineOS();
         if (!determinationSuccess) { return "Unsupported OS"; }
         Utils.loadSettings();
@@ -367,7 +367,7 @@ public class chartservlet extends HttpServlet {
             project = new String(Files.readAllBytes(Paths.get(fileName)));
             if (!Utils.checkFileValidity(project)) { return "Invalid file, not MIKAT"; }
             Utils.currentPath = fileName;
-            fileName = fileName.split("/")[fileName.split("/").length-1];
+            fileName = Paths.get(fileName).getFileName().toString();
             
         } else { //find file and read
             String pathToFile = null;
@@ -409,11 +409,14 @@ public class chartservlet extends HttpServlet {
         
         if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch) { return "File is not MIKAT file"; }
         Utils.workingDir = Paths.get(workingDirMatcher.group(1));
-        currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).split(","))));
+        if ((endLinesMatcher.group(1)).equals("[]")) {
+            currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>());
+        } else {
+            currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).split(","))));
+        }
         ObjectMapper mapper = new ObjectMapper();
         Utils.dependencies = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
 
-        fileName = fileName.split("/")[fileName.split("/").length-1];
         for (int i = 0; i < Utils.prevOpened.size(); i++){
             JsonNode node = Utils.prevOpened.get(i);
             if ((node.get("fileName").asText()).equals(fileName)) { Utils.prevOpened.remove(i); }

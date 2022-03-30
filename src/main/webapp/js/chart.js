@@ -156,7 +156,7 @@ function updateState(newItemArray, isConditional = false){
         });
     } 
     else {
-        servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&isMultipart=true&firstMultipart=true`);
+        servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&condition=${newItemArray[0].condition}&isMultipart=true&firstMultipart=true`);
         servletRequest(`./chartservlet?function=update&id=${newItemArray[1].id}&type=${newItemArray[1].type}&prevItemId=${newItemArray[1].prevItemId}&caption=${newItemArray[1].caption}&condition=${newItemArray[1].condition}&isMultipart=true`);
         result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&isMultipart=true&finalMultipart=true`));
     }
@@ -249,6 +249,9 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
 
 function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, stepIdPos, stepIdNeg, prevId){
     const iconCode = flowchartImageCodes[stepType];
+    let firstElement = null;
+    try { firstElement = JSON.parse(servletRequest("./chartservlet?function=getElement&id=" + stepId)).chartItem; }
+    catch (e) {}
     
     if (prevId !== -1 && prevId === endIconId) { 
         Metro.notify.create("Cannot add element after end", "Warning: cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
@@ -279,7 +282,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
     target.appendChild(newStep);
     setSelectedItem(stepId);
     
-    let line = new LeaderLine(prevIcon.children[0], document.getElementById(stepId).children[0], getLineStyle(stepType));
+    let line = new LeaderLine(prevIcon.children[0], document.getElementById(stepId).children[0], getLineStyle(stepType, firstElement?firstElement.condition:null));
     lines.push(line);
     
     // option 1: no end nodes
@@ -325,7 +328,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
         }
     }
     
-    return [{id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption, condition: null},
+    return [{id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption, condition: firstElement?firstElement.condition:null},
         {id:stepIdPos, type:stepTypePos, prevItemId: stepId, caption: iconCaptionPos, condition: posValue},
         {id:stepIdNeg, type:stepTypeNeg, prevItemId: stepId, caption: iconCaptionNeg, condition: null}];
 }
@@ -340,7 +343,6 @@ function drawChart(state, endlines){
     selectedItemId = -1;
     prevId = -1;
     document.getElementsByClassName("chartarea")[0].innerHTML = '';
-    console.log(state, endlines)
     
     let undoResult = JSON.parse(servletRequest("./chartservlet?function=undoSize")).size;
     let redoResult = JSON.parse(servletRequest("./chartservlet?function=redoSize")).size;
@@ -460,12 +462,16 @@ function deleteItem(id){
         let result = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${id}`));
         if (item.type === elements.retrievedata) {
             retrievedData.singulars = retrievedData.singulars.filter(el => el !== item.caption);
-            retrievedData.plurals = retrievedData.plurals.filter(el => el !== item.caption)
+            retrievedData.plurals = retrievedData.plurals.filter(el => el !== item.caption);
         }
         drawChart(result.state, result.endLines);
         return;
     } // option 3: the item is the first child of an if or an else branch
     else if (item.type !== elements.conditional) {
+        if (item.type === elements.retrievedata) {
+            retrievedData.singulars = retrievedData.singulars.filter(el => el !== item.caption);
+            retrievedData.plurals = retrievedData.plurals.filter(el => el !== item.caption);
+        }
         let newItem = {id: item.id, type: "questionMark", prevItemId: item.prevItemId, caption: clickToDefine, condition: item.condition}; 
         updateState([newItem], false);
         return;
@@ -574,7 +580,7 @@ function redefineQuestionmark(chartItem){
 function conditionalPosForm(value){
     let target = document.getElementById("conditional-form-group-pos");
     conditionalPosValue = value;
-    const val = conditionalNextElements?conditionalNextElements[0].caption:null;
+    const val = conditionalNextElements[0]?conditionalNextElements[0].caption:null;
     target.innerHTML = "";
     const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="statement1-caption" id="statement1-caption" ${val?"value=\""+val+"\"":""} required></div>`;
     const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
@@ -585,13 +591,13 @@ function conditionalPosForm(value){
             break;
         case elements.subroutine:
             target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
-            if (conditionalNextElements !== null) document.getElementById("subroutine-conditional-pos-input").value = conditionalNextElements[0].caption;
+            document.getElementById("subroutine-conditional-pos-input").value = conditionalNextElements[0]?conditionalNextElemens[0].caption:"";
             break;
         case elements.retrievedata:
             const code = getRetrieveDataSelectBox("statement1-caption", val);
             const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
             target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
-            if (conditionalNextElements !== null) $("#conditional-form-group-pos #data-retrieve-select").value = conditionalNextElements[0].caption;
+            $("#conditional-form-group-pos #data-retrieve-select").value = conditionalNextElements[0]?conditionalNextElements[0].caption:"";
             break;
         case elements.conditional:
             // place branch icon + double click to specify?
@@ -609,7 +615,7 @@ function conditionalPosForm(value){
             // fallthrough
         case elements.addNotes:
             target.appendChild(caption);
-            if (conditionalNextElements !== null) document.getElementById("statement1-caption").innerHTML = conditionalNextElements[0].caption;
+            document.getElementById("statement1-caption").innerHTML = conditionalNextElements[0]?conditionalNextElements[0].caption:"";
             break;
         default: 
             break;
@@ -618,7 +624,7 @@ function conditionalPosForm(value){
 
 function conditionalNegForm(value){
     conditionalNegValue = value;
-    const val = conditionalNextElements?conditionalNextElements[1].caption:null;
+    const val = conditionalNextElements[1]?conditionalNextElements[1].caption:null;
     let target = document.getElementById("conditional-form-group-neg");
     target.innerHTML = "";
     const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="statement2-caption" id="statement2-caption" ${val?"value=\""+val+"\"":""} required></div>`;
@@ -630,13 +636,13 @@ function conditionalNegForm(value){
             break;
         case elements.subroutine:
             target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
-            if (conditionalNextElements !== null) document.getElementById("subroutine-conditional-neg-input").value = conditionalNextElements[1].caption;
+            document.getElementById("subroutine-conditional-neg-input").value = conditionalNextElements[1]?conditionalNextElements[1].caption:"";
             break;
         case elements.retrievedata:
             const code = getRetrieveDataSelectBox("statement2-caption", val);
             const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
             target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
-            if (conditionalNextElements !== null) target.getElementById("data-retrieve-select").value = conditionalNextElements[1].caption;
+            target.getElementById("data-retrieve-select").value = conditionalNextElements[1]?conditionalNextElements[1].caption:"";
             break;
         case elements.conditional:
             target.appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
@@ -653,7 +659,7 @@ function conditionalNegForm(value){
             // fallthrough
         case elements.addNotes:
             target.appendChild(caption);
-            if (conditionalNextElements !== null) document.getElementById("statement2-caption").innerHTML = conditionalNextElements[1].caption;
+            document.getElementById("statement2-caption").innerHTML = conditionalNextElements[1]?conditionalNextElements[1].caption:"";
             break;
         default:
             break;
@@ -709,13 +715,15 @@ function initConditionalPopup(conditionalElement=null){
     if (conditionalElement!==null && conditionalElement.caption !== clickToDefine) { 
         variable = conditionalElement.caption;
         conditionalNextElements = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${conditionalElement.id}`)).items;
-        let matches = conditionalNextElements[0].condition.match(/(=|<=|>=|<|>|&#8800|is-in|is-not-in)\s(.+)/);
-        conditionPrefix = matches[1];
-        conditionText = matches[2];
-        actionPos = conditionalNextElements[0].type;
-        actionNeg = conditionalNextElements[1].type;
-        actionPosVal = conditionalNextElements[0].caption;
-        actionNegVal = conditionalNextElements[1].caption;
+        try {
+            let matches = (conditionalNextElements[0].condition).match(/(=|<=|>=|<|>|&#8800|is-in|is-not-in)\s(.+)/);
+            conditionPrefix = matches[1];
+            conditionText = matches[2];
+            actionPos = conditionalNextElements[0].type;
+            actionNeg = conditionalNextElements[1].type;
+            actionPosVal = conditionalNextElements[0].caption;
+            actionNegVal = conditionalNextElements[1].caption; 
+        } catch (e) {}
     }
     let target = document.getElementById("conditional-form");
     let selectVarCode = '<select data-role="select" name="data-conditional-var" id="data-retrieve-select" data-add-empty-value="true" required><optgroup label="Singular values">';
@@ -819,6 +827,7 @@ function openFormPopup(popupClass, subclass=null, values=null){
         case "chart-forloop-popup":
             document.getElementsByClassName("for-loop-value-set-div")[0].innerHTML = "";
             document.getElementsByClassName("for-loop-first-action-div")[0].innerHTML = "";
+            document.getElementsByClassName("for-loop-first-action-details-div")[0].innerHTML = "";
             let actionType = null;
             if (values) {
                 let nextItem = JSON.parse(servletRequest(`./chartservlet?function=getNext&id=${values.id}`)).nextItem;
@@ -946,8 +955,8 @@ function processFormConditional(){
     let newSteps = null;
     
     const firstId = elementToDefine?elementToDefine.id:getRandomId();
-    const posId = conditionalNextElements?conditionalNextElements[0].id:getRandomId();
-    const negId = conditionalNextElements?conditionalNextElements[1].id:getRandomId();
+    const posId = conditionalNextElements[0]?conditionalNextElements[0].id:getRandomId();
+    const negId = conditionalNextElements[1]?conditionalNextElements[1].id:getRandomId();
     const prevId = elementToDefine?elementToDefine.prevItemId:selectedItemId;
     
     if (conditionalPosValue === elements.conditional && conditionalNegValue === elements.conditional){
@@ -1040,7 +1049,7 @@ function processFormForloop(){
         firstAction = {id: getRandomId(), type: action, prevItemId: loopElement.id, caption: "", condition: null};
     }
     
-    if (firstAction === elements.subroutine) { 
+    if (firstAction.type === elements.subroutine) { 
         const subroutineCaption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${fileToEmbed.name}`)).mlmname;
         firstAction.caption = subroutineCaption;
         updateState([
@@ -1048,15 +1057,16 @@ function processFormForloop(){
             addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
         ]);
     }
-    else if (firstAction === elements.conditional) {
+    else if (firstAction.type === elements.conditional) {
+        firstAction.caption = valueSet;
         updateState([addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition)]);
         const conditionalItems = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${firstAction.id}`)).items;
         updateState(addConditionalStep(firstAction.id, elements.conditional, firstAction.caption, null, 
-            conditionalItems?conditionalItems[0].type:"questionMark", conditionalItems?conditionalItems[0].caption:clickToDefine, 
-            conditionalItems?conditionalItems[1].type:"questionMark", conditionalItems?conditionalItems[0].caption:clickToDefine, 
-            conditionalItems?conditionalItems[0].id:getRandomId(), conditionalItems?conditionalItems[1].id:getRandomId(), loopElement.id));
+            conditionalItems[0]?conditionalItems[0].type:"questionMark", conditionalItems[0]?conditionalItems[0].caption:clickToDefine, 
+            conditionalItems[0]?conditionalItems[1].type:"questionMark", conditionalItems[0]?conditionalItems[0].caption:clickToDefine, 
+            conditionalItems[0]?conditionalItems[0].id:getRandomId(), conditionalItems[0]?conditionalItems[1].id:getRandomId(), loopElement.id));
     } 
-    else if (firstAction === elements.retrievedata) {
+    else if (firstAction.type === elements.retrievedata) {
         firstAction.caption = document.getElementById("first-action-caption").value;
         updateState([
             addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),

@@ -49,7 +49,6 @@ public class ChartTranslator {
         String code = "";
         ArrayList<String> conditionalIds = new ArrayList<>();
         ArrayList<String> lastElseIds = new ArrayList<>();
-        System.out.println(JSONEncoder.encodeChart(state));
         for (ChartItem item : state) {
             if (conditionalIds.contains(item.getPrevItemId()) && (item.getCondition() == null)) { 
                 code += "} else {\r"; 

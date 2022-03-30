@@ -616,3 +616,7 @@ table{
     padding-top: 10px;
     padding-bottom: 10px;
 }
+
+.for-loop-first-action-details-div .file {
+    min-width: 200px;
+}

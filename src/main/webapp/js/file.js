@@ -366,7 +366,7 @@ function loadMappings(){
     }catch(e) {}
     try{
         Object.keys(standardMappings.plurals).forEach((key) => { pluralsTableTermCode += `<tr><td>${key}</td><td>${standardMappings.plurals[key]}</td></tr>`; });
-    } catch(e) { console.log(e); }
+    } catch(e) {}
     
     singularsTableDbCode += `<tr><td></td><td></td></tr>`;
     pluralsTableDbCode += `<tr><td></td><td></td></tr>`;
@@ -411,13 +411,14 @@ function saveDbMapChanges(){
     const mapping = {"singulars": singulars, "plurals": plurals};
     
     servletRequestPost("../chartservlet?function=updateLocalMapping", mapping);
+    Metro.notify.create("Database mapping saved", "Success", {animation: 'easeOutBounce', cls: "save-success"});
 }
 
 function saveTermMapChanges(){
     let singulars = {};
     let plurals = {};
     const rowsSingular = document.getElementById("standardized-mapping-singular").rows;
-    const rowsPlural = document.getElementByid("standardized-mapping-plural").rows;
+    const rowsPlural = document.getElementById("standardized-mapping-plural").rows;
     for (let row of rowsSingular) {
         singulars[row.cells[0].innerHTML] = row.cells[1].innerHTML;
     }
@@ -430,6 +431,7 @@ function saveTermMapChanges(){
     
     const mapping = {"singulars": singulars, "plurals": plurals};
     servletRequestPost("../chartservlet?function=updateStandardizedMapping", mapping);
+    Metro.notify.create("Standardized terminology mapping saved", "Success", {animation: 'easeOutBounce', cls: "save-success"})
 }
 
 function addNewDBMapSingular() {
