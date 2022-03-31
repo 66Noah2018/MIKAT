@@ -109,7 +109,7 @@ a{
     background-color: var(--bg-color-dialog);
 }
 
-#generate-testcases-load, #processing-mappings-load, #open-project-load {
+#generate-testcases-load, #processing-mappings-load, #open-project-load, #load-testcases {
     display: none;
 }
 
@@ -619,4 +619,8 @@ table{
 
 .for-loop-first-action-details-div .file {
     min-width: 200px;
+}
+
+#update-test-cases-btn{
+    float: right;
 }

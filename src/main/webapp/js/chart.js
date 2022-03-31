@@ -37,7 +37,7 @@ const chartItemTypesBasic = {
     end: "End",
     subroutine: "Add Subroutine",
     conditional: "If-Else",
-    retrievedata: "Retrieve Medical Data",
+    retrievedata: "Retrieve Medical Data"
 };
 const chartItemMedicalActions = {
     newProcedure: "New Procedure",
@@ -81,6 +81,7 @@ window.addEventListener('load', function () {
             addStart();
         } else {
             drawChart(result.state, result.endLines);
+            showErrorsWarning(result.state);
         }
         document.getElementById("section-model").classList.remove("disabled");
         document.getElementById("section-test").classList.remove("disabled");
@@ -389,7 +390,6 @@ function drawChart(state, endlines){
         }
     }
     if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type)); }
-    
     if (endlines.length > 0) {
         if (endIconId === -1){
             addNewStep(getRandomId(), elements.end, "End", endlines[0], getLineStyle(elements.end));
@@ -409,7 +409,6 @@ function drawChart(state, endlines){
             line.position();
         });
     }
-    
     showErrorsWarning(state);
 }
 
@@ -580,7 +579,7 @@ function redefineQuestionmark(chartItem){
 function conditionalPosForm(value){
     let target = document.getElementById("conditional-form-group-pos");
     conditionalPosValue = value;
-    const val = conditionalNextElements[0]?conditionalNextElements[0].caption:null;
+    const val = conditionalNextElements?conditionalNextElements[0].caption:null;
     target.innerHTML = "";
     const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="statement1-caption" id="statement1-caption" ${val?"value=\""+val+"\"":""} required></div>`;
     const caption = parser.parseFromString(captionCode, 'text/html').body.firstChild;
@@ -591,13 +590,13 @@ function conditionalPosForm(value){
             break;
         case elements.subroutine:
             target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
-            document.getElementById("subroutine-conditional-pos-input").value = conditionalNextElements[0]?conditionalNextElemens[0].caption:"";
+            document.getElementById("subroutine-conditional-pos-input").value = conditionalNextElements?conditionalNextElemens[0].caption:"";
             break;
         case elements.retrievedata:
             const code = getRetrieveDataSelectBox("statement1-caption", val);
             const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
             target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
-            $("#conditional-form-group-pos #data-retrieve-select").value = conditionalNextElements[0]?conditionalNextElements[0].caption:"";
+            $("#conditional-form-group-pos #data-retrieve-select").value = conditionalNextElements?conditionalNextElements[0].caption:"";
             break;
         case elements.conditional:
             // place branch icon + double click to specify?
@@ -615,7 +614,7 @@ function conditionalPosForm(value){
             // fallthrough
         case elements.addNotes:
             target.appendChild(caption);
-            document.getElementById("statement1-caption").innerHTML = conditionalNextElements[0]?conditionalNextElements[0].caption:"";
+            document.getElementById("statement1-caption").innerHTML = conditionalNextElements?conditionalNextElements[0].caption:"";
             break;
         default: 
             break;
@@ -624,7 +623,7 @@ function conditionalPosForm(value){
 
 function conditionalNegForm(value){
     conditionalNegValue = value;
-    const val = conditionalNextElements[1]?conditionalNextElements[1].caption:null;
+    const val = conditionalNextElements?conditionalNextElements[1].caption:null;
     let target = document.getElementById("conditional-form-group-neg");
     target.innerHTML = "";
     const captionCode = `<div style="display: -webkit-inline-box"><input type="text" name="statement2-caption" id="statement2-caption" ${val?"value=\""+val+"\"":""} required></div>`;
@@ -636,13 +635,13 @@ function conditionalNegForm(value){
             break;
         case elements.subroutine:
             target.appendChild(parser.parseFromString(selectSubroutineCode, 'text/html').body.firstChild);
-            document.getElementById("subroutine-conditional-neg-input").value = conditionalNextElements[1]?conditionalNextElements[1].caption:"";
+            document.getElementById("subroutine-conditional-neg-input").value = conditionalNextElements?conditionalNextElements[1].caption:"";
             break;
         case elements.retrievedata:
             const code = getRetrieveDataSelectBox("statement2-caption", val);
             const newChild = `<div style="display: -webkit-inline-box">${code}</div>`;
             target.appendChild(parser.parseFromString(newChild, 'text/html').body.firstChild);
-            target.getElementById("data-retrieve-select").value = conditionalNextElements[1]?conditionalNextElements[1].caption:"";
+            target.getElementById("data-retrieve-select").value = conditionalNextElements?conditionalNextElements[1].caption:"";
             break;
         case elements.conditional:
             target.appendChild(parser.parseFromString(ifElseCode, 'text/html').body.firstChild);
@@ -659,7 +658,7 @@ function conditionalNegForm(value){
             // fallthrough
         case elements.addNotes:
             target.appendChild(caption);
-            document.getElementById("statement2-caption").innerHTML = conditionalNextElements[1]?conditionalNextElements[1].caption:"";
+            document.getElementById("statement2-caption").innerHTML = conditionalNextElements?conditionalNextElements[1].caption:"";
             break;
         default:
             break;
@@ -955,8 +954,8 @@ function processFormConditional(){
     let newSteps = null;
     
     const firstId = elementToDefine?elementToDefine.id:getRandomId();
-    const posId = conditionalNextElements[0]?conditionalNextElements[0].id:getRandomId();
-    const negId = conditionalNextElements[1]?conditionalNextElements[1].id:getRandomId();
+    const posId = conditionalNextElements?conditionalNextElements[0].id:getRandomId();
+    const negId = conditionalNextElements?conditionalNextElements[1].id:getRandomId();
     const prevId = elementToDefine?elementToDefine.prevItemId:selectedItemId;
     
     if (conditionalPosValue === elements.conditional && conditionalNegValue === elements.conditional){
@@ -1145,23 +1144,29 @@ function showErrorsWarning(state){
         switch(item.type){
             case "conditional":
                 // retrievedData
-                if (!retrievedData.singulars.includes(item.caption) && !retrievedData.plurals.includes(item.caption)) { errors.push(`Conditional uses data ${item.caption}, but ${item.caption} is not retrieved`); }
+                if (!retrievedData.singulars.includes(item.caption) && !retrievedData.plurals.includes(item.caption) && item.caption !== clickToDefine) { errors.push(`Conditional uses data ${item.caption}, but ${item.caption} is not retrieved`); }
                 else {
-                    let dataFound = false;
-                    let i = 0;
-                    while (i < state.length && state[i].id !== item.id && !dataFound) {
-                        if (state[i].caption === item.caption) { dataFound = true; }
-                        i++;
+                    if (item.caption !== clickToDefine) {
+                        let dataFound = false;
+                        let i = 0;
+                        while (i < state.length && state[i].id !== item.id && !dataFound) {
+                            if (state[i].caption === item.caption) { dataFound = true; }
+                            i++;
+                        }
+                        if (!dataFound) { errors.push(`Conditional uses data ${item.caption}, but at that point ${item.caption} has not yet been retrieved`); }
                     }
-                    if (!dataFound) { errors.push(`Conditional uses data ${item.caption}, but at that point ${item.caption} has not yet been retrieved`); }
                 }
                 
                 // branches
-                let branches = state.filter((el) => el.prevItemId === item.id);
-                if (branches[0].type === "questionMark" && branches[1].type === "questionMark") { errors.push(`Conditional with caption ${item.caption} has no actions on either the if or else branch`); }
-                else if (branches[0].type === "questionMark") { warnings.push(`Conditional with caption ${item.caption} has no actions on the if branch`); }
-                else if (branches[1].type === "questionMark") { warnings.push(`Conditional with caption ${item.caption} has no actions on the else branch`); }
-                break;
+                if (item.caption !== clickToDefine) {
+                     let branches = state.filter((el) => el.prevItemId === item.id);
+                    if (branches[0].type === "questionMark" && branches[1].type === "questionMark") { errors.push(`Conditional with caption ${item.caption} has no actions on either the if or else branch`); }
+                    else if (branches[0].type === "questionMark") { warnings.push(`Conditional with caption ${item.caption} has no actions on the if branch`); }
+                    else if (branches[1].type === "questionMark") { warnings.push(`Conditional with caption ${item.caption} has no actions on the else branch`); }
+                } else {
+                    errors.push(`Undefined conditional`);
+                }
+               break;
             case "loop":
                 if (!item.caption.startsWith("End for")) {
                     // retrievedData

@@ -15,9 +15,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -46,6 +48,7 @@ public class chartservlet extends HttpServlet {
     private String standardizedMappingsFileLocation = null;
     private String localMapping = "{}";
     private String standardizedMapping = "{}";
+    private String testCasesFileLocation = null;
     
     
     /**
@@ -120,6 +123,7 @@ public class chartservlet extends HttpServlet {
                 break;
             case "getConditionalActions":
                 LinkedList<ChartItem> nextItems = getConditionalItems(request);
+                if (nextItems.isEmpty()) { nextItems = null; }
                 response.getWriter().write("{\"items\":" + JSONEncoder.encodeChart(nextItems) + "}");
                 break;
             case "getNext":
@@ -176,6 +180,26 @@ public class chartservlet extends HttpServlet {
                 Utils.defaultWorkingDirectory = Utils.getBody(request).replace("\"", "");
                 Utils.writeSettings();
                 break;
+            case "saveTestCases":
+                saveTestCases(request);
+                break;
+            case "getTestCases":
+                String testCases = getTestCases();
+                response.getWriter().write("{\"testCases\":" + testCases + "}");
+                break;
+            case "getTestCasesFromFile":
+                String testCasesFromFile = getTestCasesFromFile(request);
+                response.getWriter().write("{\"testCases\":" + testCasesFromFile + "}");
+                break;
+            case "hasTestCases":
+                Boolean hasTestCases = false;
+                if (testCasesFileLocation != null) { hasTestCases = true; }
+                response.getWriter().write("{\"hasTestCases\":" + hasTestCases + "}");
+                break;
+            case "getTestTableHeadings":
+                String headings = getTestTableHeadings();
+                response.getWriter().write(headings);
+                break;
             default:
                 break;
         }
@@ -221,7 +245,73 @@ public class chartservlet extends HttpServlet {
     }// </editor-fold>
     
     // Servlet functions
-
+    
+    private String getTestTableHeadings(){
+        ArrayList<String> retrievedataElements = new ArrayList<>();
+        ArrayList<String> medicalActions = new ArrayList<>();
+        for (ChartItem item : currentState.getValue0()){
+            switch (item.getType()){
+                case "retrievedata":
+                    retrievedataElements.add("\"" + item.getCaption() + "\"");
+                    break;
+                case "newProcedure":
+                    medicalActions.add("\"New procedure: " + item.getCaption() + "\"");
+                    break;
+                case "orderLabs":
+                    medicalActions.add("\"Order labs: " + item.getCaption() + "\"");
+                    break;
+                case "newPrescription":
+                    medicalActions.add("\"New prescription: " + item.getCaption() + "\"");
+                    break;
+                case "addDiagnosis":
+                    medicalActions.add("\"Add diagnosis: " + item.getCaption() + "\"");
+                    break;
+                case "newVaccination":
+                    medicalActions.add("\"New vaccination: " + item.getCaption() + "\"");
+                    break;
+                case "addNotes":
+                    medicalActions.add("\"Add notes: " + item.getCaption() + "\"");
+                    break;
+                default:
+                    break;
+            }
+        }
+        return "{\"retrievedata\":" + retrievedataElements.toString() + ",\"medicalActions\":" + medicalActions.toString() + "}";
+    }
+    
+    private String getTestCasesFromFile(HttpServletRequest request) throws IOException{
+        String fileName = request.getParameter("fileName");
+        String pathToFile = null;
+        fileName = fileName.substring(1, fileName.length()-1);
+        if (Utils.workingDir != null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        if (pathToFile == null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.rootPath), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        return new String(Files.readAllBytes(Paths.get(pathToFile)));
+    }
+    
+    private String getTestCases() throws IOException{
+        return new String(Files.readAllBytes(Paths.get(testCasesFileLocation)));
+    }
+    
+    private void saveTestCases(HttpServletRequest request) throws IOException {
+        String requestBody = Utils.getBody(request);
+        if (testCasesFileLocation == null){ testCasesFileLocation = Utils.workingDir.toString() + "\\" + "testcases_" + new SimpleDateFormat("dd-MM-yyyy").format(new Date()) + ".json"; }
+        FileWriter file = new FileWriter(testCasesFileLocation);
+        file.write(requestBody);
+        file.close();
+    }
+    
     private Boolean directoryExists(HttpServletRequest request) throws IOException {
         String folder = Utils.getBody(request).replace("\\\\", "\\").replace("\"", "");
         Path path = Paths.get(folder);
@@ -242,7 +332,7 @@ public class chartservlet extends HttpServlet {
         String body = Utils.getBody(request).replace("\\\"", "\"");
         body = body.substring(0, body.length()-2);
         body += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
-                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"}";
+                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocation.replace("\\", "\\\\") + "\"}";
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(body);
         Boolean matchFound = matcher.find();
@@ -393,21 +483,24 @@ public class chartservlet extends HttpServlet {
         }
         
         
-        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\"");
+        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\",\"t");
         Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
         Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
         Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+),\"s");
+        Pattern testCasesPattern = Pattern.compile("\"testCasesFileLocation\":\"(.+)\"}");
         Matcher workingDirMatcher = workingDirPattern.matcher(project);
         Matcher stateMatcher = statePattern.matcher(project);
         Matcher endLinesMatcher = endLinesPattern.matcher(project);
         Matcher dependenciesMatcher = dependenciesPattern.matcher(project);
+        Matcher testCasesMatcher = testCasesPattern.matcher(project);
         
         Boolean workingDirMatch = workingDirMatcher.find();
         Boolean stateMatch = stateMatcher.find();
         Boolean endLinesMatch = endLinesMatcher.find();
         Boolean dependenciesMatch = dependenciesMatcher.find();
+        Boolean testCasesMatch = testCasesMatcher.find();
         
-        if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch) { return "File is not MIKAT file"; }
+        if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch || !testCasesMatch) { return "File is not MIKAT file"; }
         Utils.workingDir = Paths.get(workingDirMatcher.group(1));
         if ((endLinesMatcher.group(1)).equals("[]")) {
             currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>());
@@ -416,6 +509,7 @@ public class chartservlet extends HttpServlet {
         }
         ObjectMapper mapper = new ObjectMapper();
         Utils.dependencies = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
+        testCasesFileLocation = testCasesMatcher.group(1);
 
         for (int i = 0; i < Utils.prevOpened.size(); i++){
             JsonNode node = Utils.prevOpened.get(i);
@@ -673,7 +767,7 @@ public class chartservlet extends HttpServlet {
         String currentProject = new String(Files.readAllBytes(Paths.get(Utils.currentPath)));
         String properties = currentProject.split(",\"dependencies\"")[0];
         properties += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
-                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"}";
+                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocation.replace("\\", "\\\\") + "\"}";
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(properties);
         Boolean matchFound = matcher.find();

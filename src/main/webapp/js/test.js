@@ -4,9 +4,10 @@
  * and open the template in the editor.
  */
 
-let testPatients = {};
+let testPatients = null;
 let nrVarsTable = 0;
 let outcomesTable = 0;
+let headings = null;
 
 function cartesian(args) {
     var r = [], max = args.length-1;
@@ -87,6 +88,70 @@ function showTestCases(){
     return;
 }
 
+function getTestCasesTableCode(variables, medicalActions, testPatients = null){
+    let table = document.getElementById("testcases");
+    if (table === null && headings !== null) {
+        var spinner = document.getElementById("load-testcases");
+        spinner.style.display = "block";
+        let target = document.getElementById("_target_testcases");
+        
+        let code = "<table class='table cell-hover table-border row-border cell-border compact' id='testcases'>";
+        code += "<colgroup><col span='1' style='width: 5%'></colgroup><thead><tr>";
+        variables.unshift("#");
+        variables.forEach(element => {
+            code += "<th>" + element + "</th>";
+        });
+        medicalActions.forEach(element => {
+            code += "<th>" + element + "</th>";
+        });
+        code += "</tr></thead><tbody contenteditable>";
+        if (testPatients !== null){
+            testPatients.forEach(testcase => {
+                code += "<tr>";
+                variables.forEach(key => { code += `<td>${testcase[key]}</td>`;
+                });
+                medicalActions.forEach(key => {
+                    let value = testcase[key];
+                    if (value === true){ code += `<td><input type="checkbox" name="${key}" checked></td>`; }
+                    else { code += `<td><input type="checkbox" name="${key}"></td>`; }
+                });
+                code += "</tr>";
+            });
+        } else {
+            code += "<tr>";
+            for (let i = 0; i < variables.length; i++) { code += "<td></td>"; }
+            for (let j = 0; j < medicalActions.length; j++) { code += "<td><input type='checkbox'></td>"; }
+            code += "</tr>";
+        }
+        code += "</tbody></table>";
+        
+        target.appendChild(parser.parseFromString(code, 'text/html').body.firstChild);
+        spinner.style.display = "none";
+        showTestCases();
+        document.getElementById("open-test-cases").classList.remove("disabled");
+        document.getElementById("create-test-cases").classList.add("disabled");
+        document.getElementById("load-testcases-from-file").classList.add("disabled");
+    }
+}
+
+function loadTestCases(){
+    let result = null;
+    if (testPatients === null) { 
+        try {
+            result = JSON.parse(servletRequest("./chartservlet?function=getTestCases")).testCases;
+            testPatients = result.testCases;
+            headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
+        } catch (e) {}
+    }
+    getTestCasesTableCode(headings.retrievedata, headings.medicalActions, testPatients);
+}
+
+function refreshTable(){
+    document.getElementById("testcases").remove();
+    const headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
+    getTestCasesTableCode(headings.retrievedata, headings.medicalActions, testPatients);
+}
+
 function showTestResults(){
     highlight('open-test-results', 'open-test-cases');
     const currentState = document.getElementsByClassName("tests")[0].style.display;
@@ -105,25 +170,51 @@ function showTestResults(){
 }
 
 function generateTestcases(){ //get variables and default values
-    table = document.getElementById("testcases");
+    let table = document.getElementById("testcases");
     if (table === null){
         var spinner = $("#generate-testcases-load")[0];
         spinner.style.display = "block";
         let target = document.getElementById("_target_testcases");
-        const tableCode = generateTestcasesTableCode(["CRP", "ANA"], [[5, 500], ["Pos", "Neg"]],["Log ANA positive"]);
+        const tableCode = generateTestcasesTableCode(["CRP", "ANA"], [[5, 500], ["Pos", "Neg"]],["Log ANA positive"]); //get from chart
         target.appendChild(parser.parseFromString(tableCode, 'text/html').body.firstChild);
         spinner.style.display = "none";
         showTestCases();
-        document.getElementById("_target_testcases").addEventListener("input", function(event) {
-            console.log(event.target.value);
-        }, false);
     }
     document.getElementById("generate-test-cases-btn").classList.add("disabled");
     document.getElementById("open-test-cases").classList.remove("disabled");
     document.getElementById("create-test-cases").classList.add("disabled");
+    updateTestCases();
 }
 
-function createTestCases(){}
+function updateTestCases(){
+    testPatients = [];
+    const tableRows = document.getElementById("testcases").rows;
+    headings = [];
+    const headerCells = tableRows[0].cells;
+    for (let i = 0; i < headerCells.length; i++){
+        headings.push(headerCells[i].textContent);
+    }
+    for (let i = 1; i < tableRows.length; i++){
+        let testCase = new Object();
+        let row = tableRows[i].cells;
+        for (let j = 0; j < row.length; j++){
+            if (row[j].innerHTML.toString().includes("input")) { testCase[headings[j]] = row[j].firstChild.checked.toString(); }
+            else { testCase[headings[j]] = row[j].textContent; }
+        }
+        testPatients.push(testCase);
+    }
+    console.log(testPatients);
+    servletRequestPost("./chartservlet?function=saveTestCases", {"headings": headings, "testCases": testPatients});
+}
+
+Element.prototype.remove = function() {
+    this.parentElement.removeChild(this);
+};
+
+function createTestCases(){
+    headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
+    getTestCasesTableCode(headings.retrievedata, headings.medicalActions, null);
+}
 
 function importTestCases(){}
 
