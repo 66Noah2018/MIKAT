@@ -161,6 +161,10 @@ a{
     color: red;
 }
 
+.mif-done {
+    color: #60a917;
+}
+
 .issue-info-btn{
     background-color: transparent !important;
 }
@@ -623,4 +627,20 @@ table{
 
 #update-test-cases-btn{
     float: right;
+}
+
+#test-results-listview {
+    width: 1000px;
+}
+
+#expected {
+    margin-left: 141px;
+}
+
+#actual {
+    margin-left: 208px;
+}
+
+#expected, #actual, #testcase-nr {
+    font-size: x-large;
 }

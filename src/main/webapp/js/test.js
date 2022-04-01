@@ -237,9 +237,10 @@ function startTests(){
         let result;
         testPatients.forEach(patient => {
             let result = runTest(patient, parameters );
-            if (result.passed === true) { testsPassed.push([result.testCaseNr, result.testResult]); }
+            if (result.passed === true) { testsPassed.push([result.testCaseNr, result.expectedResult, result.testResult]); }
             else { testsFailed.push([result.testCaseNr, result.expectedResult, result.testResult]); }
         });
+        displayTestResults(testsPassed, testsFailed);
     }
 }
 
@@ -273,7 +274,20 @@ function runTest(patient, parameters) {
 }
 
 function displayTestResults(testsPassed, testsFailed){
-    
+    const successIcon = "<span class='mif-done'></span>";
+    const errorIcon = "<span class='mif-cancel'></span>";
+    let target = document.getElementById("_target_results");
+    target.innerHTML = "<div id='test-results-headings'><span id='testcase-nr'><b>Test case</b></span><span id='expected'><b>Expected result</b></span><span id='actual'><b>Actual result</b></span></div>";
+    let resultsView = "<ul id='test-results-listview' data-role='listview', data-view='table' data-structure = '{\"expected\": true, \"actual\": true}'>";
+    testsFailed.forEach(test => {
+        resultsView += '<li data-icon="' + errorIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1] + '" data-actual = "' + test[2] + '"></li>';
+    });
+    testsPassed.forEach(test => {
+        resultsView += '<li data-icon="' + successIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1] + '" data-actual = "' + test[2] + '"></li>';
+    });
+    resultsView += "</ul>";
+    target.appendChild(parser.parseFromString(resultsView, 'text/html').body.firstChild);
+    showTestResults();
 }
 
 function stopTests(){}
