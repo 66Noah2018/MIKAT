@@ -25,22 +25,28 @@ import org.javatuples.Pair;
  * @author RLvan
  */
 public class ChartTranslator {
-    public static void translateToJS(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState) throws IOException{
+    public static String translateToJS(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState) throws IOException{
         LinkedList<ChartItem> state = currentState.getValue0();
-        ArrayList<String> endLines = currentState.getValue1();
         ArrayList<String> variables = getVariablesForFunction(state);
-        String functionJS = "function chartJS(" + String.join(", ", variables) + ") {\r" + "let actions = [];\r";
-        String endFunction = "return actions;\r}";
+        String functionJS = "let actions = [];";
+        String endFunction = "return actions;";
         functionJS += processStateJS(state) + endFunction;
-        if (Utils.workingDir == null && Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
-        FileWriter file;
-        if (Utils.workingDir == null) {
-            file = new FileWriter(Utils.defaultWorkingDirectory + "\\" + "chartJS.js");
-        } else {
-            file = new FileWriter(Utils.workingDir + "\\" + "chartJS.js");
-        }
-        file.write(functionJS);
-        file.close();
+        System.out.println(JSONEncoder.encodeChart(state));
+//        if (Utils.workingDir == null && Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
+//        FileWriter file;
+//        String fileLocation = null;
+//        if (Utils.workingDir == null) {
+//            fileLocation = Utils.defaultWorkingDirectory + "\\" + "chartJS.js";
+//            file = new FileWriter(fileLocation);
+//        } else {
+//            fileLocation = Utils.workingDir + "\\" + "chartJS.js";
+//            file = new FileWriter(fileLocation);
+//        }
+//        file.write(functionJS);
+//        file.close();
+//        return fileLocation;
+        System.out.println(functionJS);
+        return "{\"parameters\": " + variables.toString() + ", \"code\": \"" + functionJS + "\"}";
     }
     
     public static void translateToArdenSyntax(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState){}
@@ -50,8 +56,8 @@ public class ChartTranslator {
         ArrayList<String> conditionalIds = new ArrayList<>();
         ArrayList<String> lastElseIds = new ArrayList<>();
         for (ChartItem item : state) {
-            if (conditionalIds.contains(item.getPrevItemId()) && (item.getCondition() == null)) { 
-                code += "} else {\r"; 
+            if (conditionalIds.contains(item.getPrevItemId()) && (item.getCondition() == null || (item.getCondition()).equals("null"))) { 
+                code += "} else {"; 
                 lastElseIds.add(item.getId());
             }
             switch (item.getType()){
@@ -63,16 +69,15 @@ public class ChartTranslator {
                     Pair<Pair<LinkedList<ChartItem>, ArrayList<String>>, String> subroutineFileContent = getFileContent(item.getCaption());
                     String result = processStateJS(subroutineFileContent.getValue0().getValue0());
                     if (!result.equals("")) { code += result; }
-                    code += "\r";
                     break;
                 case "conditional":
                     LinkedList<ChartItem> conditionalItems = Utils.conditionalItems(item.getId(), state);
-                    code += "if (" + item.getCaption() + " " + conditionalItems.get(0).getCondition() + ") {\r";
+                    code += "if (" + item.getCaption() + " " + conditionalItems.get(0).getCondition() + ") {";
                     conditionalIds.add(item.getId());
                     break;
                 case "loop":
-                    if (item.getCaption().startsWith("End for")) { code += "});\r"; }
-                    else { code += item.getCaption() + ".forEach(element => {\r"; }
+                    if (item.getCaption().startsWith("End for")) { code += "});"; }
+                    else { code += item.getCaption() + ".forEach(element => {"; }
                     break;
                 case "retrievedata":
                     break;
@@ -82,7 +87,8 @@ public class ChartTranslator {
                 case "addDiagnosis":
                 case "newVaccination":
                 case "addNotes":
-                    code += "actions.push({type: " + item.getType() + ", msg: " + item.getCaption() + "});\r";
+                    String msg = getMessage(item.getType(), item.getCaption());
+                    code += "actions.push('" + msg + "');";
                     break;
                 case "questionMark":
                     break;
@@ -92,11 +98,30 @@ public class ChartTranslator {
                 lastElseIds.add(item.getId()); 
             }
             else { if (!lastElseIds.isEmpty() && !item.getType().equals("conditional")) {
-                code += "}\r"; 
+                code += "}"; 
                 lastElseIds.remove(item.getId());
             }}
          }
         return code;
+    }
+    
+    private static String getMessage(String type, String caption){
+        switch(type){
+            case "newProcedure":
+                return "New procedure: " + caption;
+            case "orderLabs":
+                return "Order labs: " + caption;
+            case "newPrescription":
+                return "New prescription: " + caption;
+            case "addDiagnosis":
+                return "Add diagnosis: " + caption;
+            case "newVaccination":
+                return "New vaccination: " + caption;
+            case "addNotes":
+                return "Add notes: " + caption;
+            default:
+                return null;
+        }
     }
     
     private static Pair<Pair<LinkedList<ChartItem>, ArrayList<String>>, String> getFileContent(String fileName) throws IOException{
@@ -128,7 +153,7 @@ public class ChartTranslator {
     private static ArrayList<String> getVariablesForFunction(LinkedList<ChartItem> state) throws IOException{
         ArrayList<String> variables = new ArrayList<>();
         for (ChartItem item : state) {
-            if (item.getType().equals("retrievedata")) { variables.add(item.getCaption()); }
+            if (item.getType().equals("retrievedata")) { variables.add("\"" + item.getCaption() + "\""); }
             else if (item.getType().equals("subroutine")){
                 LinkedList<ChartItem> subroutineState = getFileContent(item.getCaption()).getValue0().getValue0();
                 ArrayList<String> variablesSubroutine = getVariablesForFunction(subroutineState);

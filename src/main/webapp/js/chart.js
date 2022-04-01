@@ -762,12 +762,12 @@ function initConditionalPopup(conditionalElement=null){
                         <div id="condition-prefix-div">
                             <select data-role="select" id="condition-prefix" name="condition-prefix" data-add-empty-value="true">
                                 <optgroup label="Singular values">
-                                    <option ${conditionPrefix==="="?"selected":""} value="=">=</option>
+                                    <option ${conditionPrefix==="==="?"selected":""} value="===">===</option>
                                     <option ${conditionPrefix==="<"?"selected":""} value="<"><</option>
                                     <option ${conditionPrefix===">"?"selected":""} value=">">></option>
                                     <option ${conditionPrefix==="<="?"selected":""} value="<="><=</option>
                                     <option ${conditionPrefix===">="?"selected":""} value=">=">>=</option>
-                                    <option ${conditionPrefix==="&#8800"?"selected":""} value="&#8800">&#8800</option>
+                                    <option ${conditionPrefix==="!=="?"selected":""} value="!==">!==</option>
                                 </optgroup><optgroup label="Value sets">
                                     <option ${conditionPrefix==="is-in"?"selected":""} value="is-in">Is in</option>
                                     <option ${conditionPrefix==="is-not-in"?"selected":""} value="is-not-in">Is not in</option>

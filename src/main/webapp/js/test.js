@@ -8,6 +8,7 @@ let testPatients = null;
 let nrVarsTable = 0;
 let outcomesTable = 0;
 let headings = null;
+let chartJS;
 
 function cartesian(args) {
     var r = [], max = args.length-1;
@@ -112,7 +113,7 @@ function getTestCasesTableCode(variables, medicalActions, testPatients = null){
                 });
                 medicalActions.forEach(key => {
                     let value = testcase[key];
-                    if (value === true){ code += `<td><input type="checkbox" name="${key}" checked></td>`; }
+                    if (value === "true"){ code += `<td><input type="checkbox" name="${key}" checked></td>`; }
                     else { code += `<td><input type="checkbox" name="${key}"></td>`; }
                 });
                 code += "</tr>";
@@ -216,10 +217,63 @@ function createTestCases(){
     getTestCasesTableCode(headings.retrievedata, headings.medicalActions, null);
 }
 
-function importTestCases(){}
+function importTestCases(){} //link testcases file and execute loadTestCases()
 
 function startTests(){
-    servletRequest("./chartservlet?function=translateJS");
+    let testsPassed = [];
+    let testsFailed = [];
+    
+    const http = new XMLHttpRequest();
+    http.open("GET", "./chartservlet?function=translateJS", false);
+    http.send();
+    if (http.readyState === 4 && http.status === 200) {
+        const response = JSON.parse(http.responseText);
+        const parameters = response.parameters;
+        const code = response.code;
+        let functionString = "new Function(";
+        parameters.forEach(parameter => functionString += "\"" + parameter + "\",");
+        functionString += "code)";
+        chartJS = eval(functionString);
+        let result;
+        testPatients.forEach(patient => {
+            let result = runTest(patient, parameters );
+            if (result.passed === true) { testsPassed.push([result.testCaseNr, result.testResult]); }
+            else { testsFailed.push([result.testCaseNr, result.expectedResult, result.testResult]); }
+        });
+    }
+}
+
+function runTest(patient, parameters) {
+    let testString = "chartJS(";
+    parameters.forEach(parameter => testString += patient[parameter] + ",");
+    testString.substring(0, testString.length - 1);
+    testString += ");";
+    let results = eval(testString);
+    
+    expectedResults = [];
+    if (headings === undefined || headings.medicalActions === undefined) {
+        headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
+    }
+    (headings.medicalActions).forEach(action => {
+        let value = patient[action];
+        if (value === "true") { expectedResults.push(action); }
+    });
+    
+    let testPassed = true;
+    expectedResults.forEach(msg => {
+        if (!results.includes(msg)) { testPassed = false; }
+    });
+    
+    let result = new Object();
+    result.testCaseNr = patient["#"];
+    result.passed = testPassed;
+    result.expectedResult = expectedResults;
+    result.testResult = results;
+    return result;
+}
+
+function displayTestResults(testsPassed, testsFailed){
+    
 }
 
 function stopTests(){}

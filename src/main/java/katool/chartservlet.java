@@ -167,7 +167,8 @@ public class chartservlet extends HttpServlet {
                 response.getWriter().write("{\"hasProjectOpened\":" + !Utils.currentPath.equals("") + "}");
                 break;
             case "translateJS":
-                ChartTranslator.translateToJS(currentState);
+                String translation = ChartTranslator.translateToJS(currentState);
+                response.getWriter().write(translation);
                 break;
             case "translateAS":
                 ChartTranslator.translateToArdenSyntax(currentState);

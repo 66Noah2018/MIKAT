@@ -227,6 +227,16 @@ public class ChartTranslatorTest extends TestCase {
         assertEquals(expectedResponse, getTranslation());
     }
     
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.Disabled
+    public void translateJsCRPANA() throws IOException, Exception{
+        String expectedResponse = "{\"parameters\": [\"CRP\", \"ANA\"], \"code\": \"let actions = [];if (CRP >=500) {if (ANA ===1) {actions.push({type: addNotes, msg: ANAPos});} else {}} else {actions.push({type: addNotes, msg: CRPnormal});}return actions;\"}";
+        setUpCRPANATest();
+        String result = callTranslate();
+        
+        assertEquals(expectedResponse, result);
+    }
+    
     // SetUp functions
     
     private void setUpStart() throws IOException, Exception {
@@ -413,6 +423,33 @@ public class ChartTranslatorTest extends TestCase {
         updateState(stop);
     }
     
+    public void setUpCRPANATest() throws IOException, Exception {
+        ChartItem start = new ChartItem("a1", "start", "-1", "Start", null);
+        ChartItem retrieveCRP = new ChartItem("a2", "retrievedata", "a1", "CRP", null);
+        ChartItem retrieveANA = new ChartItem("a3", "retrievedata", "a2", "ANA", null);
+        ChartItem conditionalCRP = new ChartItem("a4", "conditional", "a3", "CRP", null);
+        ChartItem conditionalANA = new ChartItem("a5", "conditional", "a4", "ANA", ">=500");
+        ChartItem logPos = new ChartItem("a6", "addNotes", "a5", "ANAPos", "===1");
+        ChartItem end = new ChartItem("a7", "end", "a5", "End", null);
+        ChartItem logCRP = new ChartItem("a8", "addNotes", "a4", "CRPnormal", null);
+        
+        updateState(start);
+        updateState(retrieveCRP);
+        updateState(retrieveANA);
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalCRP) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalANA) + "&isMultipart=true");
+        response.parse(tester.getResponses(request.generate()));
+        request.setURI("/katool?function=update&" + chartItemToURLString(logCRP) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalANA) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(logPos) + "&isMultipart=true");
+        response.parse(tester.getResponses(request.generate()));
+        request.setURI("/katool?function=update&" + chartItemToURLString(end) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+    }
+    
     // Helper functions
     
     private String chartItemToURLString(ChartItem item) {
@@ -428,9 +465,10 @@ public class ChartTranslatorTest extends TestCase {
         tester.getResponses(request.generate());
     }
     
-    private void callTranslate() throws IOException, Exception{
+    private String callTranslate() throws IOException, Exception{
         request.setURI("/katool?function=translateJS");
-        tester.getResponses(request.generate());
+        response.parse(tester.getResponses(request.generate()));
+        return response.getContent();
     }
     
     private String getTranslation() throws IOException {
