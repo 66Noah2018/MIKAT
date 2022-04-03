@@ -103,17 +103,17 @@
                                     <li onclick="endForLoop()">End for loop</li>
                                 </ul>
                             </div>
-<!--                            <button class="ribbon-button" onclick="addLoop()" disabled>
-                                <span class="icon">
-                                    <span class="mif-loop"></span>
-                                </span>
-                                <span class="caption">For loop</span>
-                            </button>-->
                             <button class="ribbon-button" onclick="openFormPopup('chart-retrieve-data-popup')">
                                 <span class="icon">
                                     <span class="fas fa-file-medical"></span>
                                 </span>
                                 <span class="caption">Retrieve Medical Data</span>
+                            </button>
+                            <button class="ribbon-button" onclick="openFormPopup('chart-return-value-popup')">
+                                <span class="icon">
+                                    <span class="mif-keyboard-return"></span>
+                                </span>
+                                <span class="caption">Return Value</span>
                             </button>
                         <span class="title">Components</span>
                     </div>
@@ -339,9 +339,9 @@
                 </div>
             </form>
         </div>
-        <div class="chart-subroutine-popup">
+        <div class="chart-subroutine-popup" onsubmit="processSubroutine()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="subroutine-form" onsubmit="processSubroutine()" class=".custom-validation">
+            <form id="subroutine-form" class=".custom-validation">
                 <div class="form-group">
                     <label>Select file to embed</label>
                     <input type="file" accept="application/json" data-role="file" onSelect="processEmbedFile(files, null)" data-button-title="<span class='mif-folder'></span>" required>
@@ -351,12 +351,24 @@
                 </div>
             </form>
         </div>
-        <div class="questionmark-popup">
+        <div class="questionmark-popup" onsubmit="processQuestionmarkForm()">
             <i class="fa fa-times" onclick="closeAllForms()"></i>
-            <form id="questionmark-form" onclick="processQuestionmarkForm()" class=".custom-validation">
+            <form id="questionmark-form" class=".custom-validation">
                 <div class="form-group">
                     <label>Select component or medical action</label>
                     <div id="questionmark-popup-select"></div>
+                </div>
+                <div class="form-group submit-button-group">
+                    <button class="button" type="submit">OK</button>
+                </div>
+            </form>
+        </div>
+        <div class="chart-return-value-popup" onsubmit="processReturnValueForm()">
+            <i class="fa fa-times" onclick="closeAllForms()"></i>
+            <form id="return-value-form" class=".custom-validation">
+                <div class="form-group">
+                    <label>Enter return value</label>
+                    <input type="text" data-role="input" id="return-value-input">
                 </div>
                 <div class="form-group submit-button-group">
                     <button class="button" type="submit">OK</button>

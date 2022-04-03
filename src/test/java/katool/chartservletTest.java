@@ -189,6 +189,67 @@ public class chartservletTest {
     }  
     
     @org.junit.jupiter.api.Test
+    public void testAddDoubleConditionalSingleEndAlterFirstConditional() throws IOException, Exception {
+        String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"retrievedata\",\"prevItemId\":\"a111\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a1\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a10\",\"type\":\"returnValue\",\"prevItemId\":\"a1\",\"caption\":\"Notes\",\"condition\":\"===10\"},"
+                + "{\"id\":\"a3\",\"type\":\"retrievedata\",\"prevItemId\":\"a1\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a11\",\"type\":\"conditional\",\"prevItemId\":\"a3\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a12\",\"type\":\"newProcedure\",\"prevItemId\":\"a11\",\"caption\":\"Procedure\",\"condition\":\">=11\"},"
+                + "{\"id\":\"a13\",\"type\":\"orderLabs\",\"prevItemId\":\"a11\",\"caption\":\"Labs\",\"condition\":null},"
+                + "{\"id\":\"a20\",\"type\":\"end\",\"prevItemId\":\"a10\",\"caption\":\"End\",\"condition\":null}"
+                + "], \"endLines\":[]}";
+        
+        addDoubleConditionalSingleEnd(request);
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(0)) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(new ChartItem("a10", "returnValue", "a1", "Notes", "===10")) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(2)) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testAddDoubleConditionalSingleEndAlterSecondConditional() throws IOException, Exception {
+       String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"retrievedata\",\"prevItemId\":\"a111\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a1\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a10\",\"type\":\"addNotes\",\"prevItemId\":\"a1\",\"caption\":\"Notes\",\"condition\":\"<10\"},"
+                + "{\"id\":\"a3\",\"type\":\"retrievedata\",\"prevItemId\":\"a1\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a11\",\"type\":\"conditional\",\"prevItemId\":\"a3\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a12\",\"type\":\"returnValue\",\"prevItemId\":\"a11\",\"caption\":\"Procedure\",\"condition\":\"===11\"},"
+                + "{\"id\":\"a13\",\"type\":\"orderLabs\",\"prevItemId\":\"a11\",\"caption\":\"Labs\",\"condition\":null},"
+                + "{\"id\":\"a20\",\"type\":\"end\",\"prevItemId\":\"a10\",\"caption\":\"End\",\"condition\":null}"
+                + "], \"endLines\":[]}";
+        
+        addDoubleConditionalSingleEnd(request);
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(0)) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(new ChartItem("a12", "returnValue", "a11", "Procedure", "===11")) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(2)) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+        
+    }
+    
+    @org.junit.jupiter.api.Test
     public void testAddDoubleConditionalMultipleEnd() throws IOException, Exception {
         String expectedResponse = "{\"state\":["
                 + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
@@ -208,6 +269,66 @@ public class chartservletTest {
         response.parse(tester.getResponses(request.generate()));
         assertEquals(expectedResponse, response.getContent());
     } 
+    
+    @org.junit.jupiter.api.Test
+    public void testAddDoubleConditionalMultipleEndAlterFirstConditional() throws IOException, Exception {
+        String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"retrievedata\",\"prevItemId\":\"a111\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a1\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a10\",\"type\":\"returnValue\",\"prevItemId\":\"a1\",\"caption\":\"Notes\",\"condition\":\"===10\"},"
+                + "{\"id\":\"a3\",\"type\":\"retrievedata\",\"prevItemId\":\"a1\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a11\",\"type\":\"conditional\",\"prevItemId\":\"a3\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a12\",\"type\":\"newProcedure\",\"prevItemId\":\"a11\",\"caption\":\"Procedure\",\"condition\":\">=11\"},"
+                + "{\"id\":\"a13\",\"type\":\"orderLabs\",\"prevItemId\":\"a11\",\"caption\":\"Labs\",\"condition\":null},"
+                + "{\"id\":\"a20\",\"type\":\"end\",\"prevItemId\":\"a10\",\"caption\":\"End\",\"condition\":null}"
+                + "], \"endLines\":[\"a13\"]}";
+        
+        addDoubleConditionalMultipleEnd(request);
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(0)) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(new ChartItem("a10", "returnValue", "a1", "Notes", "===10")) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(2)) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testAddDoubleConditionalMultipleEndAlterSecondConditional() throws IOException, Exception {
+        String expectedResponse = "{\"state\":["
+                + "{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"retrievedata\",\"prevItemId\":\"a111\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a1\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Test1\",\"condition\":null},"
+                + "{\"id\":\"a10\",\"type\":\"addNotes\",\"prevItemId\":\"a1\",\"caption\":\"Notes\",\"condition\":\"<10\"},"
+                + "{\"id\":\"a3\",\"type\":\"retrievedata\",\"prevItemId\":\"a1\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a11\",\"type\":\"conditional\",\"prevItemId\":\"a3\",\"caption\":\"Test2\",\"condition\":null},"
+                + "{\"id\":\"a12\",\"type\":\"returnValue\",\"prevItemId\":\"a11\",\"caption\":\"Procedure\",\"condition\":\"===11\"},"
+                + "{\"id\":\"a13\",\"type\":\"orderLabs\",\"prevItemId\":\"a11\",\"caption\":\"Labs\",\"condition\":null},"
+                + "{\"id\":\"a20\",\"type\":\"end\",\"prevItemId\":\"a10\",\"caption\":\"End\",\"condition\":null}"
+                + "], \"endLines\":[\"a13\"]}";
+        
+        addDoubleConditionalMultipleEnd(request);
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(0)) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(new ChartItem("a12", "returnValue", "a11", "Procedure", "===11")) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockConditional2.get(2)) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());
+    }
     
     // Test for undo
     @org.junit.jupiter.api.Test
@@ -703,7 +824,7 @@ public class chartservletTest {
         request.setURI("/katool?function=update&" + chartItemToURLString(new ChartItem("a21", "addDiagnosis", "a3", "Diagnosis", null)));
         tester.getResponses(request.generate());
         
-        request.setURI("/katool?function=endline&id=a21");
+        request.setURI("/katool?function=endline&id=\"a21\"");
         tester.getResponses(request.generate());
     }
     
@@ -723,7 +844,7 @@ public class chartservletTest {
     private void addDoubleConditionalMultipleEnd(HttpTester request) throws IOException, Exception{
         addDoubleConditionalSingleEnd(request);
         
-        request.setURI("/katool?function=endline&id=a13");
+        request.setURI("/katool?function=endline&id=\"a13\"");
         tester.getResponses(request.generate());
         
     }

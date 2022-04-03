@@ -67,15 +67,15 @@ public class chartservlet extends HttpServlet {
         switch(request.getParameter("function")){
             case "update":
                 updateState(request);
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + Utils.ALToString(currentState.getValue1()) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + currentState.getValue1().toString() + "}");
                 break;
             case "undo":
                 Integer undoSize = undo();
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + Utils.ALToString(currentState.getValue1()) + ", \"size\":" + undoSize + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + currentState.getValue1().toString() + ", \"size\":" + undoSize + "}");
                 break;
             case "redo":
                 Integer redoSize = redo();
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + Utils.ALToString(currentState.getValue1()) + ", \"size\":" + redoSize + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + currentState.getValue1().toString() + ", \"size\":" + redoSize + "}");
                 break;
             case "undoSize":
                 response.getWriter().write("{\"size\":" + undoStack.size() + "}");
@@ -93,7 +93,7 @@ public class chartservlet extends HttpServlet {
                 break;
             case "delete":
                 deleteItem(request);
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + Utils.ALToString(currentState.getValue1()) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + currentState.getValue1().toString() + "}");
                 break;
             case "file":
                 String mlmname = selectFile(request);
@@ -107,7 +107,7 @@ public class chartservlet extends HttpServlet {
                 saveChanges();
                 break;
             case "state":
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + Utils.ALToString(currentState.getValue1()) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + currentState.getValue1().toString() + "}");
                 break;
             case "getElement":
                 ChartItem element = getElementById(request);
@@ -115,7 +115,7 @@ public class chartservlet extends HttpServlet {
                 break;
             case "endline":
                 updateEndlineList(request);
-                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + Utils.ALToString(currentState.getValue1()) + "}");
+                response.getWriter().write("{\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ", \"endLines\":" + currentState.getValue1().toString() + "}");
                 break;
             case "hasNext":
                 Boolean result = itemHasNext(request);
@@ -175,6 +175,7 @@ public class chartservlet extends HttpServlet {
                 break;
             case "getDefaultWorkingDirectory":
                 if (Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
+                System.out.println(Utils.defaultWorkingDirectory);
                 response.getWriter().write("{\"defaultWorkingDirectory\":\"" + Utils.defaultWorkingDirectory.replace("\\", "\\\\") + "\"}");
                 break;
             case "setDefaultWorkingDirectory":
@@ -247,7 +248,7 @@ public class chartservlet extends HttpServlet {
     
     // Servlet functions
     
-    private String getTestTableHeadings(){
+    private String getTestTableHeadings() throws IOException{
         ArrayList<String> retrievedataElements = new ArrayList<>();
         ArrayList<String> medicalActions = new ArrayList<>();
         for (ChartItem item : currentState.getValue0()){
@@ -273,11 +274,33 @@ public class chartservlet extends HttpServlet {
                 case "addNotes":
                     medicalActions.add("\"Add notes: " + item.getCaption() + "\"");
                     break;
+                case "subroutine":
+                    LinkedList<ChartItem> subroutineState = JSONDecoder.decodeChart(Utils.getDependency(item.getCaption()));
+                    ArrayList<String> result = getSubroutineHeadings(subroutineState);
+                    retrievedataElements.addAll(result);
                 default:
                     break;
             }
         }
         return "{\"retrievedata\":" + retrievedataElements.toString() + ",\"medicalActions\":" + medicalActions.toString() + "}";
+    }
+    
+    public ArrayList<String> getSubroutineHeadings(LinkedList<ChartItem> state) throws JsonProcessingException, IOException {
+        ArrayList<String> retrievedataElements = new ArrayList<>();
+        for (ChartItem item : state){
+            switch (item.getType()){
+                case "retrievedata":
+                    retrievedataElements.add("\"" + item.getCaption() + "\"");
+                    break;
+                case "subroutine":
+                    LinkedList<ChartItem> subroutineState = JSONDecoder.decodeChart(Utils.getDependency(item.getCaption()));
+                    ArrayList<String> result = getSubroutineHeadings(subroutineState);
+                    retrievedataElements.addAll(result);
+                default:
+                    break;
+            }
+        }
+        return retrievedataElements;
     }
     
     private String getTestCasesFromFile(HttpServletRequest request) throws IOException{
@@ -306,8 +329,9 @@ public class chartservlet extends HttpServlet {
     }
     
     private void saveTestCases(HttpServletRequest request) throws IOException {
+        String newFile = request.getParameter("newFile");
         String requestBody = Utils.getBody(request);
-        if (testCasesFileLocation == null){ testCasesFileLocation = Utils.workingDir.toString() + "\\" + "testcases_" + new SimpleDateFormat("dd-MM-yyyy").format(new Date()) + ".json"; }
+        if (testCasesFileLocation == null || newFile.equals("true")){ testCasesFileLocation = Utils.workingDir.toString() + "\\" + "testcases_" + new SimpleDateFormat("dd-MM-yyyy").format(new Date()) + ".json"; }
         FileWriter file = new FileWriter(testCasesFileLocation);
         file.write(requestBody);
         file.close();
@@ -329,11 +353,15 @@ public class chartservlet extends HttpServlet {
     }
     
     private void saveProject(HttpServletRequest request) throws IOException{
+        String isNew = request.getParameter("isNew");
+        if (isNew.equals("true")) { clearAllStacks(); }
         Utils.determineOS();
+        String testCasesFileLocationString = Paths.get(testCasesFileLocation).toString().replace("\\", "\\\\");
+//        if (!testCasesFileLocationString.contains("\\\\")) { testCasesFileLocationString.replace("\\", "\\"); }
         String body = Utils.getBody(request).replace("\\\"", "\"");
         body = body.substring(0, body.length()-2);
         body += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
-                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocation.replace("\\", "\\\\") + "\"}";
+                ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocationString + "\"}";
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(body);
         Boolean matchFound = matcher.find();
@@ -426,6 +454,9 @@ public class chartservlet extends HttpServlet {
     
     private void updateEndlineList(HttpServletRequest request){
         String id = request.getParameter("id");
+        System.out.println(id);
+        if (!id.startsWith("\"")) { id = "\"" + id + "\""; }
+        System.out.println(id);
         if (!currentState.getValue1().contains(id)) {
             maintainMaxDequeSize("undo");
             undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
@@ -483,41 +514,44 @@ public class chartservlet extends HttpServlet {
             Utils.currentPath = pathToFile;
         }
         
-        
         Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\",\"t");
         Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
         Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
         Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+),\"s");
         Pattern testCasesPattern = Pattern.compile("\"testCasesFileLocation\":\"(.+)\"}");
+        Pattern mlmNamePattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher workingDirMatcher = workingDirPattern.matcher(project);
         Matcher stateMatcher = statePattern.matcher(project);
         Matcher endLinesMatcher = endLinesPattern.matcher(project);
         Matcher dependenciesMatcher = dependenciesPattern.matcher(project);
         Matcher testCasesMatcher = testCasesPattern.matcher(project);
+        Matcher mlmNameMatcher = mlmNamePattern.matcher(project);
         
         Boolean workingDirMatch = workingDirMatcher.find();
         Boolean stateMatch = stateMatcher.find();
         Boolean endLinesMatch = endLinesMatcher.find();
         Boolean dependenciesMatch = dependenciesMatcher.find();
         Boolean testCasesMatch = testCasesMatcher.find();
+        Boolean mlmNameMatch = mlmNameMatcher.find();
         
-        if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch || !testCasesMatch) { return "File is not MIKAT file"; }
+        if(!workingDirMatch || !stateMatch || !endLinesMatch || !dependenciesMatch || !testCasesMatch || !mlmNameMatch) { return "File is not MIKAT file"; }
         Utils.workingDir = Paths.get(workingDirMatcher.group(1));
         if ((endLinesMatcher.group(1)).equals("[]")) {
             currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>());
         } else {
-            currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).split(","))));
+            currentState = new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).replace("[", "").replace("]", "").split(", "))));
         }
         ObjectMapper mapper = new ObjectMapper();
         Utils.dependencies = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
         testCasesFileLocation = testCasesMatcher.group(1);
 
+        String mlmName = mlmNameMatcher.group(1);
         for (int i = 0; i < Utils.prevOpened.size(); i++){
             JsonNode node = Utils.prevOpened.get(i);
-            if ((node.get("fileName").asText()).equals(fileName)) { Utils.prevOpened.remove(i); }
+            if ((node.get("fileName").asText()).equals(mlmName)) { Utils.prevOpened.remove(i); }
         }
         
-        Utils.updatePrevOpened(fileName);
+        Utils.updatePrevOpened(mlmName);
         setMappingLocations(project);
         return "File opened successfully";
     }
@@ -629,13 +663,13 @@ public class chartservlet extends HttpServlet {
                 if (prevItemIndex >= currentState.getValue0().size() - 1){ currentState.getValue0().addLast(newItem); } 
                 else { currentState.getValue0().add(prevItemIndex + 1, newItem); }
             } else { // add last and change previd of next item
-                if (prevItemIndex >= currentState.getValue0().size() - 2){
+                if (prevItemIndex >= currentState.getValue0().size() - 1){
                     currentState.getValue0().addLast(newItem);
                 } else {
                     currentState.getValue0().add(prevItemIndex + 2, newItem);
-                    Integer nextIndex = Utils.nextElementIndex(conditionalId, currentState.getValue0());
+                    Integer nextIndex = Utils.nextElementIndex(prevItemId, currentState.getValue0());
                     ChartItem nextItem = currentState.getValue0().get(nextIndex);
-                    nextItem.setPrevItemId(conditionalId);
+                    nextItem.setPrevItemId(prevItemId);
                     currentState.getValue0().set(nextIndex, nextItem);
                 }
             }
@@ -662,7 +696,7 @@ public class chartservlet extends HttpServlet {
         localMappingsFileLocation = null;
         standardizedMappingsFileLocation = null;
         Pattern patternLocal = Pattern.compile("\"localMappingFile\":\"(.+)\",\"s");
-        Pattern patternStandardized = Pattern.compile("\"standardizedMappingFile\":\"(.+)\",\"d");
+        Pattern patternStandardized = Pattern.compile("\"standardizedMappingFile\":\"(.+)\",\"depen");
         Matcher matcherLocal = patternLocal.matcher(body);
         Matcher matcherStandardized = patternStandardized.matcher(body);
         Boolean matchFound = matcherLocal.find();

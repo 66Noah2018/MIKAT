@@ -25,6 +25,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.swing.filechooser.FileSystemView;
 import org.apache.commons.io.FileUtils;
@@ -48,6 +50,7 @@ public class Utils {
     private static ArrayList<Pair<String, JsonNode>> loadedDependencies = new ArrayList<>();
     public static String defaultWorkingDirectory = null;
     private static String settings = null;
+    private static ArrayList<JsonNode> subroutineDependencies = new ArrayList<>();
     
     public static String findAndReadFile(String fileName, String workingDir) throws IOException {
         String pathToFile = null;
@@ -72,7 +75,7 @@ public class Utils {
         currentPath = pathToFile;
         return project;
     }
-    
+       
     public static Boolean determineOS(){
         Boolean OSDetermined = true;
         if (programFilesPath.equals("") || rootPath.equals("")){
@@ -94,7 +97,7 @@ public class Utils {
     }
     
     public static Boolean checkFileValidity(String projectString) throws JsonProcessingException{
-        projectString = projectString.substring(1, projectString.length());
+        if (projectString.startsWith("\"")) { projectString = projectString.substring(1, projectString.length()); }
         ObjectMapper mapper = new ObjectMapper();
         JsonNode project = mapper.readTree(projectString);
         // check whether file was created by this program and contains the correct 'keys'
@@ -182,13 +185,14 @@ public class Utils {
         projectFile.put("fileName", fileName);
         projectFile.put("path", currentPath);
         projectFile.put("date", new Date().toString());
-        prevOpened.add(projectFile);
+        prevOpened.insert(0, projectFile);
+        if (prevOpened.size() > 5) { prevOpened.remove(5); }
         writeSettings();
     }
     
     public static void writeSettings() throws IOException {
         String settingsString = "{";
-        settingsString += "\"prevOpened\":" + prevOpened.toPrettyString() + ",\"defaultWorkingDirectory\":" + defaultWorkingDirectory + "}";
+        settingsString += "\"prevOpened\":" + prevOpened.toPrettyString() + ",\"defaultWorkingDirectory\":\"" + defaultWorkingDirectory.replace("\\", "\\\\") + "\"}";
         FileWriter settingsFile = new FileWriter(programFilesPath + "//" + settingsFileName);
         settingsFile.write(settingsString);
         settingsFile.close();
@@ -202,6 +206,39 @@ public class Utils {
         JsonNode newDependency = JsonTools.createNode(newItems);
         dependencies.add(newDependency);
         loadedDependencies.add(new Pair<>(dependency, dependencyContents));
+    }
+    
+    public static String getDependency(String dependency) throws IOException {
+        String fileLocation = null;
+        for (JsonNode dependencyNode : dependencies) {
+            if ((dependencyNode.get("dependency").asText()).equals(dependency)) {
+                fileLocation = dependencyNode.get("fileLocation").asText();
+                break;
+            }
+        }
+        if (fileLocation == null) {
+            for (JsonNode dependencyNode : subroutineDependencies) {
+                if ((dependencyNode.get("dependency").asText()).equals(dependency)) {
+                    fileLocation = dependencyNode.get("fileLocation").asText();
+                    break;
+                }
+            }
+        }
+        if (fileLocation == null) { return null; }
+        String dependencyContent = new String(Files.readAllBytes(Paths.get(fileLocation)));
+        Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
+        Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+),\"s");
+        Matcher stateMatcher = statePattern.matcher(dependencyContent);
+        Matcher dependenciesMatcher = dependenciesPattern.matcher(dependencyContent);
+        Boolean stateMatch = stateMatcher.find();
+        Boolean dependenciesMatch = dependenciesMatcher.find();
+        if (dependenciesMatch) {
+            ObjectMapper mapper = new ObjectMapper();
+            ArrayNode dependenciesNode = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
+            for (JsonNode node : dependenciesNode) { subroutineDependencies.add(node); }
+        }
+        if (stateMatch) { return stateMatcher.group(1); }
+        else { return "invalid file"; }
     }
     
     public static Integer nextElementIndex(String id, LinkedList<ChartItem> state){
@@ -315,7 +352,7 @@ public class Utils {
     }
     
     public static void loadSettings() throws IOException{
-        if (settings == null){
+        if (settings == null || defaultWorkingDirectory == null){
             if (rootPath == "") {
                 determineOS();
             }
@@ -331,6 +368,7 @@ public class Utils {
                 }
                 settings = new String(Files.readAllBytes(Paths.get(fileLocation)));
             }
+            System.out.println(settings);
             if (fileLocation == null) { writeSettings(); }
             ObjectMapper mapper = new ObjectMapper();
             JsonNode settingsNode = mapper.readTree(settings);

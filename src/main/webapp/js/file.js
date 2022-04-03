@@ -148,7 +148,7 @@ function editProject(isNew = false){
     const projectJson = valuesToJson(title, mlmname, arden, version, institution, author, specialist, date, validation, purpose, explanation, keywords, citations, links, localFile, standardizedFile);
     
     servletRequestPost("../chartservlet?function=setWorkingDirectory", terminologyFormdata.get("workingDirectory"));
-    servletRequestPost("../chartservlet?function=saveProject", projectJson);
+    servletRequestPost("../chartservlet?function=saveProject&isNew=" + isNew, projectJson);
     window.location.href = "../index.html";
 }
 
@@ -309,6 +309,7 @@ function openRecentProject(file){
  */
 function saveProject(){
     servletRequest("http://localhost:8080/katool/chartservlet?function=save");
+    window.location.href = "http://localhost:8080/katool/index.html";
 }
 
 /**
@@ -479,7 +480,8 @@ function showSelectedDir(location){
 }
 
 function removeClassesFromDirBtn(){
-    let dirBtn = document.getElementById("checkDirBtn").classList.remove("error");
+    let dirBtn = document.getElementById("checkDirBtn");
+    dirBtn.classList.remove("error");
     dirBtn.classList.remove("success");
 }
 
@@ -500,13 +502,14 @@ function showPrevOpened(){
 
 function showDefaultWorkingDir(){
     let defaultWorkingDirectory = JSON.parse(servletRequest("../chartservlet?function=getDefaultWorkingDirectory")).defaultWorkingDirectory;
+    if (defaultWorkingDirectory === "null") { defaultWorkingDirectory = ""; }
     document.getElementById("workingDirectory").value = defaultWorkingDirectory;
     document.getElementById("checkDirBtn").classList.add("success");
 }
 
 function showPreferences(){
     let defaultWorkingDirectory = JSON.parse(servletRequest("../chartservlet?function=getDefaultWorkingDirectory")).defaultWorkingDirectory.replaceAll("\\\\", "\\");
-    if (defaultWorkingDirectory !== null){
+    if (defaultWorkingDirectory !== "null" && defaultWorkingDirectory !== null){
         document.getElementById("defaultWorkingDirectory").value = defaultWorkingDirectory;
         document.getElementById("checkDirBtn").classList.add("success");
     }

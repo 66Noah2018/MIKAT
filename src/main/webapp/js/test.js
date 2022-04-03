@@ -9,6 +9,7 @@ let nrVarsTable = 0;
 let outcomesTable = 0;
 let headings = null;
 let chartJS;
+let newTestCasesFile = false;
 
 function cartesian(args) {
     var r = [], max = args.length-1;
@@ -109,7 +110,10 @@ function getTestCasesTableCode(variables, medicalActions, testPatients = null){
         if (testPatients !== null){
             testPatients.forEach(testcase => {
                 code += "<tr>";
-                variables.forEach(key => { code += `<td>${testcase[key]}</td>`;
+                variables.forEach(key => { 
+                let variableValue = testcase[key];
+                if (variableValue === undefined) { variableValue = ""; }
+                    code += `<td>${variableValue}</td>`;
                 });
                 medicalActions.forEach(key => {
                     let value = testcase[key];
@@ -119,8 +123,8 @@ function getTestCasesTableCode(variables, medicalActions, testPatients = null){
                 code += "</tr>";
             });
         } else {
-            code += "<tr>";
-            for (let i = 0; i < variables.length; i++) { code += "<td></td>"; }
+            code += "<tr><td>1</td>";
+            for (let i = 0; i < variables.length - 1; i++) { code += "<td></td>"; }
             for (let j = 0; j < medicalActions.length; j++) { code += "<td><input type='checkbox'></td>"; }
             code += "</tr>";
         }
@@ -136,6 +140,7 @@ function getTestCasesTableCode(variables, medicalActions, testPatients = null){
 }
 
 function loadTestCases(){
+    newTestCasesFile = false;
     let result = null;
     if (testPatients === null) { 
         try {
@@ -204,8 +209,8 @@ function updateTestCases(){
         }
         testPatients.push(testCase);
     }
-    console.log(testPatients);
-    servletRequestPost("./chartservlet?function=saveTestCases", {"headings": headings, "testCases": testPatients});
+    servletRequestPost("./chartservlet?function=saveTestCases&newFile=" + newTestCasesFile, {"headings": headings, "testCases": testPatients});
+    Metro.notify.create("Test cases saved", "Success", {animation: 'easeOutBounce', cls: "save-success"});
 }
 
 Element.prototype.remove = function() {
@@ -213,6 +218,7 @@ Element.prototype.remove = function() {
 };
 
 function createTestCases(){
+    newTestCasesFile = true;
     headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
     getTestCasesTableCode(headings.retrievedata, headings.medicalActions, null);
 }
@@ -293,12 +299,13 @@ function displayTestResults(testsPassed, testsFailed){
 function stopTests(){}
 
 function addNewTestCase(){
+    const headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
     let newRow = document.getElementById("testcases").insertRow();
     let newCell = newRow.insertCell(0);
     let nextId = document.getElementById("testcases").rows.length - 1;
     newCell.appendChild(document.createTextNode(nextId));
-    [...Array(nrVarsTable)].forEach((e) => newRow.insertCell(-1));
-    [...Array(outcomesTable)].forEach((outcome) => {
+    (headings.retrievedata).forEach((e) => newRow.insertCell(-1));
+    (headings.medicalActions).forEach((outcome) => {
         let content = `<input type="checkbox" id="${outcome}_${nextId}" name="${outcome}">`;
         newCell = newRow.insertCell(-1);
         newCell.appendChild(parser.parseFromString(content, 'text/html').body.firstChild);

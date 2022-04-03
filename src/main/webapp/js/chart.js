@@ -19,7 +19,8 @@ const flowchartImageCodes = {
     addDiagnosis: "<span class='fas fa-diagnoses flow-icon'></span>",
     newVaccination: "<span class='fas fa-syringe flow-icon'></span>",
     addNotes: "<span class='fas fa-pencil-alt flow-icon'></span>",
-    questionMark: "<span class='mif-question mif-3x flow-icon'></span>"
+    questionMark: "<span class='mif-question mif-3x flow-icon'></span>",
+    returnValue: "<span class='mif-keyboard-return mif-3x flow-icon'></span>"
 };
 
 let lines = [];
@@ -37,7 +38,8 @@ const chartItemTypesBasic = {
     end: "End",
     subroutine: "Add Subroutine",
     conditional: "If-Else",
-    retrievedata: "Retrieve Medical Data"
+    retrievedata: "Retrieve Medical Data",
+    returnValue: "Return Value"
 };
 const chartItemMedicalActions = {
     newProcedure: "New Procedure",
@@ -51,7 +53,7 @@ let conditionalPosValue = null;
 let conditionalNegValue = null;
 let conditionalVarValue = null;
 const selectBoxCodePost = '</select>';
-let retrievedData = {"singulars":[], "plurals":[]};
+let retrievedData = {"singulars":[], "plurals":[], "subroutines":[]};
 const clickToDefine = "Double-click to define";
 let elementToDefine = null;
 let conditionalNextElements = null;
@@ -69,23 +71,27 @@ const elements = {
     addDiagnosis: "addDiagnosis",
     newVaccination: "newVaccination",
     addNotes: "addNotes",
-    questionMark: "questionMark"
+    questionMark: "questionMark",
+    returnValue: "returnValue"
 };
 
 window.addEventListener('load', function () {
     maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
     let hasProjectOpened = JSON.parse(servletRequest("./chartservlet?function=hasProjectOpened")).hasProjectOpened;
     let result = JSON.parse(servletRequest("./chartservlet?function=state"));
+    console.log(result)
     if (hasProjectOpened){
         if (result.state.length < 1) {
             addStart();
-        } else {
+        } 
+        else {
             drawChart(result.state, result.endLines);
             showErrorsWarning(result.state);
         }
         document.getElementById("section-model").classList.remove("disabled");
         document.getElementById("section-test").classList.remove("disabled");
-    } else {
+    }
+    else {
         document.getElementById("section-model").classList.add("disabled");
         document.getElementById("section-test").classList.add("disabled");
         Metro.notify.create("No project opened. Click File -> Open Project to open a project or File -> New Project to create a project", "Warning: No project", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true});
@@ -151,15 +157,16 @@ function openErrorStatusbar(context){
 function updateState(newItemArray, isConditional = false){
     if (newItemArray === null) { return; }
     let result = null;
+    console.log(newItemArray)
     if (!isConditional){
         newItemArray.forEach((item) => {
             result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${item.id}&type=${item.type}&prevItemId=${item.prevItemId}&caption=${item.caption}&condition=${item.condition}`));
         });
     } 
     else {
-        servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&condition=${newItemArray[0].condition}&isMultipart=true&firstMultipart=true`);
-        servletRequest(`./chartservlet?function=update&id=${newItemArray[1].id}&type=${newItemArray[1].type}&prevItemId=${newItemArray[1].prevItemId}&caption=${newItemArray[1].caption}&condition=${newItemArray[1].condition}&isMultipart=true`);
-        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&isMultipart=true&finalMultipart=true`));
+        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[0].id}&type=${newItemArray[0].type}&prevItemId=${newItemArray[0].prevItemId}&caption=${newItemArray[0].caption}&condition=${newItemArray[0].condition}&isMultipart=true&firstMultipart=true`));
+        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[1].id}&type=${newItemArray[1].type}&prevItemId=${newItemArray[1].prevItemId}&caption=${newItemArray[1].caption}&condition=${newItemArray[1].condition}&isMultipart=true`));
+        result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&condition=${newItemArray[2].condition}&isMultipart=true&finalMultipart=true`));
     }
     drawChart(result.state, result.endLines);
 }
@@ -345,8 +352,10 @@ function drawChart(state, endlines){
     prevId = -1;
     document.getElementsByClassName("chartarea")[0].innerHTML = '';
     
+    console.log(state);
     let undoResult = JSON.parse(servletRequest("./chartservlet?function=undoSize")).size;
     let redoResult = JSON.parse(servletRequest("./chartservlet?function=redoSize")).size;
+    const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
     const undoAvailable = (undoResult>0)?true:false;
     const redoAvailable = (redoResult>0)?true:false;
     if (undoAvailable){
@@ -386,7 +395,12 @@ function drawChart(state, endlines){
                 conditionalData.shift();
                 conditionalData = conditionalData.filter((item) => { return item.type === elements.conditional; });
             }
-            else { addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
+            else {
+                if (item.type === elements.retrievedata){
+                    if (values.singulars[item.caption]) { if (!retrievedData.singulars.includes(item.caption)) { retrievedData.singulars.push(item.caption); }}
+                    else if (values.plurals[item.caption]) { if (!retrievedData.plurals.includes(item.caption)) { retrievedData.plurals.push(item.caption); }}
+                } else if (item.type === elements.subroutine) { if (!retrievedData.subroutines.includes(item.caption)) { retrievedData.subroutines.push(item.caption); }}
+                addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
         }
     }
     if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type)); }
@@ -429,7 +443,6 @@ function addStop(){
 }
 
 function addLoop(){
-    //popup: start new or end existing loop
      let newItem = addNewStep(elements.loop, "");
      updateState([newItem], false);
 }
@@ -446,6 +459,7 @@ function setSelectedItem(id){
 
 function deleteItem(id){
     let item = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${id}`)).chartItem;
+    console.log(item)
     let state = JSON.parse(servletRequest(`./chartservlet?function=state`)).state;
     if (item.type === elements.start) {
         Metro.notify.create("Cannot delete start element", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
@@ -555,6 +569,8 @@ function defineElement(id){
             case "questionMark":
                 redefineQuestionmark(chartItem);
                 break;
+            case elements.returnValue:
+                openFormPopup("chart-return-value-popup", null, chartItem);
         }
     }
 }
@@ -613,6 +629,8 @@ function conditionalPosForm(value){
         case elements.newVaccination:
             // fallthrough
         case elements.addNotes:
+            //fallthrough
+        case elements.returnValue:
             target.appendChild(caption);
             document.getElementById("statement1-caption").innerHTML = conditionalNextElements?conditionalNextElements[0].caption:"";
             break;
@@ -657,6 +675,8 @@ function conditionalNegForm(value){
         case elements.newVaccination:
             // fallthrough
         case elements.addNotes:
+            // fallthrough
+        case elements.returnValue:
             target.appendChild(caption);
             document.getElementById("statement2-caption").innerHTML = conditionalNextElements?conditionalNextElements[1].caption:"";
             break;
@@ -691,13 +711,13 @@ function getRetrieveDataSelectBox(name, value=null, setsOnly = false){
     if (!setsOnly) {
         selectBoxCodeRetrieve += '<optgroup label="Singular values">';
         singulars.forEach((key) => {
-            selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
+            selectBoxCodeRetrieve += `<option value="${key}" ${value===key?"selected":""}>${key}</option>`;
         });
         selectBoxCodeRetrieve += '</optgroup>';
     }
     selectBoxCodeRetrieve += '<optgroup label="Value sets">';
     plurals.forEach((key) => {
-        selectBoxCodeRetrieve += `<option value=${key} ${value===key?"selected":""}>${key}</option>`;
+        selectBoxCodeRetrieve += `<option value="${key}" ${value===key?"selected":""}>${key}</option>`;
     });
     selectBoxCodeRetrieve += '</optgroup>' + selectBoxCodePost;
     return selectBoxCodeRetrieve;
@@ -713,9 +733,10 @@ function initConditionalPopup(conditionalElement=null){
     let variable = null;
     if (conditionalElement!==null && conditionalElement.caption !== clickToDefine) { 
         variable = conditionalElement.caption;
+        console.log(conditionalElement)
         conditionalNextElements = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${conditionalElement.id}`)).items;
         try {
-            let matches = (conditionalNextElements[0].condition).match(/(=|<=|>=|<|>|&#8800|is-in|is-not-in)\s(.+)/);
+            let matches = (conditionalNextElements[0].condition).match(/(===|<=|>=|<|>|!==|is-in|is-not-in)\s(.+)/);
             conditionPrefix = matches[1];
             conditionText = matches[2];
             actionPos = conditionalNextElements[0].type;
@@ -729,6 +750,8 @@ function initConditionalPopup(conditionalElement=null){
     retrievedData.singulars.forEach((el) => { selectVarCode += `<option value=${el} ${variable===el?"selected":""}>${el}</option>`; });
     selectVarCode += '</optgroup><optgroup label="Value sets">';
     retrievedData.plurals.forEach((el) => { selectVarCode += `<option value=${el} ${variable===el?"selected":""}>${el}</option>`; });
+    selectVarCode += '</optgroup><optgroup label="Subroutine returns">';
+    retrievedData.subroutines.forEach((el) => { selectVarCode += `<option value=${el} ${variable===el?"selected":""}>${el}</option>`; });
     selectVarCode += '</optgroup></select>';
             
     // selectboxes for actions
@@ -833,7 +856,9 @@ function openFormPopup(popupClass, subclass=null, values=null){
                 actionType = nextItem?nextItem.type:null;
             }
             let valueSetCode = '<select data-role="select" name="for-loop-variable-select-box" id="for-loop-variable-select-box" data-add-empty-value="true" required><optgroup label="Value sets">';
-            retrievedData.plurals.forEach((el) => { valueSetCode += `<option value=${el} ${values?(vales.caption===el?"selected":""):""}>${el}</option>`; });
+            retrievedData.plurals.forEach((el) => { valueSetCode += `<option value=${el} ${values?(values.caption===el?"selected":""):""}>${el}</option>`; });
+            valueSetCode += '</optgroup><optgroup label="Subroutine returns">';
+            retrievedData.subroutines.forEach((el) => { valueSetCode += `<option value=${el} ${values?(values.caption===el?"selected":""):""}>${el}</option>`; });
             valueSetCode += '</optgroup></select>';
             
             let selectBoxCodeActions = '<select data-role="select" name="data-loop-action" id="data-loop-action" data-add-empty-value="true" data-on-change="setLoopAction(this.value)" required>';
@@ -851,6 +876,10 @@ function openFormPopup(popupClass, subclass=null, values=null){
             document.getElementsByClassName("for-loop-first-action-div")[0].appendChild(parser.parseFromString(selectBoxCodeActions, 'text/html').body.firstChild);
             if (values) {setLoopAction(actionType); }
             document.getElementsByClassName("chart-forloop-popup")[0].style.display = "block";
+            break;
+        case "chart-return-value-popup":
+            document.getElementById("return-value-input").innerHTML = values?values.value:"";
+            document.getElementsByClassName("chart-return-value-popup")[0].style.display = "block";
             break;
         default:
             break;
@@ -875,9 +904,11 @@ function getFormValueStandard(){
 function processEmbedFile(files, location){
     if (location === "pos"){
         conditionalPosEmbed = files[0];
-    } else if (location === "neg"){
+    } 
+    else if (location === "neg"){
         conditionalNegEmbed = files[0];
-    } else {
+    } 
+    else {
         fileToEmbed = files[0];
     }
 }
@@ -899,7 +930,7 @@ function addMedicalAction(){
 }
 
 function closeAllForms(){
-    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup", "chart-forloop-popup"];
+    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup", "chart-forloop-popup", "chart-return-value-popup"];
     popupClasses.forEach((popupClass) => {
         document.getElementsByClassName(popupClass)[0].style.display = "none";
     });
@@ -932,6 +963,7 @@ function processFormConditional(){
     
     let conditionPrefix = formdata.get("condition-prefix");
     let conditionValue = formdata.get("condition");
+//    if (isNaN(conditionValue) && !retrievedData.plurals.includes(conditionValue)) { conditionValue = "\"" + conditionValue + "\""; } // this causes jsonparse error
     if (conditionPrefix === "is-in" || conditionPrefix === "is-not-in") { 
         if (retrievedData.singulars.includes(variable)) { 
             document.getElementsByClassName("condition-error")[0].style.visibility = "visible"; 
@@ -943,9 +975,11 @@ function processFormConditional(){
     // process
     if (conditionalPosValue === elements.subroutine){
         statement1Caption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${conditionalPosEmbed.name}`)).mlmname; //let backend know of new file to be included
+        if (!retrievedData.subroutines.includes(statement1Caption)) { retrievedData.subroutines.push(statement1Caption); }
     }
     if (conditionalNegValue === elements.subroutine){
         statement2Caption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${conditionalNegEmbed.name}`)).mlmname;
+        if (!retrievedData.subroutines.includes(statement2Caption)) { retrievedData.subroutines.push(statement2Caption); }
     }
     
     if (conditionalPosValue === elements.end) {statement1Caption = "Stop"; }
@@ -971,6 +1005,7 @@ function processFormConditional(){
         newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, posId, negId, prevId);
     }
     closeAllForms();
+    console.log(newSteps)
     updateState(newSteps, true);
     endLinesToAdd.forEach((id) => {
         updateEndLinesList(id);
@@ -984,6 +1019,7 @@ function processSubroutine(){
     let caption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${fileToEmbed.name}`)).mlmname;
     let newStep = addNewStep(getRandomId(), elements.subroutine, caption, selectedItemId, getLineStyle(elements.subroutine));
     updateState([newStep]);
+    if (!retrievedData.subroutines.includes(caption)) { retrievedData.subroutines.push(caption); }
     document.getElementsByClassName("chart-subroutine-popup")[0].style.display = "none";
 }
 
@@ -1007,6 +1043,9 @@ function processQuestionmarkForm(){
             elementToDefine.caption = "End";
             updateState([elementToDefine]);
             break;
+        case elements.returnValue:
+            openFormPopup("chart-return-value-popup", null, elementToDefine);
+            break;
         default: //assume medical action
             openFormPopup("chart-item-popup", value, elementToDefine);
             break;
@@ -1017,6 +1056,7 @@ function getFormValueRetrieve(){
     event.preventDefault();
     let formdata = new FormData(document.getElementById("retrieve-data-form"));
     const value = formdata.get("retrieve-data-select-box");
+    console.log(value);
     if (elementToDefine) {
         elementToDefine.caption = value;
         updateState([elementToDefine]);
@@ -1071,7 +1111,8 @@ function processFormForloop(){
             addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
             addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
         ]);
-    } else { //medicalAction
+    } 
+    else { //medicalAction
         firstAction.caption = document.getElementById("first-action-caption").value;
         updateState([
             addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
@@ -1120,6 +1161,8 @@ function setLoopAction(value){
         case elements.newVaccination:
             // fallthrough
         case elements.addNotes:
+            // fallthrough
+        case elements.returnValue:
             target.appendChild(caption);
             if (val !== null) document.getElementById("first-action-caption").innerHTML = val;
             break;
@@ -1214,4 +1257,14 @@ function showErrorsWarning(state){
     document.getElementById("badge-errors").innerText = errors.length;
     openStatusbarDbl();
     openStatusbarDbl(); // reload statusbar;
+}
+
+function processReturnValueForm(){
+    event.preventDefault();
+    const returnValue = document.getElementById("return-value-input").value;
+    if (elementToDefine) { updateState([addNewStep(elementToDefine.id, elementToDefine.type, returnValue, elementToDefine.prevItemId, getLineStyle(elementToDefine.type), condition = elementToDefine.condition)]); }
+    else {
+        updateState([addNewStep(getRandomId(), elements.returnValue, returnValue, selectedItemId, getLineStyle(elements.returnValue), condition = null)]);
+    }
+    closeAllForms();
 }
