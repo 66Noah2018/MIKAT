@@ -6,6 +6,7 @@
 package katool;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import org.eclipse.jetty.testing.HttpTester;
 import org.junit.jupiter.api.AfterEach;
@@ -42,9 +43,6 @@ public class chartservletTest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
-        tester = new ServletTester();
-        tester.addServlet(katool.chartservlet.class, "/katool");
-        tester.start();
         mockStart = new ChartItem("a111", "start", "-1", "Start", null);
         mockElement1 = new ChartItem("a222", "newProcedure", "a111", "Procedure", null);
         mockElement2 = new ChartItem("a333", "orderLabs", "a222", "Labs", null);
@@ -77,6 +75,9 @@ public class chartservletTest {
     
     @BeforeEach
     public void setUp() throws Exception {
+        tester = new ServletTester();
+        tester.addServlet(katool.chartservlet.class, "/katool");
+        tester.start();
         request = new HttpTester();
         request.setMethod("GET");
         request.setVersion("HTTP/1.0");
@@ -328,6 +329,90 @@ public class chartservletTest {
         request.setURI("/katool?function=state");
         response.parse(tester.getResponses(request.generate()));
         assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testHypertensionSituation() throws IOException, Exception {
+        String expectedResponse = "{\"state\":[{\"id\":\"a1\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"subroutine\",\"prevItemId\":\"a1\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a3\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a4\",\"type\":\"retrievedata\",\"prevItemId\":\"a3\",\"caption\":\"Risico_HVZ\",\"condition\":\"===true\"},"
+                + "{\"id\":\"a6\",\"type\":\"conditional\",\"prevItemId\":\"a4\",\"caption\":\"Risico_HVZ\",\"condition\":null},"
+                + "{\"id\":\"a7\",\"type\":\"retrievedata\",\"prevItemId\":\"a6\",\"caption\":\"Gebruikt_diuretica\",\"condition\":\">20\"},"
+                + "{\"id\":\"a8\",\"type\":\"conditional\",\"prevItemId\":\"a7\",\"caption\":\"Gebruikt_diuretica\",\"condition\":null},"
+                + "{\"id\":\"a9\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"ACE-remmers\",\"condition\":\"===true\"},"
+                + "{\"id\":\"a10\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"Diuretica\",\"condition\":null},"
+                + "{\"id\":\"a5\",\"type\":\"end\",\"prevItemId\":\"a3\",\"caption\":\"Stop\",\"condition\":null}], \"endLines\":"
+                + "[\"a6\", \"a9\", \"a10\"]}";
+        
+        setUpTestHypertensionSituation(request);
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());               
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testHypertensionSituationChangeFirstConditional() throws IOException, Exception {
+        String expectedResponse = "{\"state\":[{\"id\":\"a1\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"subroutine\",\"prevItemId\":\"a1\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a3\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a4\",\"type\":\"retrievedata\",\"prevItemId\":\"a3\",\"caption\":\"Risico_HVZ\",\"condition\":\"!==true\"},"
+                + "{\"id\":\"a6\",\"type\":\"conditional\",\"prevItemId\":\"a4\",\"caption\":\"Risico_HVZ\",\"condition\":null},"
+                + "{\"id\":\"a7\",\"type\":\"retrievedata\",\"prevItemId\":\"a6\",\"caption\":\"Gebruikt_diuretica\",\"condition\":\">20\"},"
+                + "{\"id\":\"a8\",\"type\":\"conditional\",\"prevItemId\":\"a7\",\"caption\":\"Gebruikt_diuretica\",\"condition\":null},"
+                + "{\"id\":\"a9\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"ACE-remmers\",\"condition\":\"===true\"},"
+                + "{\"id\":\"a10\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"Diuretica\",\"condition\":null},"
+                + "{\"id\":\"a5\",\"type\":\"end\",\"prevItemId\":\"a3\",\"caption\":\"Stop\",\"condition\":null}], \"endLines\":"
+                + "[\"a6\", \"a9\", \"a10\"]}";
+        
+        setUpTestHypertensionSituationChangeFirst(request);
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent());               
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testHypertensionSituationChangeSecondConditional() throws IOException, Exception {
+        String expectedResponse = "{\"state\":[{\"id\":\"a1\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"subroutine\",\"prevItemId\":\"a1\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a3\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a4\",\"type\":\"retrievedata\",\"prevItemId\":\"a3\",\"caption\":\"Risico_HVZ\",\"condition\":\"===true\"},"
+                + "{\"id\":\"a6\",\"type\":\"conditional\",\"prevItemId\":\"a4\",\"caption\":\"Risico_HVZ\",\"condition\":null},"
+                + "{\"id\":\"a7\",\"type\":\"retrievedata\",\"prevItemId\":\"a6\",\"caption\":\"Gebruikt_diuretica\",\"condition\":\"<20\"},"
+                + "{\"id\":\"a8\",\"type\":\"conditional\",\"prevItemId\":\"a7\",\"caption\":\"Gebruikt_diuretica\",\"condition\":null},"
+                + "{\"id\":\"a9\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"ACE-remmers\",\"condition\":\"===true\"},"
+                + "{\"id\":\"a10\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"Diuretica\",\"condition\":null},"
+                + "{\"id\":\"a5\",\"type\":\"end\",\"prevItemId\":\"a3\",\"caption\":\"Stop\",\"condition\":null}], \"endLines\":"
+                + "[\"a6\", \"a9\", \"a10\"]}";
+        
+        setUpTestHypertensionSituationChangeSecond(request);
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent()); 
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testHypertensionSituationChangeThirdConditional() throws IOException, Exception {
+        String expectedResponse = "{\"state\":[{\"id\":\"a1\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null},"
+                + "{\"id\":\"a2\",\"type\":\"subroutine\",\"prevItemId\":\"a1\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a3\",\"type\":\"conditional\",\"prevItemId\":\"a2\",\"caption\":\"Hypertensie\",\"condition\":null},"
+                + "{\"id\":\"a4\",\"type\":\"retrievedata\",\"prevItemId\":\"a3\",\"caption\":\"Risico_HVZ\",\"condition\":\"===true\"},"
+                + "{\"id\":\"a6\",\"type\":\"conditional\",\"prevItemId\":\"a4\",\"caption\":\"Risico_HVZ\",\"condition\":null},"
+                + "{\"id\":\"a7\",\"type\":\"retrievedata\",\"prevItemId\":\"a6\",\"caption\":\"Gebruikt_diuretica\",\"condition\":\">20\"},"
+                + "{\"id\":\"a8\",\"type\":\"conditional\",\"prevItemId\":\"a7\",\"caption\":\"Gebruikt_diuretica\",\"condition\":null},"
+                + "{\"id\":\"a9\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"ACE-remmers\",\"condition\":\"!==true\"},"
+                + "{\"id\":\"a10\",\"type\":\"newPrescription\",\"prevItemId\":\"a8\",\"caption\":\"Diuretica\",\"condition\":null},"
+                + "{\"id\":\"a5\",\"type\":\"end\",\"prevItemId\":\"a3\",\"caption\":\"Stop\",\"condition\":null}], \"endLines\":"
+                + "[\"a6\", \"a9\", \"a10\"]}";
+        
+        setUpTestHypertensionSituationChangeThird(request);
+        
+        request.setURI("/katool?function=state");
+        response.parse(tester.getResponses(request.generate()));
+        assertEquals(expectedResponse, response.getContent()); 
     }
     
     // Test for undo
@@ -883,6 +968,82 @@ public class chartservletTest {
         tester.getResponses(request.generate());
         
         request.setURI("/katool?function=update&" + chartItemToURLString(mockLoop2FirstAction));
+        tester.getResponses(request.generate());
+    }
+    
+    private void setUpTestHypertensionSituation(HttpTester request) throws IOException, Exception {
+        ChartItem start2 = new ChartItem("a1", "start", "-1", "Start", null);
+        ChartItem subroutineHypertensie = new ChartItem("a2", "subroutine", "a1", "Hypertensie", null);
+        ChartItem conditionalHypertensie = new ChartItem("a3", "conditional", "a2", "Hypertensie", null);
+        ChartItem retrieveRisico = new ChartItem("a4", "retrievedata", "a3", "Risico_HVZ", "===true");
+        ChartItem end = new ChartItem("a5", "end", "a3", "Stop", null);
+        ChartItem conditionalRisico = new ChartItem("a6", "conditional", "a4", "Risico_HVZ", null);
+        ChartItem retrieveDiuretica = new ChartItem("a7", "retrievedata", "a6", "Gebruikt_diuretica", ">20");
+        ChartItem conditionalDiuretica = new ChartItem("a8", "conditional", "a7", "Gebruikt_diuretica", null);
+        ChartItem prescribeACE = new ChartItem("a9", "newPrescription", "a8", "ACE-remmers", "===true");
+        ChartItem prescribeDiuretica = new ChartItem("a10", "newPrescription", "a8", "Diuretica", null);
+        
+        request.setURI("/katool?function=update&" + chartItemToURLString(start2));
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(subroutineHypertensie));
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalHypertensie) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(retrieveRisico) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(end) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalRisico) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(retrieveDiuretica) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=endline&id=a6");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalDiuretica) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(prescribeACE) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(prescribeDiuretica) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=endline&id=a9");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=endline&id=a10");
+        tester.getResponses(request.generate());
+    }
+    
+    private void setUpTestHypertensionSituationChangeFirst(HttpTester request) throws IOException, Exception{
+        setUpTestHypertensionSituation(request);
+        ChartItem conditionalHypertensie = new ChartItem("a3", "conditional", "a2", "Hypertensie", null);
+        ChartItem retrieveRisico = new ChartItem("a4", "retrievedata", "a3", "Risico_HVZ", "!==true");
+        ChartItem end = new ChartItem("a5", "end", "a3", "Stop", null);
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalHypertensie) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(retrieveRisico) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(end) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+    }
+    
+    private void setUpTestHypertensionSituationChangeSecond(HttpTester request) throws IOException, Exception{
+        setUpTestHypertensionSituation(request);
+        ChartItem conditionalRisico = new ChartItem("a6", "conditional", "a4", "Risico_HVZ", null);
+        ChartItem retrieveDiuretica = new ChartItem("a7", "retrievedata", "a6", "Gebruikt_diuretica", "<20");
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalRisico) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(retrieveDiuretica) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+    }
+    
+    private void setUpTestHypertensionSituationChangeThird(HttpTester request) throws IOException, Exception {
+        setUpTestHypertensionSituation(request);
+        ChartItem conditionalDiuretica = new ChartItem("a8", "conditional", "a7", "Gebruikt_diuretica", null);
+        ChartItem prescribeACE = new ChartItem("a9", "newPrescription", "a8", "ACE-remmers", "!==true");
+        ChartItem prescribeDiuretica = new ChartItem("a10", "newPrescription", "a8", "Diuretica", null);
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalDiuretica) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(prescribeACE) + "&isMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(prescribeDiuretica) + "&isMultipart=true&finalMultipart=true");
         tester.getResponses(request.generate());
     }
 }

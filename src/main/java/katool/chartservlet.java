@@ -175,7 +175,6 @@ public class chartservlet extends HttpServlet {
                 break;
             case "getDefaultWorkingDirectory":
                 if (Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
-                System.out.println(Utils.defaultWorkingDirectory);
                 response.getWriter().write("{\"defaultWorkingDirectory\":\"" + Utils.defaultWorkingDirectory.replace("\\", "\\\\") + "\"}");
                 break;
             case "setDefaultWorkingDirectory":
@@ -454,12 +453,14 @@ public class chartservlet extends HttpServlet {
     
     private void updateEndlineList(HttpServletRequest request){
         String id = request.getParameter("id");
-        System.out.println(id);
+        String isMultipart = request.getParameter("isMultipart");
+        if (isMultipart == null) { isMultipart = "false"; }
         if (!id.startsWith("\"")) { id = "\"" + id + "\""; }
-        System.out.println(id);
         if (!currentState.getValue1().contains(id)) {
-            maintainMaxDequeSize("undo");
-            undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
+            if (isMultipart.equals("false")) {
+                maintainMaxDequeSize("undo");
+                undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
+            }
             currentState.getValue1().add(id);
         }
     }
@@ -477,6 +478,7 @@ public class chartservlet extends HttpServlet {
     }
     
     private String openProject(HttpServletRequest request) throws IOException{
+        clearAllStacks();
         Boolean determinationSuccess = Utils.determineOS();
         if (!determinationSuccess) { return "Unsupported OS"; }
         Utils.loadSettings();
@@ -636,7 +638,7 @@ public class chartservlet extends HttpServlet {
         ChartItem newItem = new ChartItem(id, type, prevItemId, caption);
         if (condition != null && !condition.equals("null")) { newItem = new ChartItem(id, type, prevItemId, caption, condition); }
         
-        if (Utils.nextIsEnd(prevItemId, currentState.getValue0())){
+        if (Utils.nextIsEnd(prevItemId, currentState.getValue0()) && isMultipart.equals("false")){
             Integer endIndex = Utils.nextElementIndex(prevItemId, currentState.getValue0());
             ChartItem endItem = currentState.getValue0().get(endIndex);
             endItem.setPrevItemId(id);
@@ -648,8 +650,10 @@ public class chartservlet extends HttpServlet {
             clearAllStacks();
             currentState.getValue0().add(newItem);
         } else if (index > 0) { // replace
-            maintainMaxDequeSize("undo");
-            undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
+            if (isMultipart.equals("false") || firstMultipart.equals("true")) {
+                maintainMaxDequeSize("undo");
+                undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
+            }
             currentState.getValue0().set(index, newItem);
         } else if (isMultipart.equals("true")){ // conditional
             if (firstMultipart.equals("true")) { 

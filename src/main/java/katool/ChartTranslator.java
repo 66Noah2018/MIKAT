@@ -5,18 +5,14 @@
  */
 package katool;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.InvalidPropertiesFormatException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.maven.surefire.shade.booter.org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 
 /**
@@ -61,7 +57,8 @@ public class ChartTranslator {
                     break;
                 case "conditional":
                     LinkedList<ChartItem> conditionalItems = Utils.conditionalItems(item.getId(), state);
-                    code += "if (" + item.getCaption() + " " + conditionalItems.get(0).getCondition() + ") {";
+                    String condition = prepCondition(conditionalItems.get(0).getCondition());
+                    code += "if (" + item.getCaption() + " " + condition + ") {";
                     conditionalIds.add(item.getId());
                     break;
                 case "loop":
@@ -102,6 +99,21 @@ public class ChartTranslator {
             }}
          }
         return new Pair<String, ArrayList<String>>(code, variables);
+    }
+    
+    private static String prepCondition (String condition) {
+        String preppedCondition = "";
+        Pattern conditionPattern = Pattern.compile("/(===|<=|>=|<|>|!==|is-in|is-not-in) (.+)/");
+        Matcher conditionMatcher = conditionPattern.matcher(condition);
+        Boolean found = conditionMatcher.find();
+        if (found) {
+            preppedCondition += conditionMatcher.group(1);
+            String conditionPart = conditionMatcher.group(2);
+            if (!StringUtils.isNumericSpace(conditionPart.strip()) && !conditionPart.strip().equals("true") && !conditionPart.strip().equals("false")) { preppedCondition += "\"" + conditionPart + "\""; }
+            else { preppedCondition += conditionPart; }
+            return preppedCondition;
+        }
+        return condition;
     }
     
     private static String getMessage(String type, String caption){
