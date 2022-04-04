@@ -201,6 +201,10 @@ public class chartservlet extends HttpServlet {
                 String headings = getTestTableHeadings();
                 response.getWriter().write(headings);
                 break;
+            case "setTestCasesFileLocation":
+                String loaded = setTestCasesFileLocation(request);
+                response.getWriter().write("{\"fileLoaded\":" + loaded + "}");
+                break;
             default:
                 break;
         }
@@ -246,6 +250,31 @@ public class chartservlet extends HttpServlet {
     }// </editor-fold>
     
     // Servlet functions
+    
+    private String setTestCasesFileLocation(HttpServletRequest request) throws IOException{
+        String fileName = Utils.getBody(request);
+        String pathToFile = null;
+        fileName = fileName.substring(1, fileName.length()-1);
+        System.out.println(fileName);
+            if (Utils.workingDir != null) {
+                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
+                while (fileIterator.hasNext() && pathToFile == null) {
+                    File file = fileIterator.next();
+                    if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+                }
+            }
+            if (pathToFile == null) {
+                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.rootPath), Utils.extensions, true);
+                while (fileIterator.hasNext() && pathToFile == null) {
+                    File file = fileIterator.next();
+                    if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+                }
+            }
+            System.out.println(pathToFile);
+            if (pathToFile == null) { return "Invalid file, no path"; }
+        testCasesFileLocation = pathToFile;
+        return "loaded";
+    }
     
     private String getTestTableHeadings() throws IOException{
         ArrayList<String> retrievedataElements = new ArrayList<>();

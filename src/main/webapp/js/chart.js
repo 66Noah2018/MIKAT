@@ -909,6 +909,9 @@ function openFormPopup(popupClass, subclass=null, values=null){
             document.getElementById("return-value-input").innerHTML = values?values.value:"";
             document.getElementsByClassName("chart-return-value-popup")[0].style.display = "block";
             break;
+        case "select-testcasesfile-popup":
+            document.getElementsByClassName("select-testcasesfile-popup")[0].style.display = "block";
+            break;
         default:
             break;
     }
@@ -958,7 +961,7 @@ function addMedicalAction(){
 }
 
 function closeAllForms(){
-    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup", "chart-forloop-popup", "chart-return-value-popup"];
+    const popupClasses = ["chart-item-popup", "chart-conditional-popup", "chart-retrieve-data-popup", "chart-subroutine-popup", "questionmark-popup", "chart-forloop-popup", "chart-return-value-popup", "select-testcasesfile-popup"];
     popupClasses.forEach((popupClass) => {
         document.getElementsByClassName(popupClass)[0].style.display = "none";
     });

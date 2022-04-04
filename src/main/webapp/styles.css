@@ -406,7 +406,7 @@ table{
     margin-bottom: 10px;
 }
 
-.chart-retrieve-data-popup, .chart-subroutine-popup{
+.chart-retrieve-data-popup, .chart-subroutine-popup, .select-testcasesfile-popup{
     position: absolute;
     top: 175px;
     left: calc(50vw - 105px);
@@ -418,18 +418,18 @@ table{
     display: none;
 }
 
-.chart-retrieve-data-popup .form-group, .chart-subroutine-popup .form-group, .chart-forloop-popup .form-group{
+.chart-retrieve-data-popup .form-group, .chart-subroutine-popup .form-group, .chart-forloop-popup .form-group, .select-testcasesfile-popup .form-group{
     display: initial;
 }
 
-.chart-retrieve-data-popup form, .chart-subroutine-popup form{
+.chart-retrieve-data-popup form, .chart-subroutine-popup form, .select-testcasesfile-popup form{
     width: 180px;
     margin-left: auto;
     margin-right: auto; 
     margin-top: 5px;
 }
 
-.chart-retrieve-data-popup label, .chart-subroutine-popup label{
+.chart-retrieve-data-popup label, .chart-subroutine-popup label, .select-testcasesfile-popup label{
     line-height: 35px;
 }
 
@@ -437,7 +437,7 @@ table{
     display: block;
 }
 
-.chart-retrieve-data-popup button, .chart-subroutine-popup button, .questionmark-popup button, .chart-forloop-popup button {
+.chart-retrieve-data-popup button, .chart-subroutine-popup button, .questionmark-popup button, .chart-forloop-popup button, .select-testcasesfile-popup button {
     margin-top: 10px;
     float: right;
 }

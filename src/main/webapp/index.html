@@ -167,7 +167,7 @@
                                 </span>
                                 <span class="caption">Create Test Cases</span>
                             </button>
-                            <button class="ribbon-button" onclick="importTestCases()">
+                            <button class="ribbon-button" onclick="openFormPopup('select-testcasesfile-popup')">
                                 <span class="icon">
                                     <span class="fas fa-folder-open"></span>
                                 </span>
@@ -288,6 +288,19 @@
                     <span class="mif-spinner ani-pulse"></span>
                 </div>
             </div>
+        </div>
+        
+        <div class="select-testcasesfile-popup" onsubmit="importTestCases()">
+            <i class="fa fa-times" onclick="closeAllForms()"></i>
+            <form id="testcasesfile-form" class=".custom-validation">
+                <div class="form-group">
+                    <label>Select test cases file</label>
+                    <input id="testcasefile-select" type="file" accept="application/json" data-role="file" data-button-title="<span class='mif-folder'></span>" required>
+                </div>
+                <div class="form-group">
+                    <button class="button" type="submit">OK</button>
+                </div>
+            </form>
         </div>
         
         <div class="chart-item-popup" onsubmit="addMedicalAction()">
