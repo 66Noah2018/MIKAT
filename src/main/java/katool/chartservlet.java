@@ -648,9 +648,9 @@ public class chartservlet extends HttpServlet {
         ArrayList<String> endlinesCopy = (ArrayList<String>) currentState.getValue1().clone();
         for (ChartItem item : currentState.getValue0()){
             stateIds.add("\"" + item.getId() + "\"");
-        }
+        }   
         for (String id : currentState.getValue1()) {
-            if (!stateIds.contains(id)) { System.out.println(id); endlinesCopy.remove(id); }
+            if (!stateIds.contains(id)) { endlinesCopy.remove(id); }
         }
         currentState = currentState.setAt1(endlinesCopy);
     }

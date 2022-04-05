@@ -228,7 +228,6 @@ function importTestCases(){
     closeAllForms();
     let fileName = document.getElementById("testcasefile-select").value;
     fileName = fileName.split("\\")[fileName.split("\\").length - 1];
-    console.log(fileName);
     servletRequestPost("./chartservlet?function=setTestCasesFileLocation", fileName);
     loadTestCases();    
 }
@@ -247,7 +246,6 @@ function startTests(){
         let functionString = "new Function(";
         parameters.forEach(parameter => functionString += "\"" + parameter + "\",");
         functionString += "code)";
-        console.log(code)
         chartJS = eval(functionString);
         let result;
         testPatients.forEach(patient => {

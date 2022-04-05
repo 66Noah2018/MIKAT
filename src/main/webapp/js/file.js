@@ -129,8 +129,8 @@ function editProject(isNew = false){
     // form value checks
     
     if (title === "") { displayErrorMessage("title-group", "Title cannot be empty"); }
-    if (mlmname === "" || mlmname.length > 80 || specialChars.test(mlmname)) {
-        displayErrorMessage("mlmname-group", "MLMname cannot be empty, contain special characters (_ is allowed), or contain more than 80 characters");
+    if (mlmname === "" || mlmname.length > 80 || specialChars.test(mlmname) || mlmname.indexOf(" ") >= 0) {
+        displayErrorMessage("mlmname-group", "MLMname cannot be empty, contain special characters or spaces (_ is allowed), or contain more than 80 characters");
     }
     if (version === "" || version.length > 80){ displayErrorMessage("version-group", "Version cannot be empty or smaller than 0, or contain more than 80 characters"); }
     if (institution === "" || institution.length > 80) { displayErrorMessage("institution-group", "Institution can not be empty or contain more than 80 characters"); }
@@ -397,6 +397,10 @@ function saveDbMapChanges(){
         if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
             let key = row.cells[0].innerText.trim();
             let value = row.cells[1].innerText.trim();
+            if (key.indexOf(" ") >= 0) { 
+                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                return;
+            }
             singulars[key] = value;
         }
     }
@@ -406,6 +410,10 @@ function saveDbMapChanges(){
         if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
             let key = row.cells[0].innerText.trim();
             let value = row.cells[1].innerText.trim();
+            if (key.indexOf(" ") >= 0) { 
+                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                return;
+            }
             plurals[key] = value;
         }
     }
@@ -423,12 +431,28 @@ function saveTermMapChanges(){
     const rowsSingular = document.getElementById("standardized-mapping-singular").rows;
     const rowsPlural = document.getElementById("standardized-mapping-plural").rows;
     for (let row of rowsSingular) {
-        singulars[row.cells[0].innerHTML] = row.cells[1].innerHTML;
+        if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
+            let key = row.cells[0].innerText.trim();
+            let value = row.cells[1].innerText.trim();
+            if (key.indexOf(" ") >= 0) { 
+                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                return;
+            }
+            singulars[key] = value;
+        }
     }
     delete singulars.Term;
     
     for (let row of rowsPlural) {
-        plurals[row.cells[0].innerHTML] = row.cells[1].innerHTML;
+        if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
+            let key = row.cells[0].innerText.trim();
+            let value = row.cells[1].innerText.trim();
+            if (key.indexOf(" ") >= 0) { 
+                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                return;
+            }
+            plurals[key] = value;
+        }
     }
     delete plurals.Term;
     
