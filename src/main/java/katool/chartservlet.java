@@ -408,6 +408,7 @@ public class chartservlet extends HttpServlet {
             }
 
             Utils.updatePrevOpened(mlmname);
+            clearUndoRedo();
         }
     }
     
@@ -858,11 +859,17 @@ public class chartservlet extends HttpServlet {
             file.write(properties);
             file.close();
             setMappingLocations(properties);
+            clearUndoRedo();
         }
     }
     
     private void clearAllStacks(){
         currentState = new Pair(new LinkedList<>(), new ArrayList<>());
+        undoStack.clear();
+        redoStack.clear();
+    }
+    
+    private void clearUndoRedo(){
         undoStack.clear();
         redoStack.clear();
     }
