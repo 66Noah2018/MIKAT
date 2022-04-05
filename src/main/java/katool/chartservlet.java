@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,15 +24,19 @@ import java.util.Date;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.javatuples.Pair;
+import static java.util.stream.Collectors.*;
 
 /**
  *
@@ -205,6 +210,13 @@ public class chartservlet extends HttpServlet {
                 String loaded = setTestCasesFileLocation(request);
                 response.getWriter().write("{\"fileLoaded\":" + loaded + "}");
                 break;
+            case "readCSVFile":
+                String fileContent = readCSVFile(request);
+                response.getWriter().write("{\"fileContent\":\"" + fileContent.replace(System.lineSeparator(),";ret;") + "\"}");
+                break;
+            case "exportCSV":
+                exportCSV(request);
+                break;
             default:
                 break;
         }
@@ -249,27 +261,82 @@ public class chartservlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
     
-    // Servlet functions
+    // Servlet functions 
+    
+    private void exportCSV(HttpServletRequest request) throws IOException {
+        String newFileLocation = testCasesFileLocation.replace(".json", ".csv");
+        String body = Utils.getBody(request);
+        body = body.substring(1, body.length() - 1);
+        ArrayList<String> fileContent = new ArrayList<String>(Arrays.asList(body.split(";ret;")));
+        FileWriter file = new FileWriter(newFileLocation);
+        file.write("sep=,");
+        file.write(System.lineSeparator());
+        for (String record : fileContent) {
+            file.write(record);
+            file.write(System.lineSeparator());
+        }
+        file.close();
+    }
+    
+    private String readCSVFile(HttpServletRequest request) throws IOException {
+        String fileName = Utils.getBody(request);
+        fileName = fileName.substring(1, fileName.length() - 1);
+        String pathToFile = null;
+        if (Utils.workingDir != null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        if (Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
+        if (pathToFile == null && Utils.defaultWorkingDirectory != null){
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.defaultWorkingDirectory), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        if (pathToFile == null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.rootPath), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        if (pathToFile == null) { return "Invalid file, no path"; }
+        testCasesFileLocation = pathToFile;
+        return new String(Files.readAllBytes(Paths.get(pathToFile)));
+    }
     
     private String setTestCasesFileLocation(HttpServletRequest request) throws IOException{
         String fileName = Utils.getBody(request);
         String pathToFile = null;
+        System.out.println(fileName);
         fileName = fileName.substring(1, fileName.length()-1);
-            if (Utils.workingDir != null) {
-                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
-                while (fileIterator.hasNext() && pathToFile == null) {
-                    File file = fileIterator.next();
-                    if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
-                }
+        if (Utils.workingDir != null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
             }
-            if (pathToFile == null) {
-                Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.rootPath), Utils.extensions, true);
-                while (fileIterator.hasNext() && pathToFile == null) {
-                    File file = fileIterator.next();
-                    if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
-                }
+        }
+        if (Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
+        if (pathToFile == null && Utils.defaultWorkingDirectory != null){
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.defaultWorkingDirectory), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
             }
-            if (pathToFile == null) { return "Invalid file, no path"; }
+        }
+        if (pathToFile == null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.rootPath), Utils.extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        if (pathToFile == null) { return "Invalid file, no path"; }
         testCasesFileLocation = pathToFile;
         return "loaded";
     }

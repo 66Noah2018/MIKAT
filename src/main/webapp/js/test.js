@@ -227,9 +227,65 @@ function importTestCases(){
     event.preventDefault();
     closeAllForms();
     let fileName = document.getElementById("testcasefile-select").value;
-    fileName = fileName.split("\\")[fileName.split("\\").length - 1];
-    servletRequestPost("./chartservlet?function=setTestCasesFileLocation", fileName);
+    if (fileName.includes("\\")) { fileName = fileName.split("\\")[fileName.split("\\").length - 1]; }
+    if (fileName.includes(".csv")) {
+        const newFileName = processCSVData(fileName);
+    } else {
+        servletRequestPost("./chartservlet?function=setTestCasesFileLocation", fileName);
+    }
     loadTestCases();    
+}
+
+function processCSVData(fileName){
+    const http = new XMLHttpRequest(); // servletrequestpost doesnt work here, loading response somehow takes too long
+    http.open("POST", "./chartservlet?function=readCSVFile", true);
+    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    http.send(JSON.stringify(fileName));
+    http.onload = function(){ 
+        const fileContent = JSON.parse(http.responseText).fileContent;
+        if (fileContent === "Invalid file, no path") { 
+            Metro.notify.create("Selected file does not exist", "Warning: Nonexistent file", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true}); 
+            return;
+        }
+        testPatients = [];
+        const records = fileContent.split(";ret;");
+        records.shift();
+        const headings = records[0].split(",");
+        for (let i = 1; i < records.length; i++) {
+            if (records[i] !== ""){
+                let testCase = new Object();
+                let cells = records[i].split(",");
+                for (let j = 0; j < cells.length; j++) {
+                    testCase[headings[j]] = cells[j];
+                }
+                console.log(testCase);
+                testPatients.push(testCase);
+            } 
+        }
+        servletRequestPost("./chartservlet?function=saveTestCases&newFile=true", {"headings": headings, "testCases": testPatients});
+        Metro.notify.create("Test cases imported", "Success", {animation: 'easeOutBounce', cls: "save-success"});
+        loadTestCases();
+    }
+}
+
+function exportToCSV(){
+    let csvString = "";
+    if (headings === null) { headings = headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings")); }
+    console.log(headings);
+    csvString += headings.retrievedata.join(",") + "," + headings.medicalActions.join(",") + ";ret;";
+    testPatients.forEach(patient => {
+        let patientString = "";
+        headings.retrievedata.forEach(heading => {
+            patientString += patient[heading] + ",";
+        });
+        headings.medicalActions.forEach(heading => {
+            patientString += patient[heading] + ",";
+        });
+        patientString = patientString.substring(0, patientString.length - 1);
+        csvString += patientString + ";ret;";
+    });
+    servletRequestPost("./chartservlet?function=exportCSV", csvString);
+    Metro.notify.create("Test cases exported", "Success", {animation: 'easeOutBounce', cls: "save-success"});
 }
 
 function startTests(){
@@ -318,9 +374,3 @@ function addNewTestCase(){
         newCell.appendChild(parser.parseFromString(content, 'text/html').body.firstChild);
     });
 }
-
-//function createTestCases(){
-//    
-//    
-//    generateTestcasesTableCode(variables, possibleValues, possibleOutcomes
-//}

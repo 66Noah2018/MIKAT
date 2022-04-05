@@ -40,7 +40,7 @@ import org.javatuples.Pair;
  */
 public class Utils {
     
-    public final static String[] extensions = new String[]{"json"};
+    public final static String[] extensions = new String[]{"json","csv"};
     public static String rootPath = "";
     public static String programFilesPath = "";
     public static Path workingDir = null;
