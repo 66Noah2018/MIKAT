@@ -640,6 +640,19 @@ public class chartservlet extends HttpServlet {
         } else {
            removeEndline(id); 
         }
+        removeUnusedEndlines();
+    }
+    
+    private void removeUnusedEndlines(){
+        ArrayList<String> stateIds = new ArrayList<>();
+        ArrayList<String> endlinesCopy = (ArrayList<String>) currentState.getValue1().clone();
+        for (ChartItem item : currentState.getValue0()){
+            stateIds.add("\"" + item.getId() + "\"");
+        }
+        for (String id : currentState.getValue1()) {
+            if (!stateIds.contains(id)) { System.out.println(id); endlinesCopy.remove(id); }
+        }
+        currentState = currentState.setAt1(endlinesCopy);
     }
     
     private void updateState(HttpServletRequest request) throws IOException{
@@ -763,8 +776,6 @@ public class chartservlet extends HttpServlet {
     
     private void removeEndline(String id) {
         if (currentState.getValue1().contains(id)){
-            maintainMaxDequeSize("undo");
-            undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
             currentState.getValue1().remove(id);
         }
     }
@@ -774,8 +785,10 @@ public class chartservlet extends HttpServlet {
         currentState.getValue0().remove(currentState.getValue0().get(itemIndex));
         for (Iterator<ChartItem> iterator = currentState.getValue0().iterator(); iterator.hasNext(); ) {
             ChartItem item = iterator.next();
-            if (item.getPrevItemId().equals(id)) { iterator.remove(); }
-            removeEndline(item.getId());
+            if (item.getPrevItemId().equals(id)) { 
+                iterator.remove(); 
+                removeEndline(item.getId());
+            } 
         }
         removeEndline(id);
     }

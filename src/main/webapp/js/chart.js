@@ -154,7 +154,7 @@ function openErrorStatusbar(context){
     }
 }
 
-function updateState(newItemArray, isConditional = false){
+function updateState(newItemArray, isConditional = false, redraw = true){
     if (newItemArray === null) { return; }
     let result = null;
     if (!isConditional){
@@ -172,7 +172,7 @@ function updateState(newItemArray, isConditional = false){
         } 
         else { result = JSON.parse(servletRequest(`./chartservlet?function=update&id=${newItemArray[2].id}&type=${newItemArray[2].type}&prevItemId=${newItemArray[2].prevItemId}&caption=${newItemArray[2].caption}&condition=${newItemArray[2].condition}&isMultipart=true&finalMultipart=true`)); }
     }
-    drawChart(result.state, result.endLines);
+    if (redraw === true) { drawChart(result.state, result.endLines); }
 }
 
 function updateEndLinesList(id, newEndline = false){
@@ -482,10 +482,42 @@ function setSelectedItem(id){
 
 function deleteItem(id){
     let item = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${id}`)).chartItem;
-    console.log(item)
     let state = JSON.parse(servletRequest(`./chartservlet?function=state`)).state;
     if (item.type === elements.start) {
         Metro.notify.create("Cannot delete start element", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
+        return;
+    }
+    if (item.type === elements.end) { // we have to deal with all involved conditionals
+        let element = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${item.prevItemId}`)).chartItem;
+        const endLines = JSON.parse(servletRequest("./chartservlet?function=state")).endLines;
+        servletRequest(`./chartservlet?function=delete&id=${item.id}`);
+        if (element.type === elements.conditional) { 
+            let actions = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${element.id}`)).items;
+            actions.unshift(element);
+            if (actions[1].condition === null || actions[1].condition === "null") {
+                actions.splice(1, 0, {"id": getRandomId(), "type": elements.questionMark, "prevItemId": element.id, "caption": clickToDefine, "conditional": item.condition});
+            } else {
+                actions.push({"id": getRandomId(), "type": elements.questionMark, "prevItemId": element.id, "caption": clickToDefine, "conditional": item.condition});
+            }
+            updateState(actions, true, false); 
+        }
+        
+        endLines.forEach(lineId => {
+            element = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${lineId}`)).chartItem;
+            if (element.type === elements.conditional) { 
+                let actions = JSON.parse(servletRequest(`./chartservlet?function=getConditionalActions&id=${element.id}`)).items;
+                actions.unshift(element);
+                if (actions[1].condition === null || actions[1].condition === "null") {
+                    actions.splice(1, 0, {"id": getRandomId(), "type": elements.questionMark, "prevItemId": element.id, "caption": clickToDefine, "conditional": item.condition});
+                } else {
+                    actions.push({"id": getRandomId(), "type": elements.questionMark, "prevItemId": element.id, "caption": clickToDefine, "conditional": item.condition});
+                }
+                updateState(actions, true, false); 
+            }
+        });
+        
+        const result = JSON.parse(servletRequest("./chartservlet?function=state"));
+        drawChart(result.state, result.endLines);
         return;
     }
     // add option: if item is end, find all conditionals with line to end and give them questionmark
