@@ -167,7 +167,7 @@ public class chartservlet extends HttpServlet {
                 response.getWriter().write("{\"hasProjectOpened\":" + !Utils.currentPath.equals("") + "}");
                 break;
             case "translateJS":
-                String translation = ChartTranslator.translateToJS(currentState);
+                String translation = ChartTranslator.translateToJS(currentState, Paths.get(Utils.currentPath).getFileName().toString());
                 response.getWriter().write(translation);
                 break;
             case "translateAS":
@@ -255,7 +255,6 @@ public class chartservlet extends HttpServlet {
         String fileName = Utils.getBody(request);
         String pathToFile = null;
         fileName = fileName.substring(1, fileName.length()-1);
-        System.out.println(fileName);
             if (Utils.workingDir != null) {
                 Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
                 while (fileIterator.hasNext() && pathToFile == null) {
@@ -270,7 +269,6 @@ public class chartservlet extends HttpServlet {
                     if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
                 }
             }
-            System.out.println(pathToFile);
             if (pathToFile == null) { return "Invalid file, no path"; }
         testCasesFileLocation = pathToFile;
         return "loaded";
@@ -303,8 +301,8 @@ public class chartservlet extends HttpServlet {
                     medicalActions.add("\"Add notes: " + item.getCaption() + "\"");
                     break;
                 case "subroutine":
-                    LinkedList<ChartItem> subroutineState = JSONDecoder.decodeChart(Utils.getDependency(item.getCaption()));
-                    ArrayList<String> result = getSubroutineHeadings(subroutineState);
+                    Pair<LinkedList<ChartItem>, ArrayList<String>> subroutine = Utils.getDependency(item.getCaption());
+                    ArrayList<String> result = getSubroutineHeadings(subroutine.getValue0());
                     retrievedataElements.addAll(result);
                 default:
                     break;
@@ -321,7 +319,7 @@ public class chartservlet extends HttpServlet {
                     retrievedataElements.add("\"" + item.getCaption() + "\"");
                     break;
                 case "subroutine":
-                    LinkedList<ChartItem> subroutineState = JSONDecoder.decodeChart(Utils.getDependency(item.getCaption()));
+                    LinkedList<ChartItem> subroutineState = Utils.getDependency(item.getCaption()).getValue0();
                     ArrayList<String> result = getSubroutineHeadings(subroutineState);
                     retrievedataElements.addAll(result);
                 default:
@@ -385,7 +383,6 @@ public class chartservlet extends HttpServlet {
         if (isNew.equals("true")) { clearAllStacks(); }
         Utils.determineOS();
         String testCasesFileLocationString = Paths.get(testCasesFileLocation).toString().replace("\\", "\\\\");
-//        if (!testCasesFileLocationString.contains("\\\\")) { testCasesFileLocationString.replace("\\", "\\"); }
         String body = Utils.getBody(request).replace("\\\"", "\"");
         body = body.substring(0, body.length()-2);
         body += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 

@@ -13,18 +13,22 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.maven.surefire.shade.booter.org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
+import org.javatuples.*;
 
 /**
  *
  * @author RLvan
  */
 public class ChartTranslator {
-    public static String translateToJS(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState) throws IOException{
+    public static String translateToJS(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState, String mlmname) throws IOException{
         LinkedList<ChartItem> state = currentState.getValue0();
+        ArrayList<String> endlines = currentState.getValue1();
         String functionJS = "let actions = [];";
         String endFunction = "return actions;";
-        Pair<String, ArrayList<String>> result = processStateJS(state);
+        Triplet<String, ArrayList<String>, ArrayList<String>> result = processStateJS(state, endlines, mlmname);
+        for (int i = 0; i < result.getValue2().size(); i++) {
+            functionJS += result.getValue2().get(i) + ";";
+        }
         functionJS += result.getValue0() + endFunction;
         ArrayList<String> variables = result.getValue1();
         return "{\"parameters\": " + variables.toString() + ", \"code\": \"" + functionJS + "\"}";
@@ -32,8 +36,9 @@ public class ChartTranslator {
     
     public static void translateToArdenSyntax(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState){}
     
-    private static Pair<String, ArrayList<String>> processStateJS(LinkedList<ChartItem> state) throws IOException {
+    private static Triplet<String, ArrayList<String>, ArrayList<String>> processStateJS(LinkedList<ChartItem> state, ArrayList<String> endlines, String mlmname) throws IOException {
         String code = "";
+        ArrayList<String> letsToAdd = new ArrayList<>();
         ArrayList<String> conditionalIds = new ArrayList<>();
         ArrayList<String> lastElseIds = new ArrayList<>();
         ArrayList<String> variables = new ArrayList<>();
@@ -48,12 +53,12 @@ public class ChartTranslator {
                 case "end":
                     break;
                 case "subroutine":
-                    String projectString = Utils.getDependency(item.getCaption());
-                    System.out.println(projectString);
-                    if (projectString.equals("invalid file")) { break; }
-                    Pair<String, ArrayList<String>> result = processStateJS(JSONDecoder.decodeChart(projectString));
+                    Pair<LinkedList<ChartItem>, ArrayList<String>> projectString = Utils.getDependency(item.getCaption());
+                    if (projectString.getValue0().isEmpty()) { break; }
+                    Triplet<String, ArrayList<String>, ArrayList<String>> result = processStateJS(projectString.getValue0(), projectString.getValue1(), item.getCaption());
                     if (!result.getValue0().equals("")) { code += result.getValue0(); }
                     if (!result.getValue1().isEmpty()) { variables.addAll(result.getValue1()); }
+                    if (!result.getValue2().isEmpty()) { letsToAdd.addAll(result.getValue2()); }
                     break;
                 case "conditional":
                     LinkedList<ChartItem> conditionalItems = Utils.conditionalItems(item.getId(), state);
@@ -86,9 +91,10 @@ public class ChartTranslator {
                     } catch (NumberFormatException e) {
                         if (!returnValue.equals("true") && !returnValue.equals("false")) { returnValue = "\"" + returnValue + "\""; }
                     }
-                    code += "let " + item.getCaption() + " = " + returnValue + ";";
+                    code += mlmname + " = " + returnValue + ";";
+                    letsToAdd.add("let " + mlmname);
                     break;
-             }
+            }
             if (lastElseIds.contains(item.getPrevItemId())) { 
                 lastElseIds.remove(item.getPrevItemId());
                 lastElseIds.add(item.getId()); 
@@ -96,9 +102,11 @@ public class ChartTranslator {
             else { if (!lastElseIds.isEmpty() && !item.getType().equals("conditional")) {
                 code += "}"; 
                 lastElseIds.remove(item.getId());
+                conditionalIds.remove(conditionalIds.size() - 1);
             }}
-         }
-        return new Pair<String, ArrayList<String>>(code, variables);
+        }
+        for (int i = 0; i < conditionalIds.size(); i++) { code += "}"; }
+        return new Triplet<String, ArrayList<String>, ArrayList<String>>(code, variables, letsToAdd);
     }
     
     private static String prepCondition (String condition) {
@@ -135,29 +143,29 @@ public class ChartTranslator {
         }
     }
     
-    private static Pair<Pair<LinkedList<ChartItem>, ArrayList<String>>, String> getFileContent(String fileName) throws IOException{
-        String fileContent = Utils.findAndReadFile(fileName, Utils.workingDir.toString());
-        String workingDir = null;
-        String state = null;
-        ArrayList<String> endLines = new ArrayList<>();
-        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\"");
-        Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
-        Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
-        Matcher workingDirMatcher = workingDirPattern.matcher(fileContent);
-        Matcher stateMatcher = statePattern.matcher(fileContent);
-        Matcher endLinesMatcher = endLinesPattern.matcher(fileContent);
-        workingDirMatcher.find();
-        stateMatcher.find();
-        endLinesMatcher.find();
-        try {
-            workingDir = workingDirMatcher.group(1);
-            state = stateMatcher.group(1);
-            endLines = new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).split(",")));
-            
-        } catch (Exception e) {
-            throw new InvalidPropertiesFormatException("File format invalid");
-        }
-        Pair<LinkedList<ChartItem>, ArrayList<String>> currentState = new Pair<>(JSONDecoder.decodeChart(state), endLines);
-        return new Pair<>(currentState, workingDir);
-    }
+//    private static Pair<Pair<LinkedList<ChartItem>, ArrayList<String>>, String> getFileContent(String fileName) throws IOException{
+//        String fileContent = Utils.findAndReadFile(fileName, Utils.workingDir.toString());
+//        String workingDir = null;
+//        String state = null;
+//        ArrayList<String> endLines = new ArrayList<>();
+//        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\"");
+//        Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
+//        Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
+//        Matcher workingDirMatcher = workingDirPattern.matcher(fileContent);
+//        Matcher stateMatcher = statePattern.matcher(fileContent);
+//        Matcher endLinesMatcher = endLinesPattern.matcher(fileContent);
+//        workingDirMatcher.find();
+//        stateMatcher.find();
+//        endLinesMatcher.find();
+//        try {
+//            workingDir = workingDirMatcher.group(1);
+//            state = stateMatcher.group(1);
+//            endLines = new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).replace("[", "").replace("]", "").split(", ")));
+//            
+//        } catch (Exception e) {
+//            throw new InvalidPropertiesFormatException("File format invalid");
+//        }
+//        Pair<LinkedList<ChartItem>, ArrayList<String>> currentState = new Pair<>(JSONDecoder.decodeChart(state), endLines);
+//        return new Pair<>(currentState, workingDir);
+//    }
 }

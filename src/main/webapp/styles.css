@@ -663,11 +663,11 @@ table{
 }
 
 #expected {
-    margin-left: 141px;
+    margin-left: 92px;
 }
 
 #actual {
-    margin-left: 208px;
+    margin-left: 233px;
 }
 
 #expected, #actual, #testcase-nr {

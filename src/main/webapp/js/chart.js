@@ -85,7 +85,6 @@ window.addEventListener('load', function () {
             addStart();
         } 
         else {
-            console.log("on load drawchart")
             drawChart(result.state, result.endLines);
             showErrorsWarning(result.state);
         }
@@ -311,7 +310,6 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
         // option 2: positive node is end node
         if (endIconId !== -1 || posIsEndLine){
             // there is already an end node we can connect to 
-            console.log(endIconId);
             let endNode = document.getElementById(endIconId);
             endNode.style.left = highestX + 120; // move node
             linesToEnd.forEach((line) => {
@@ -362,7 +360,6 @@ function drawChart(state, endlines){
     prevId = -1;
     document.getElementsByClassName("chartarea")[0].innerHTML = '';
     
-    console.log(state);
     let undoResult = JSON.parse(servletRequest("./chartservlet?function=undoSize")).size;
     let redoResult = JSON.parse(servletRequest("./chartservlet?function=redoSize")).size;
     const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
@@ -1040,7 +1037,6 @@ function processFormConditional(){
         newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, posId, negId, prevId);
     }
     closeAllForms();
-    console.log(newSteps)
     updateState(newSteps, true);
     endLinesToAdd.forEach((id) => {
         updateEndLinesList(id);
@@ -1091,7 +1087,6 @@ function getFormValueRetrieve(){
     event.preventDefault();
     let formdata = new FormData(document.getElementById("retrieve-data-form"));
     const value = formdata.get("retrieve-data-select-box");
-    console.log(value);
     if (elementToDefine) {
         elementToDefine.caption = value;
         updateState([elementToDefine]);

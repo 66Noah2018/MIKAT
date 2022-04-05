@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.Iterator;
@@ -56,6 +57,14 @@ public class Utils {
         String pathToFile = null;
         if (workingDir != null) {
             Iterator<File> fileIterator = FileUtils.iterateFiles(new File(workingDir), extensions, true);
+            while (fileIterator.hasNext() && pathToFile == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
+            }
+        }
+        if (defaultWorkingDirectory == null) {
+            loadSettings();
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(defaultWorkingDirectory), extensions, true);
             while (fileIterator.hasNext() && pathToFile == null) {
                 File file = fileIterator.next();
                 if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
@@ -208,7 +217,7 @@ public class Utils {
         loadedDependencies.add(new Pair<>(dependency, dependencyContents));
     }
     
-    public static String getDependency(String dependency) throws IOException {
+    public static Pair<LinkedList<ChartItem>, ArrayList<String>> getDependency(String dependency) throws IOException {
         String fileLocation = null;
         for (JsonNode dependencyNode : dependencies) {
             if ((dependencyNode.get("dependency").asText()).equals(dependency)) {
@@ -224,21 +233,26 @@ public class Utils {
                 }
             }
         }
-        if (fileLocation == null) { return null; }
-        String dependencyContent = new String(Files.readAllBytes(Paths.get(fileLocation)));
+        String dependencyContent = "";
+        if (fileLocation != null) { dependencyContent = new String(Files.readAllBytes(Paths.get(fileLocation))); }
+        else { dependencyContent = findAndReadFile(dependency + ".json", null); }
+        
         Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
         Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+),\"s");
+        Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
         Matcher stateMatcher = statePattern.matcher(dependencyContent);
         Matcher dependenciesMatcher = dependenciesPattern.matcher(dependencyContent);
+        Matcher endLinesMatcher = endLinesPattern.matcher(dependencyContent);
         Boolean stateMatch = stateMatcher.find();
         Boolean dependenciesMatch = dependenciesMatcher.find();
+        Boolean endLinesMatch = endLinesMatcher.find();
         if (dependenciesMatch) {
             ObjectMapper mapper = new ObjectMapper();
             ArrayNode dependenciesNode = (ArrayNode) mapper.readTree(dependenciesMatcher.group(1));
             for (JsonNode node : dependenciesNode) { subroutineDependencies.add(node); }
         }
-        if (stateMatch) { return stateMatcher.group(1); }
-        else { return "invalid file"; }
+        if (stateMatch && endLinesMatch) { return new Pair<>(JSONDecoder.decodeChart(stateMatcher.group(1)), new ArrayList<>(Arrays.asList(endLinesMatcher.group(1).replace("[", "").replace("]", "").split(", ")))); }
+        else { return new Pair<>(new LinkedList<>(), new ArrayList<>()); }
     }
     
     public static Integer nextElementIndex(String id, LinkedList<ChartItem> state){
@@ -368,7 +382,6 @@ public class Utils {
                 }
                 settings = new String(Files.readAllBytes(Paths.get(fileLocation)));
             }
-            System.out.println(settings);
             if (fileLocation == null) { writeSettings(); }
             ObjectMapper mapper = new ObjectMapper();
             JsonNode settingsNode = mapper.readTree(settings);

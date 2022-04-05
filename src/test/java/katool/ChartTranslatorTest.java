@@ -9,13 +9,17 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import junit.framework.TestCase;
 import static katool.Utils.determineOS;
 import static katool.Utils.rootPath;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.testing.HttpTester;
 import org.eclipse.jetty.testing.ServletTester;
+import org.javatuples.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,171 +72,162 @@ public class ChartTranslatorTest extends TestCase {
     }
 
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled //disabled because running these tests takes at least 20secs per tests
     public void translateJsTestEmpty() throws IOException, Exception {
-        String expectedResponse = "function chartJS() {\rlet actions = [];\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];return actions;\"}";
         setUpStart();       
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestNewProcedure() throws IOException, Exception{
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: newProcedure, msg: Test});\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('New procedure: Test');return actions;\"}";
         setUpSingleMedicalAction("newProcedure");
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestOrderLabs() throws IOException, Exception{
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: orderLabs, msg: Test});\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('Order labs: Test');return actions;\"}";
         setUpSingleMedicalAction("orderLabs");
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestNewPrescription() throws IOException, Exception{
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: newPrescription, msg: Test});\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('New prescription: Test');return actions;\"}";
         setUpSingleMedicalAction("newPrescription");
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestAddDiagnosis() throws IOException, Exception{
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: addDiagnosis, msg: Test});\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('Add diagnosis: Test');return actions;\"}";
         setUpSingleMedicalAction("addDiagnosis");
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestNewVaccination() throws IOException, Exception{
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: newVaccination, msg: Test});\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('New vaccination: Test');return actions;\"}";
         setUpSingleMedicalAction("newVaccination");
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestAddNotes() throws IOException, Exception{
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: addNotes, msg: Test});\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('Add notes: Test');return actions;\"}";
         setUpSingleMedicalAction("addNotes");
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestVariableSingle() throws IOException, Exception{
-        String expectedResponse = "function chartJS(test1) {\rlet actions = [];\rreturn actions;\r}";
-        
+        String expectedResponse = "{\"parameters\": [\"test1\"], \"code\": \"let actions = [];return actions;\"}";
         setUpVariableSingle();
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
-    public void translateJsTestSubroutine() throws IOException, Exception {
-        String expectedResponse = "function chartJS() {\rlet actions = [];\r\rreturn actions;\r}";
-        
-        setUpSubroutine();
-        callTranslate();
-        
-        assertEquals(expectedResponse, getTranslation());
-    }
-    
-    @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestSingleIfElse() throws IOException, Exception {
-        String expectedResponse = "function chartJS(test1) {\rlet actions = [];\rif (test1 >=10) {\ractions.push({type: addDiagnosis, msg: testD1});\r} else {\ractions.push({type: addNotes, msg: cElse});\r}\rreturn actions;\r}";
+        String expectedResponse = "{\"parameters\": [\"test1\"], \"code\": \"let actions = [];if (test1 >=10) {actions.push('Add diagnosis: testD1');} else {actions.push('Add notes: cElse');}return actions;\"}";
         setUpSingleIfElse();
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     /* loop tests are disabled because Jetty marks an URI with spaces as invalid whereas the app can handle it. 
         code remains in case I have time/motivation to rewrite the code for adding chartitems to use JSON body and rewrite the tests */
 //    @org.junit.jupiter.api.Test
 //    public void translateJsTestSingleLoopFixedAction() throws IOException, Exception {
-//        String expectedResponse = "function chartJS(testPlural1) {\rlet actions = [];\rtestPlural1.forEach(element => {\ractions.push({type: addNotes, msg: test});\r});\rreturn actions;\r}";
+//        String expectedResponse = "chartJS(testPlural1) {let actions = [];testPlural1.forEach(element => {actions.push({type: addNotes, msg: test});});return actions;}";
 //        setUpSingleLoopFixedAction();
-//        callTranslate();
+//        String result = callTranslate();
 //        
-//        assertEquals(expectedResponse, getTranslation());
+//        assertEquals(expectedResponse, result);
 //    }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestThreeActions() throws IOException, Exception {
-        String expectedResponse = "function chartJS() {\rlet actions = [];\ractions.push({type: addNotes, msg: notes});\ractions.push({type: newVaccination, msg: flu});\ractions.push({type: addDiagnosis, msg: test});\rreturn actions;\r}";
+        String expectedResponse = "{\"parameters\": [], \"code\": \"let actions = [];actions.push('Add notes: notes');actions.push('New vaccination: flu');actions.push('Add diagnosis: test');return actions;\"}";
         setUpThreeActions();
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestConditionalInIf() throws IOException, Exception {
-        String expectedResponse = "function chartJS(test1, test2) {\rlet actions = [];\rif (test1 >=10) {\rif (test2 >=20) {\ractions.push({type: addNotes, msg: notes});\r} else {\ractions.push({type: addDiagnosis, msg: flu});\r}\r} else {\ractions.push({type: newVaccination, msg: flu});\r}\rreturn actions;\r}";
+        String expectedResponse = "{\"parameters\": [\"test1\", \"test2\"], \"code\": \"let actions = [];if (test1 >=10) {if (test2 >=20) {actions.push('Add notes: notes');} else {actions.push('Add diagnosis: flu');}} else {actions.push('New vaccination: flu');}return actions;\"}";
         setUpConditionalInIf();
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestConditionalInElse() throws IOException, Exception {
-        String expectedResponse = "function chartJS(test1, test2) {\rlet actions = [];\rif (test1 >=10) {\ractions.push({type: newVaccination, msg: flu});\r} else {\rif (test2 >=20) {\ractions.push({type: addNotes, msg: notes});\r} else {\ractions.push({type: addDiagnosis, msg: flu});\r}\r}\rreturn actions;\r}";
+        String expectedResponse = "{\"parameters\": [\"test1\", \"test2\"], \"code\": \"let actions = [];if (test1 >=10) {actions.push('New vaccination: flu');} else {if (test2 >=20) {actions.push('Add notes: notes');} else {actions.push('Add diagnosis: flu');}}return actions;\"}";
         setUpConditionalInElse();
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsTestConditionalsBothBranches() throws IOException, Exception {
-        String expectedResponse = "function chartJS(test1, test2, test3) {\rlet actions = [];\rif (test1 >=10) {\rif (test2 >=20) {\ractions.push({type: addNotes, msg: notes});\r} else {\ractions.push({type: addDiagnosis, msg: flu});\r}\r} else {\rif (test3 >=30) {\ractions.push({type: newVaccination, msg: flu});\r} else {\ractions.push({type: newVaccination, msg: covid});\r}\r}\rreturn actions;\r}";
+        String expectedResponse = "{\"parameters\": [\"test1\", \"test2\", \"test3\"], \"code\": \"let actions = [];if (test1 >=10) {if (test2 >=20) {actions.push('Add notes: notes');} else {actions.push('Add diagnosis: flu');}} else {if (test3 >=30) {actions.push('New vaccination: flu');} else {actions.push('New vaccination: covid');}}return actions;\"}";
         setUpConditionalsBothBranches();
-        callTranslate();
+        String result = callTranslate();
         
-        assertEquals(expectedResponse, getTranslation());
+        assertEquals(expectedResponse, result);
     }
     
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.Disabled
     public void translateJsCRPANA() throws IOException, Exception{
-        String expectedResponse = "{\"parameters\": [\"CRP\", \"ANA\"], \"code\": \"let actions = [];if (CRP >=500) {if (ANA ===1) {actions.push({type: addNotes, msg: ANAPos});} else {}} else {actions.push({type: addNotes, msg: CRPnormal});}return actions;\"}";
+        String expectedResponse = "{\"parameters\": [\"CRP\", \"ANA\"], \"code\": \"let actions = [];if (CRP >=500) {if (ANA ===1) {actions.push('Add notes: ANAPos');} else {}} else {actions.push('Add notes: CRPnormal');}return actions;\"}";
         setUpCRPANATest();
         String result = callTranslate();
+        
+        assertEquals(expectedResponse, result);
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void translateJsHypertensionScenario() throws IOException, Exception {
+        String expectedResponse = "{\"parameters\": [\"Onderdruk\", \"Bovendruk\", \"Risico_HVZ\", \"Gebruikt_diuretica\"], \"code\": \""
+                + "let actions = [];let hypertensie;if (Onderdruk > 90) {if (Bovendruk > 140) {hypertensie = true;} else {}} else {}if (hypertensie ===true) {if (Risico_HVZ >20) {if (Gebruikt_diuretica ===true) "
+                + "{actions.push('New prescription: ACE-remmers');} else {actions.push('New prescription: Diuretica');}} else {}}return actions;\"}";
+        setUpHypertensionScenario();
+        String result = callTranslate();
+        
+        assertEquals(expectedResponse, result);
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void translateJsHypertensionScenarioFixedState() throws IOException, Exception {
+        String expectedResponse = "{\"parameters\": [\"Onderdruk\", \"Bovendruk\", \"Risico_HVZ\", \"Gebruikt_diuretica\"], \"code\": \""
+            + "let actions = [];let hypertensie;if (Onderdruk > 90) {if (Bovendruk > 140) {hypertensie = true;} else {}} else {}if (hypertensie ===true) {if (Risico_HVZ >20) {if (Gebruikt_diuretica ===true) "
+            + "{actions.push('New prescription: ACE-remmers');} else {actions.push('New prescription: Diuretica');}} else {}}return actions;\"}";
+        String stateString = "[{\"id\":\"a3966\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":\"null\"},{\"id\":\"a9070\",\"type\":\"subroutine\",\"prevItemId\":\"a3966\",\"caption\":\"hypertensie\",\"condition\":\"null\"},{\"id\":\"a571\",\"type\":\"conditional\",\"prevItemId\":\"a9070\",\"caption\":\"hypertensie\",\"condition\":null},{\"id\":\"a1790\",\"type\":\"retrievedata\",\"prevItemId\":\"a571\",\"caption\":\"Risico_HVZ\",\"condition\":\"===true\"},{\"id\":\"a8919\",\"type\":\"conditional\",\"prevItemId\":\"a1790\",\"caption\":\"Risico_HVZ\",\"condition\":\"null\"},{\"id\":\"a4323\",\"type\":\"retrievedata\",\"prevItemId\":\"a8919\",\"caption\":\"Gebruikt_diuretica\",\"condition\":\">20\"},{\"id\":\"a6180\",\"type\":\"conditional\",\"prevItemId\":\"a4323\",\"caption\":\"Gebruikt_diuretica\",\"condition\":\"null\"},{\"id\":\"a2701\",\"type\":\"newPrescription\",\"prevItemId\":\"a6180\",\"caption\":\"ACE-remmers\",\"condition\":\"===true\"},{\"id\":\"a7276\",\"type\":\"newPrescription\",\"prevItemId\":\"a6180\",\"caption\":\"Diuretica\",\"condition\":\"null\"},{\"id\":\"a3064\",\"type\":\"end\",\"prevItemId\":\"a571\",\"caption\":\"Stop\",\"condition\":null}]";
+        String endlines = "[\"a8919\", \"a7276\", \"a2701\"]";
+        Pair<LinkedList<ChartItem>, ArrayList<String>> state = new Pair<>(JSONDecoder.decodeChart(stateString), new ArrayList<>(Arrays.asList(endlines.replace("[", "").replace("]", "").split(", "))));
+        String result = ChartTranslator.translateToJS(state, "usability");
         
         assertEquals(expectedResponse, result);
     }
@@ -264,16 +259,6 @@ public class ChartTranslatorTest extends TestCase {
         
         updateState(start);
         updateState(variable);
-        updateState(stop);
-    }
-    
-    private void setUpSubroutine() throws IOException, Exception {
-        ChartItem start = new ChartItem("a1", "start", "-1", "Start", null);
-        ChartItem subroutine = new ChartItem("a2", "subroutine", "a1", "Test1.json", null);
-        ChartItem stop = new ChartItem("a3", "end", "a2", "End", null);
-        
-        updateState(start);
-        updateState(subroutine);
         updateState(stop);
     }
     
@@ -450,6 +435,38 @@ public class ChartTranslatorTest extends TestCase {
         tester.getResponses(request.generate());
     }
     
+    public void setUpHypertensionScenario() throws IOException, Exception {
+        ChartItem start = new ChartItem("a1", "start", "-1", "Start", null);
+        ChartItem hypertensieSub = new ChartItem("a2", "subroutine", "a1", "hypertensie", null);
+        ChartItem conditionalH = new ChartItem("a3", "conditional", "a2", "hypertensie", null);
+        ChartItem retrieveRisico = new ChartItem("a4", "retrievedata", "a3", "Risico_HVZ", "===true");
+        ChartItem end = new ChartItem("a99", "end", "a3", "Stop", null);
+        ChartItem conditionalR = new ChartItem("a5", "conditional", "a4", "Risico_HVZ", null);
+        ChartItem retrieveDiuretica = new ChartItem("a6", "retrievedata", "a5", "Gebruikt_diuretica", ">20");
+        ChartItem conditionalD = new ChartItem("a7", "conditional", "a6", "Gebruikt_diuretica", null);
+        ChartItem prescribeACE = new ChartItem("a8", "newPrescription", "a7", "ACE-remmers", "===true");
+        ChartItem prescribeD = new ChartItem("a9", "newPrescription", "a7", "Diuretica", null);
+        
+        updateState(start);
+        updateState(hypertensieSub);
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalH) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(retrieveRisico) + "&isMultipart=true");
+        response.parse(tester.getResponses(request.generate()));
+        request.setURI("/katool?function=update&" + chartItemToURLString(end) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalR) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(retrieveDiuretica) + "&isMultipart=true");
+        response.parse(tester.getResponses(request.generate()));
+        request.setURI("/katool?function=update&" + chartItemToURLString(conditionalD) + "&isMultipart=true&firstMultipart=true");
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=update&" + chartItemToURLString(prescribeACE) + "&isMultipart=true");
+        response.parse(tester.getResponses(request.generate()));
+        request.setURI("/katool?function=update&" + chartItemToURLString(prescribeD) + "&isMultipart=true&finalMultipart=true");
+        tester.getResponses(request.generate());
+    }
+    
     // Helper functions
     
     private String chartItemToURLString(ChartItem item) {
@@ -488,7 +505,6 @@ public class ChartTranslatorTest extends TestCase {
                 if (file.getName().equals(fileName)) { pathToFile = file.getPath(); }
             }
         }
-//        System.out.println(new String(Files.readAllBytes(Paths.get(pathToFile))));
         return new String(Files.readAllBytes(Paths.get(pathToFile)));
     }
 }
