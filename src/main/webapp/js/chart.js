@@ -1338,3 +1338,9 @@ function processReturnValueForm(){
     }
     closeAllForms();
 }
+
+function closeTestView(){
+    document.getElementsByClassName("tests")[0].style.display = "none";
+    document.getElementById("open-test-cases").classList.remove("highlight");
+    document.getElementById("open-test-results").classList.remove("highlight");
+}
