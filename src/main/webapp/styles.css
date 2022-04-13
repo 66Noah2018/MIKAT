@@ -15,7 +15,7 @@ and open the template in the editor.
 }
 
 .sidebar{
-    width: 27vh; 
+    width: 230px;
     height:100vh; 
     background-color: var(--menu-bg-color)
 }
@@ -48,12 +48,12 @@ a{
 
 #sidebar-fixed{
     height: 100vh;
-    width: 27vh;
+    width: 230px;
 }
 
 #create-project, #edit-project, #open-project, #mappings-div, #preferences-div{
     height: 99vh;
-    margin-left: 28vh;
+    margin-left: 240px;
     margin-top: -99.5vh;
 }
 
@@ -672,4 +672,8 @@ table{
 
 #expected, #actual, #testcase-nr {
     font-size: x-large;
+}
+
+.ribbon-menu{
+    z-index: 2;
 }

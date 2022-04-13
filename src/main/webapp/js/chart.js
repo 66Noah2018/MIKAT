@@ -74,6 +74,7 @@ const elements = {
     questionMark: "questionMark",
     returnValue: "returnValue"
 };
+let hasErrors = false;
 
 window.addEventListener('load', function () {
     maxX = document.getElementsByClassName("chartarea")[0].getBoundingClientRect().width;
@@ -111,9 +112,9 @@ function redrawLines(){
 }
 
 function getLineStyle(stepType, label = null) {
-    if (stepType === elements.end) return {"color": "black", "size": 4, path: "arc"};
+    if (stepType === elements.end) return {"color": "black", "size": 4, path: "fluid", startSocket: "right"};
     else if (label === null || label === "null") return {"color": "black", "size": 4, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
-    else return {"color": "black", "size": 4, middleLabel: label, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
+    else return {"color": "black", "size": 4, middleLabel: LeaderLine.pathLabel(label), startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
 }
 
 function getRandom(max){
@@ -181,12 +182,14 @@ function updateEndLinesList(id, newEndline = false){
     if (undoAvailable){
         document.getElementById("undoBtn").disabled = false;
     }
-//    if (newEndline) {
-//        drawChart(result.state, result.endLines);
-//    }
 }
 
-function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false, condition=null){
+function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false, condition=null, isRedraw=false){
+    let hasNext = JSON.parse(servletRequest(`./chartservlet?function=hasNext&id=${prevId}`)).hasNext;
+    if ((hasNext === true || hasNext === "true") && (isRedraw === false)) {
+        Metro.notify.create("Cannot add new step to chart item that does already have a next step", "Warning: Cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
+        return;
+    }
     if (stepType === elements.retrievedata) { 
         const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
         if (Object.keys(values.singulars).includes(iconCaption)) {
@@ -202,7 +205,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     }
     
     const iconCode = flowchartImageCodes[stepType];
-    if (condition !== null && condition !== 'null') { options.middleLabel=condition; }
+    if (condition !== null && condition !== 'null') { options.middleLabel=LeaderLine.pathLabel(condition); }
     if (stepType === elements.end && endIconId !== -1) { // end 
         endElement = document.getElementById(endIconId);
         let newX = Math.min(highestX + 120, maxX - 90);
@@ -261,7 +264,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     return {id: stepId, type: stepType, prevItemId: prevId, caption: iconCaption, condition: condition};
 }
 
-function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, stepIdPos, stepIdNeg, prevId){
+function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos, iconCaptionPos, stepTypeNeg, iconCaptionNeg, stepIdPos, stepIdNeg, prevId, isRedraw = false){
     const posIsEndLine = ((stepTypePos === null?true:false) && endIconId !== -1);
     const negIsEndLine = ((stepTypeNeg === null?true:false) && endIconId !== -1);
     const iconCode = flowchartImageCodes[stepType];
@@ -303,8 +306,8 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
     
     // option 1: no end nodes
     if (stepTypePos !== elements.end && !posIsEndLine && stepTypeNeg !== elements.end && !negIsEndLine){
-        addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(stepTypePos, posValue));
-        addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(stepTypeNeg), true);
+        addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(stepTypePos, posValue), false, null, isRedraw);
+        addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(stepTypeNeg), true, null, isRedraw);
     }
     else if (stepTypePos === elements.end || posIsEndLine) {
         // option 2: positive node is end node
@@ -321,13 +324,13 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
             endLinesToAdd.push(newStep.id);
         } 
         else {
-            addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(stepTypePos, posValue));
+            addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(stepTypePos, posValue), false, null, isRedraw);
         }
         // add step for neg
-        stepIdNeg = addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(stepTypeNeg), true);
+        stepIdNeg = addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(stepTypeNeg), true, null, isRedraw);
     } 
     else if (stepTypeNeg === elements.end || negIsEndLine){ // negative node is end node
-        addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(stepTypePos, posValue));
+        addNewStep(stepIdPos, stepTypePos, iconCaptionPos, stepId, getLineStyle(stepTypePos, posValue), false, null, isRedraw);
         if (endIconId !== -1 || negIsEndLine){
             let endNode = document.getElementById(endIconId);
             endNode.style.left = highestX + 120; // move node
@@ -340,7 +343,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
             endLinesToAdd.push(newStep.id);
         } 
         else {
-            addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(stepTypeNeg), true);
+            addNewStep(stepIdNeg, stepTypeNeg, iconCaptionNeg, stepId, getLineStyle(stepTypeNeg), true, null, isRedraw);
         }
     }
     
@@ -384,7 +387,7 @@ function drawChart(state, endlines){
     for (let i = 0; i < state.length; i++){
         let item = state[[i]];
         if (!conditionalIds.includes(item.prevItemId)) {
-            if (item.type === elements.start) { addNewStep(item.id, item.type, item.caption, -1, condition = item.condition); }
+            if (item.type === elements.start) { addNewStep(item.id, item.type, item.caption, -1, condition = item.condition, false, null, isRedraw=true); }
             else if (item.type === elements.end) { endElement = item; }
             else if (item.type === elements.conditional){
                 let conditionalData = [item];
@@ -396,10 +399,10 @@ function drawChart(state, endlines){
                     if (conditionalData.length === 2 && (endlines.includes(item.id) || getEndIconPrevItemId(state) === item.id)) {
                         if (conditionalData[1].condition === null || conditionalData[1] === "null") {
                             // if branch is endline
-                            addConditionalStep(conditionalData[0].id, elements.conditional, conditionalData[0].caption, null, null, null, conditionalData[1].type, conditionalData[1].caption, null, conditionalData[1].id, conditionalData[0].prevItemId);
+                            addConditionalStep(conditionalData[0].id, elements.conditional, conditionalData[0].caption, null, null, null, conditionalData[1].type, conditionalData[1].caption, null, conditionalData[1].id, conditionalData[0].prevItemId, true);
                         } else {
                             // else branch is endline
-                            addConditionalStep(conditionalData[0].id, elements.conditional, conditionalData[0].caption, conditionalData[1].condition, conditionalData[1].type, conditionalData[1].caption, null, null, conditionalData[1].id, null, conditionalData[0].prevItemId);
+                            addConditionalStep(conditionalData[0].id, elements.conditional, conditionalData[0].caption, conditionalData[1].condition, conditionalData[1].type, conditionalData[1].caption, null, null, conditionalData[1].id, null, conditionalData[0].prevItemId, true);
                         }
                     } else {
                         console.error("conditional incomplete!");
@@ -407,7 +410,7 @@ function drawChart(state, endlines){
                     }
                 } 
                 else {
-                    addConditionalStep(conditionalData[0].id, elements.conditional, conditionalData[0].caption, conditionalData[1].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId);   
+                    addConditionalStep(conditionalData[0].id, elements.conditional, conditionalData[0].caption, conditionalData[1].condition, conditionalData[1].type, conditionalData[1].caption, conditionalData[2].type, conditionalData[2].caption, conditionalData[1].id, conditionalData[2].id, conditionalData[0].prevItemId, true);   
                 } 
                 conditionalData.shift();
                 conditionalData = conditionalData.filter((item) => { return item.type === elements.conditional; });
@@ -417,13 +420,13 @@ function drawChart(state, endlines){
                     if (values.singulars[item.caption]) { if (!retrievedData.singulars.includes(item.caption)) { retrievedData.singulars.push(item.caption); }}
                     else if (values.plurals[item.caption]) { if (!retrievedData.plurals.includes(item.caption)) { retrievedData.plurals.push(item.caption); }}
                 } else if (item.type === elements.subroutine) { if (!retrievedData.subroutines.includes(item.caption)) { retrievedData.subroutines.push(item.caption); }}
-                addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false); }
+                addNewStep(item.id, item.type, item.caption, item.prevItemId, getLineStyle(item.type, item.condition), false, null, isRedraw=true); }
         }
     }
-    if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type)); }
+    if (endElement) { addNewStep(endElement.id, endElement.type, endElement.caption, endElement.prevItemId, getLineStyle(endElement.type), false, null, isRedraw=true); }
     if (endlines.length > 0) {
         if (endIconId === -1){
-            addNewStep(getRandomId(), elements.end, "End", endlines[0], getLineStyle(elements.end));
+            addNewStep(getRandomId(), elements.end, "End", endlines[0], getLineStyle(elements.end), false, null, isRedraw=true);
         }
         let endIcon = document.getElementById(endIconId);
         endlines.forEach((id) => {
@@ -1307,7 +1310,8 @@ function showErrorsWarning(state){
                 break;
         }
     });
-    
+    if (warnings.length > 0 || errors.length > 0) { hasErrors = true; }
+    else { hasErrors = false; }
     let target = document.getElementById("error-view");
     target.innerHTML = null;
     errors.forEach((error) => {

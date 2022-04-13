@@ -289,6 +289,10 @@ function exportToCSV(){
 }
 
 function startTests(){
+    if (hasErrors) {
+        Metro.notify.create("Cannot run tests while model contains errors", "Warning: Cannot run tests", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true}); 
+        return;
+    }
     let testsPassed = [];
     let testsFailed = [];
     
