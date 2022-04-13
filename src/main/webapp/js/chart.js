@@ -1045,12 +1045,12 @@ function processFormConditional(){
     }
     
     if (elementToDefine === null) {
-        if (conditionalPosValue === elements.end) { statement1Caption = "Stop"; }
-        if (conditionalNegValue === elements.end) { statement2Caption = "Stop"; }
+        if (conditionalPosValue === elements.end) { statement1Caption = "End"; }
+        if (conditionalNegValue === elements.end) { statement2Caption = "End"; }
     } 
     else {
-        if (conditionalPosValue === elements.end && (conditionalNextElements || conditionalNextElements[0].caption !== null)) {statement1Caption = "Stop"; }
-        if (conditionalNegValue === elements.end && (conditionalNextElements || conditionalNextElements[1].caption !== null)) {statement2Caption = "Stop"; } 
+        if (conditionalPosValue === elements.end && (conditionalNextElements || conditionalNextElements[0].caption !== null)) {statement1Caption = "End"; }
+        if (conditionalNegValue === elements.end && (conditionalNextElements || conditionalNextElements[1].caption !== null)) {statement2Caption = "End"; } 
     }    
     
     let newSteps = null;
