@@ -15,8 +15,7 @@ and open the template in the editor.
 }
 
 .sidebar{
-    width: 230px;
-    height:100vh; 
+    min-width: 230px;
     background-color: var(--menu-bg-color)
 }
 
@@ -46,17 +45,6 @@ a{
     height: 100vh;
 }
 
-#sidebar-fixed{
-    height: 100vh;
-    width: 230px;
-}
-
-#create-project, #edit-project, #open-project, #mappings-div, #preferences-div{
-    height: 99vh;
-    margin-left: 240px;
-    margin-top: -99.5vh;
-}
-
 #open-project{
     height: 97vh !important;
 }
@@ -67,7 +55,7 @@ a{
 }
 
 .sidebar-div{
-    height: 100vh;
+    height: inherit;
 }
 
 .node-data.item-data-fileName, .node-data.item-data-lastEdited{
@@ -174,16 +162,6 @@ a{
     color: white;
 }
 
-/*.error-view{
-    position: fixed;
-    width: 100vw;
-    height: 225px;
-    left: 0;
-    bottom:0;
-    z-index: 9999;
-    background-color: var(--menu-bg-color);
-}*/
-
 #error-warning-list{
     position: fixed;
     width: 100vw;
@@ -211,6 +189,7 @@ a{
     cursor: pointer;
     width: fit-content;
     max-width: 60px;
+    z-index: 2;
 }
 
 .flow-icon{
@@ -578,6 +557,11 @@ table{
     float: right;
 }
 
+#save-project-properties-changes {
+    margin-top: 20px;
+    margin-left: 635px;
+}
+
 #save-preferences-changes{
     margin-right: 10px;
     margin-top: -50px;
@@ -617,11 +601,11 @@ table{
 
 #edit-properties-dir-map .file {
     margin-left: 10px;
-    width: 500px;
+    width: 441px;
 }
 
 #edit-properties-dir-map .dir-validity-btn, #preferences-form .dir-validity-btn{
-    margin-left: 10px;
+    margin-left: 60px;
     width: 220px;
 }
 
@@ -631,7 +615,7 @@ table{
 
 #selected-working-dir-edit {
     color: red;
-    display: none;
+    visibility: hidden;
 }
 
 #selectedLocalFile, #selectedStandardizedFile{
@@ -676,4 +660,37 @@ table{
 
 .ribbon-menu{
     z-index: 2;
+}
+
+.drop-container {
+    height: fit-content !important;
+    background-color: white;
+    opacity: 1;
+}
+
+body {
+    height: 100%;
+    
+}
+
+.split-fixed-sidebar {
+    width: 100%;
+    overflow-x: scroll;
+    padding-right: 10px;
+}
+
+.sidebar-split {
+    width: 21%;
+    float: left;
+    overflow: hidden;
+    height: 100%;
+}
+
+.content-split {
+    width: 79%;
+    float: right;
+}
+
+.label-local {
+    padding-right: 49px;
 }

@@ -9,7 +9,7 @@ let parser = new DOMParser();
 const flowchartImageCodes = {
     start: "<span class='far fa-play-circle flow-icon'></span>",
     end: "<span class='far fa-stop-circle flow-icon'></span>",
-    subroutine: "<span class='mif-link mif-3x'></span>",
+    subroutine: "<span class='mif-link mif-3x flow-icon'></span>",
     conditional: "<span class='mif-flow-branch mif-3x flow-icon'></span>",
     loop: "<span class='mif-loop mif-3x flow-icon'></span>",
     retrievedata: "<span class='fas fa-file-medical flow-icon'></span>",
@@ -112,9 +112,9 @@ function redrawLines(){
 }
 
 function getLineStyle(stepType, label = null) {
-    if (stepType === elements.end) return {"color": "black", "size": 4, path: "fluid", startSocket: "right"};
-    else if (label === null || label === "null") return {"color": "black", "size": 4, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
-    else return {"color": "black", "size": 4, middleLabel: LeaderLine.pathLabel(label), startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
+    if (stepType === elements.end) return {"color": "dimGray", "size": 4, path: "fluid", startSocket: "right"};
+    else if (label === null || label === "null") return {"color": "dimGray", "size": 4, startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
+    else return {"color": "dimGray", "size": 4, endLabel: LeaderLine.pathLabel(label), startSocket: "right", endSocket: "left", startSocketGravity: 1, path:"fluid"};
 }
 
 function getRandom(max){
@@ -185,11 +185,11 @@ function updateEndLinesList(id, newEndline = false){
 }
 
 function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false, condition=null, isRedraw=false){
-    let hasNext = JSON.parse(servletRequest(`./chartservlet?function=hasNext&id=${prevId}`)).hasNext;
-    if ((hasNext === true || hasNext === "true") && (isRedraw === false)) {
-        Metro.notify.create("Cannot add new step to chart item that does already have a next step", "Warning: Cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
-        return;
-    }
+//    let hasNext = JSON.parse(servletRequest(`./chartservlet?function=hasNext&id=${prevId}`)).hasNext;
+//    if ((hasNext === true || hasNext === "true") && (isRedraw === false)) {
+//        Metro.notify.create("Cannot add new step to chart item that does already have a next step", "Warning: Cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
+//        return;
+//    }
     if (stepType === elements.retrievedata) { 
         const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
         if (Object.keys(values.singulars).includes(iconCaption)) {
@@ -205,7 +205,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     }
     
     const iconCode = flowchartImageCodes[stepType];
-    if (condition !== null && condition !== 'null') { options.middleLabel=LeaderLine.pathLabel(condition); }
+    if (condition !== null && condition !== 'null') { options.endLabel=LeaderLine.pathLabel(condition); }
     if (stepType === elements.end && endIconId !== -1) { // end 
         endElement = document.getElementById(endIconId);
         let newX = Math.min(highestX + 120, maxX - 90);
@@ -384,6 +384,7 @@ function drawChart(state, endlines){
 
     let conditionalIds = [];
     let endElement = null;
+    console.log(state);
     for (let i = 0; i < state.length; i++){
         let item = state[[i]];
         if (!conditionalIds.includes(item.prevItemId)) {
@@ -490,6 +491,10 @@ function deleteItem(id){
         Metro.notify.create("Cannot delete start element", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
         return;
     }
+    if (item.type === elements.retrievedata) {
+        retrievedData.singulars = retrievedData.singulars.filter(el => el !== item.caption);
+        retrievedData.plurals = retrievedData.plurals.filter(el => el !== item.caption);
+    }
     if (item.type === elements.end) { // we have to deal with all involved conditionals
         let element = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${item.prevItemId}`)).chartItem;
         const endLines = JSON.parse(servletRequest("./chartservlet?function=state")).endLines;
@@ -532,10 +537,6 @@ function deleteItem(id){
     // option 2: the item to be deleted is not a conditional, nor part of it
     else if (item.type !== elements.conditional && JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${item.prevItemId}`)).chartItem.type !== elements.conditional) {
         let result = JSON.parse(servletRequest(`./chartservlet?function=delete&id=${id}`));
-        if (item.type === elements.retrievedata) {
-            retrievedData.singulars = retrievedData.singulars.filter(el => el !== item.caption);
-            retrievedData.plurals = retrievedData.plurals.filter(el => el !== item.caption);
-        }
         drawChart(result.state, result.endLines);
         return;
     } // option 3: the item is the first child of an if or an else branch
@@ -938,7 +939,7 @@ function openFormPopup(popupClass, subclass=null, values=null){
             document.getElementsByClassName("chart-forloop-popup")[0].style.display = "block";
             break;
         case "chart-return-value-popup":
-            document.getElementById("return-value-input").innerHTML = values?values.value:"";
+            document.getElementById("return-value-input").value = values?values.caption:"";
             document.getElementsByClassName("chart-return-value-popup")[0].style.display = "block";
             break;
         case "select-testcasesfile-popup":
@@ -1060,17 +1061,18 @@ function processFormConditional(){
     const negId = conditionalNextElements?conditionalNextElements[1].id:getRandomId();
     const prevId = elementToDefine?elementToDefine.prevItemId:selectedItemId;
     
+    const redraw = (elementToDefine !== null)?true:false;
     if (conditionalPosValue === elements.conditional && conditionalNegValue === elements.conditional){
-        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, clickToDefine, posId, negId, prevId);
+        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, clickToDefine, posId, negId, prevId, redraw);
     }
     else if (conditionalPosValue === elements.conditional){
-        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, statement2Caption, posId, negId, prevId);
+        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, clickToDefine, conditionalNegValue, statement2Caption, posId, negId, prevId, redraw);
     } 
     else if (conditionalNegValue === elements.conditional){
-        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, clickToDefine, posId, negId, prevId);
+        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, clickToDefine, posId, negId, prevId, redraw);
     } 
     else {
-        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, posId, negId, prevId);
+        newSteps = addConditionalStep(firstId, elements.conditional, variable, condition, conditionalPosValue, statement1Caption, conditionalNegValue, statement2Caption, posId, negId, prevId, redraw);
     }
     closeAllForms();
     updateState(newSteps, true);
@@ -1083,11 +1085,23 @@ function processFormConditional(){
 
 function processSubroutine(){
     event.preventDefault();
-    let caption = JSON.parse(servletRequest(`./chartservlet?function=file&name=${fileToEmbed.name}`)).mlmname;
-    let newStep = addNewStep(getRandomId(), elements.subroutine, caption, selectedItemId, getLineStyle(elements.subroutine));
+    let caption;
+    const http = new XMLHttpRequest();
+    http.open("GET", `./chartservlet?function=file&name=${fileToEmbed.name}`, false);
+    http.send();
+    if (http.readyState === 4 && http.status === 200) {
+        caption = JSON.parse(http.responseText).mlmname;
+    }
+    let newStep;
+    if (elementToDefine !== null) {
+        newStep = {id: elementToDefine.id, type: elementToDefine.type, prevItemId: elementToDefine.prevItemId, caption: caption, condition: elementToDefine.condition};
+    } else {
+        newStep = addNewStep(getRandomId(), elements.subroutine, caption, selectedItemId, getLineStyle(elements.subroutine));
+    }
     updateState([newStep]);
     if (!retrievedData.subroutines.includes(caption)) { retrievedData.subroutines.push(caption); }
     document.getElementsByClassName("chart-subroutine-popup")[0].style.display = "none";
+    elementToDefine = null;
 }
 
 function processQuestionmarkForm(){
@@ -1124,6 +1138,8 @@ function getFormValueRetrieve(){
     let formdata = new FormData(document.getElementById("retrieve-data-form"));
     const value = formdata.get("retrieve-data-select-box");
     if (elementToDefine) {
+        retrievedData.singulars = retrievedData.singulars.filter(el => el !== elementToDefine.caption);
+        retrievedData.plurals = retrievedData.plurals.filter(el => el !== elementToDefine.caption);
         elementToDefine.caption = value;
         updateState([elementToDefine]);
     } 
@@ -1169,20 +1185,20 @@ function processFormForloop(){
         updateState(addConditionalStep(firstAction.id, elements.conditional, firstAction.caption, null, 
             conditionalItems[0]?conditionalItems[0].type:"questionMark", conditionalItems[0]?conditionalItems[0].caption:clickToDefine, 
             conditionalItems[0]?conditionalItems[1].type:"questionMark", conditionalItems[0]?conditionalItems[0].caption:clickToDefine, 
-            conditionalItems[0]?conditionalItems[0].id:getRandomId(), conditionalItems[0]?conditionalItems[1].id:getRandomId(), loopElement.id));
+            conditionalItems[0]?conditionalItems[0].id:getRandomId(), conditionalItems[0]?conditionalItems[1].id:getRandomId(), loopElement.id), (elementToDefine!==null)?true:false);
     } 
     else if (firstAction.type === elements.retrievedata) {
         firstAction.caption = document.getElementById("first-action-caption").value;
         updateState([
-            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
-            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
+            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), false, loopElement.condition, (elementToDefine!==null)?true:false),
+            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), false, firstAction.condition, (elementToDefine!==null)?true:false)
         ]);
     } 
     else { //medicalAction
         firstAction.caption = document.getElementById("first-action-caption").value;
         updateState([
-            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), condition=loopElement.condition),
-            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), condition=firstAction.condition)
+            addNewStep(loopElement.id, loopElement.type, loopElement.caption, loopElement.prevItemId, getLineStyle(loopElement.type), false, loopElement.condition, (elementToDefine!==null)?true:false),
+            addNewStep(firstAction.id, firstAction.type, firstAction.caption, firstAction.prevItemId, getLineStyle(firstAction.type), false, firstAction.condition, (elementToDefine!==null)?true:false)
         ]);
     }
     elementToDefine = null;

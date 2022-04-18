@@ -47,11 +47,11 @@ function checkDirValidity(){
         directoryExists = JSON.parse(http.responseText).directoryExists;
         if (directoryExists && directory !== "") { 
             targetBtn.classList.add("success"); 
-            document.getElementById("selected-working-dir-edit").style.display = 'none';
+            document.getElementById("selected-working-dir-edit").style.visibility = 'hidden';
         } 
         else { 
             targetBtn.classList.add("alert"); 
-            document.getElementById("selected-working-dir-edit").style.display = 'block';
+            document.getElementById("selected-working-dir-edit").style.visibility = 'visible';
         }
     };
 }
@@ -71,11 +71,11 @@ function checkDefaultDirValidity(){
         directoryExists = JSON.parse(http.responseText).directoryExists;
         if (directoryExists && directory !== "") { 
             targetBtn.classList.add("success"); 
-            document.getElementById("selected-working-dir-edit").style.display = 'none';
+            document.getElementById("selected-working-dir-edit").style.visibility = 'hidden';
         } 
         else { 
             targetBtn.classList.add("alert"); 
-            document.getElementById("selected-working-dir-edit").style.display = 'block';
+            document.getElementById("selected-working-dir-edit").style.visibility = 'visible';
         }
     };
 }
@@ -86,7 +86,7 @@ function displayErrorMessage(formGroupId, errorMessage){
 }
 
 function clearErrorMessages(){
-    document.getElementById("selected-working-dir-edit").style.display = 'none';
+    document.getElementById("selected-working-dir-edit").style.visibility = 'hidden';
     const groupsToClear = ["title-group", "mlmname-group", "version-group", "institution-group", "author-group", "date-group", "validation-group", "purpose-group", "explanation-group", "keywords-group",
         "local-group", "standardized-group"];
     groupsToClear.forEach((group) => { document.getElementById(group).innerText = ""; });
@@ -97,7 +97,7 @@ function editProject(isNew = false){
     invalidForm = false;
     clearErrorMessages();
     if (!document.getElementById("checkDirBtn").classList.contains("success")){
-        document.getElementById("selected-working-dir-edit").style.display = "block";
+        document.getElementById("selected-working-dir-edit").style.visibility = "visible";
     }
     let maintenanceFormdata = new FormData(document.getElementById("edit-properties-maintenance"));
     let libraryFormdata = new FormData(document.getElementById("edit-properties-library"));
@@ -222,7 +222,7 @@ function editProjectProperties(){
     properties = JSON.parse(servletRequest("../chartservlet?function=getProjectProperties"));
     if (properties !== null){
         document.getElementById("checkDirBtn").classList.add("success"); 
-        document.getElementById("selected-working-dir-edit").style.display = 'none';
+        document.getElementById("selected-working-dir-edit").style.visibility = 'hidden';
         document.getElementById("title").value = properties.maintenance.title;
         document.getElementById("mlmname").value = properties.maintenance.mlmname;
         document.getElementById("arden").value = properties.maintenance.arden;
@@ -307,9 +307,14 @@ function openRecentProject(file){
  * 
  * @returns {null}
  */
-function saveProject(){
+function saveProject(isFixedSidebar = false){
     servletRequest("http://localhost:8080/katool/chartservlet?function=save");
-    window.location.href = "http://localhost:8080/katool/index.html";
+    if (!isFixedSidebar) {
+       window.location.href = "http://localhost:8080/katool/index.html"; 
+    }
+    else {
+        parent.window.location.href = "http://localhost:8080/katool/index.html"; 
+    }
 }
 
 /**
@@ -549,4 +554,9 @@ function removeClassesFromDefaultDirBtn() {
     let btn = document.getElementById("checkDirBtn");
     btn.classList.remove("alert");
     btn.classList.remove("success");
+}
+
+function setSidebarHeight(){
+    let target = document.getElementById("sidebar-fixed");
+    target.style.height=document.documentElement.scrollHeight+'px';
 }

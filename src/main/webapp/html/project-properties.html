@@ -19,92 +19,96 @@ and open the template in the editor.
         <script src="../js/file.js"></script>
         <script src="../js/test.js"></script>
     </head>
-    <body onload="editProjectProperties()">
-        <div class="sidebar-div">
-            <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
-        </div>
-        
-        <div id="edit-project">
-            <div data-role="wizard" data-button-mode="cycle" class="wizard-wide-fs" data-on-help-click="alert('test')" data-on-finish-click="editProject()">
-                <section><div class="page-content">
-                        <h2>Maintenance</h2>
-                    <form id="edit-properties-maintenance">
-                        <div class="form-group">
-                            <label>Title</label>
-                            <input type="text" class="metro-input" name="title" id="title">
-                        </div>
-                        <div class="form-group error" id="title-group"></div>
-                        <div class="form-group">
-                            <label>MLMname</label>
-                            <input type="text" class="metro-input" name="mlmname" id="mlmname">
-                        </div>
-                        <div class="form-group error" id="mlmname-group"></div>
-                        <div class="form-group">
-                            <label>Arden</label>
-                            <input type="text" class="metro-input" value="Version 2.9" name="arden" id="arden" readonly>
-                        </div>
-                        <div class="form-group error" id="arden-group"></div>
-                        <div class="form-group">
-                            <label>Version</label>
-                            <input type="text" class="metro-input" name="version" id="version" value="0.0.1">
-                        </div>
-                        <div class="form-group error" id="version-group"></div>
-                        <div class="form-group">
-                            <label>Institution</label>
-                            <input type="text" class="metro-input" name="institution" id="institution">
-                        </div>
-                        <div class="form-group error" id="institution-group"></div>
-                        <div class="form-group">
-                            <label>Author</label>
-                            <input type="text" class="metro-input" name="author" id="author">
-                        </div>
-                        <div class="form-group error" id="author-group"></div>
-                        <div class="form-group" id="specialist-group">
-                            <label>Specialist</label>
-                            <input type="text" class="metro-input" name="specialist" id="specialist">
-                        </div>
-                        <div class="form-group">
-                            <label>Date</label><br>
-                            <input type="date" class="metro-input" name="date" id="date">
-                        </div>
-                        <div class="form-group error" id="date-group"></div>
-                        <div class="form-group validation">
-                            <label>Validation</label><br>
-                            <input type="radio" data-role="radio" data-caption="Production" name="validation" data-style="2" value="Production" id="Production">
-                            <input type="radio" data-role="radio" data-caption="Research" name="validation" data-style="2" value="Research" id="Research">
-                            <input type="radio" data-role="radio" data-caption="Testing" name="validation" data-style="2" value="Testing" id="Testing">
-                            <input type="radio" data-role="radio" data-caption="Expired" name="validation" data-style="2" value="Expired" id="Expired">
-                        </div>
-                        <div class="form-group error" id="validation-group"></div>
-                    </form>
-                </div></section>
-                <section id="edit-properties-section"></section>
-                <section><div class="page-content">
-                    <h2>Working Directory and Mappings</h2>
-                    <form id="edit-properties-dir-map">
-                        <div class="form-group" id="working-dir-group">
-                            <label>Working directory</label>
-                            <!--<input type="file" data-role="file" data-prepend="Select working directory" data-button-title="<span class='mif-folder'></span>" name="workingDirectory" id="workingDirectory" webkitdirectory mozdirectory onchange="showSelectedDir('create')">-->
-                            <input type="text" data-role="input" name="workingDirectory" id="workingDirectory" onchange="removeClassesFromDirBtn()">
-                            <button class="button dir-validity-btn" id="checkDirBtn" onclick="checkDirValidity()">Check directory</button>
-                        </div>
-                        <div class="form-group">
-                            <div id="selected-working-dir-edit">Please check the working directory, it might be incorrect or unchecked</div>
-                        </div>
-                        <div class="form-group" id="local-map-group">
-                            <label>Local terminology - Database mapping</label>
-                            <input type="file" data-role="file" data-prepend="Select local mapping" accept=".json" data-button-title="<span class='mif-folder'></span>" name="localMapping" id="localMapping" onchange="document.getElementById('selectedLocalFile').style.visibility = 'hidden'">
-                        </div>
-                        <div class="form-group error" id="local-group"></div>
-                        <div id="selectedLocalFile"></div>
-                        <div class="form-group" id="standardized-map-group">
-                            <label>Local terminology - Standardized terminology</label>
-                            <input type="file" data-role="file" data-prepend="Select terminology mapping" accept=".json" data-button-title="<span class='mif-folder'></span>" name="standardizedMapping" id="standardizedMapping" onchange="document.getElementById('standardizedMapping').style.visibility = 'hidden'">
-                        </div>
-                        <div class="form-group error" id="standardized-group"></div>
-                        <div id="selectedStandardizedFile"></div>
-                    </form>
-                </div></section>
+    <body onload="editProjectProperties(); setSidebarHeight();">
+        <div class="split-fixed-sidebar">
+            <div class="sidebar-split">
+                <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
+            </div>
+            <div class="content-split">
+                <button class="image-button" id="save-project-properties-changes" onclick="editProject(false)">
+                    <span class="mif-floppy-disk icon"></span>
+                    <span class="caption">Save changes</span>
+                </button>
+                <h2>Project properties</h2>
+                <form id="edit-properties-maintenance">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" class="metro-input" name="title" id="title">
+                    </div>
+                    <div class="form-group error" id="title-group"></div>
+                    <div class="form-group">
+                        <label>MLMname</label>
+                        <input type="text" class="metro-input" name="mlmname" id="mlmname">
+                    </div>
+                    <div class="form-group error" id="mlmname-group"></div>
+                    <div class="form-group">
+                        <label>Arden</label>
+                        <input type="text" class="metro-input" value="Version 2.9" name="arden" id="arden" readonly>
+                    </div>
+                    <div class="form-group error" id="arden-group"></div>
+                    <div class="form-group">
+                        <label>Version</label>
+                        <input type="text" class="metro-input" name="version" id="version" value="0.0.1">
+                    </div>
+                    <div class="form-group error" id="version-group"></div>
+                    <div class="form-group">
+                        <label>Institution</label>
+                        <input type="text" class="metro-input" name="institution" id="institution">
+                    </div>
+                    <div class="form-group error" id="institution-group"></div>
+                    <div class="form-group">
+                        <label>Author</label>
+                        <input type="text" class="metro-input" name="author" id="author">
+                    </div>
+                    <div class="form-group error" id="author-group"></div>
+                    <div class="form-group" id="specialist-group">
+                        <label>Specialist</label>
+                        <input type="text" class="metro-input" name="specialist" id="specialist">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label><br>
+                        <input type="date" class="metro-input" name="date" id="date">
+                    </div>
+                    <div class="form-group error" id="date-group"></div>
+                    <div class="form-group validation">
+                        <label>Validation</label><br>
+                        <input type="radio" data-role="radio" data-caption="Production" name="validation" data-style="2" value="Production" id="Production">
+                        <input type="radio" data-role="radio" data-caption="Research" name="validation" data-style="2" value="Research" id="Research">
+                        <input type="radio" data-role="radio" data-caption="Testing" name="validation" data-style="2" value="Testing" id="Testing">
+                        <input type="radio" data-role="radio" data-caption="Expired" name="validation" data-style="2" value="Expired" id="Expired">
+                    </div>
+                    <div class="form-group error" id="validation-group"></div>
+                </form>
+                <div id="edit-properties-section"></div>
+                <h2>Working directory and mappings</h2>
+                <form id="edit-properties-dir-map">
+                    <div class="form-group" id="working-dir-group">
+                        <label>Working directory</label>
+                        <!--<input type="file" data-role="file" data-prepend="Select working directory" data-button-title="<span class='mif-folder'></span>" name="workingDirectory" id="workingDirectory" webkitdirectory mozdirectory onchange="showSelectedDir('create')">-->
+                        <input type="text" data-role="input" name="workingDirectory" id="workingDirectory" onchange="removeClassesFromDirBtn()">
+                        
+                    </div>
+                    <div class="form-group">
+                        <div id="selected-working-dir-edit">Please check the working directory, it might be incorrect or unchecked</div>
+                        <button class="button dir-validity-btn" id="checkDirBtn" onclick="checkDirValidity()">Check directory</button>
+                    </div>
+                    <div class="form-group" id="local-map-group">
+                        <label class="label-local">Local terminology - Database mapping</label>
+                        <input type="file" data-role="file" data-prepend="Select file" accept=".json" data-button-title="<span class='mif-folder'></span>" name="localMapping" id="localMapping" onchange="document.getElementById('selectedLocalFile').style.visibility = 'hidden'">
+                    </div>
+                    <div class="form-group error" id="local-group"></div>
+                    <div id="selectedLocalFile"></div>
+                    <div class="form-group" id="standardized-map-group">
+                        <label>Local terminology - Standardized terminology</label>
+                        <input type="file" data-role="file" data-prepend="Select file" accept=".json" data-button-title="<span class='mif-folder'></span>" name="standardizedMapping" id="standardizedMapping" onchange="document.getElementById('standardizedMapping').style.visibility = 'hidden'">
+                    </div>
+                    <div class="form-group error" id="standardized-group"></div>
+                    <div id="selectedStandardizedFile"></div>
+                </form>
+                <button class="image-button" id="save-project-properties-changes" onclick="editProject(false)">
+                    <span class="mif-floppy-disk icon"></span>
+                    <span class="caption">Save changes</span>
+                </button>
             </div>
         </div>
     </body>

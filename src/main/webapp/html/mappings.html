@@ -19,76 +19,80 @@ and open the template in the editor.
         <script src="../js/file.js"></script>
         <script src="../js/test.js"></script>
     </head>
-    <body onload="loadMappings()">
-        <div class="sidebar-div">
-            <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
-        </div>
-        <div id="mappings-div">
-            <div class="dialog" id="process-mappings-load">
-                <div class="dialog-title">Processing mappings</div>
-                <div class="dialog-content">
-                    <div class="content-spinner">
-                        <span class="mif-spinner ani-pulse"></span>
-                    </div>
-                </div>
+    <body onload="loadMappings(); setSidebarHeight();">
+        <div class="split-fixed-sidebar">
+            <div class="sidebar-split">
+                <iframe id="sidebar-fixed" src="sidebar-fixed.html"></iframe>
             </div>
-            <ul data-role="tabs" data-expand="true">
-                <li><a href="#_target_db">Database mapping</a></li>
-                <li><a href="#_target_standard">Standardized terminology mapping</a></li>
-            </ul>
-            <div class="bd-default no-border-top p-2">
-                <div id="_target_db">
-                    <div>
-                        <div class="column">
-                            <button class="image-button" onclick="addNewDBMapSingular()" id="new-db-singular">
-                                <span class="mif-plus icon"></span>
-                                <span class="caption">Add new database mapping singular value</span>
-                            </button>
-                        </div>
-                        <div class="column">
-                            <button class="image-button" onclick="addNewDbMapPlural()" id="new-db-plural">
-                                <span class="mif-plus icon"></span>
-                                <span class="caption">Add new database mapping value set</span>
-                            </button>
-                            <button class="image-button" id="save-db-map-changes" onclick="saveDbMapChanges()">
-                                <span class="mif-floppy-disk icon"></span>
-                                <span class="caption">Save changes</span>
-                            </button>
+            <div class="content-split">
+                <div id="mappings-div">
+                    <div class="dialog" id="process-mappings-load">
+                        <div class="dialog-title">Processing mappings</div>
+                        <div class="dialog-content">
+                            <div class="content-spinner">
+                                <span class="mif-spinner ani-pulse"></span>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <h5 class="column center-header">Singular Values</h5>
-                        <h5 class="column center-header">Value Sets</h5>
+                    <ul data-role="tabs" data-expand="true">
+                        <li><a href="#_target_db">Database mapping</a></li>
+                        <li><a href="#_target_standard">Standardized terminology mapping</a></li>
+                    </ul>
+                    <div class="bd-default no-border-top p-2">
+                        <div id="_target_db">
+                            <div>
+                                <div class="column">
+                                    <button class="image-button" onclick="addNewDBMapSingular()" id="new-db-singular">
+                                        <span class="mif-plus icon"></span>
+                                        <span class="caption">Add new database mapping singular value</span>
+                                    </button>
+                                </div>
+                                <div class="column">
+                                    <button class="image-button" onclick="addNewDbMapPlural()" id="new-db-plural">
+                                        <span class="mif-plus icon"></span>
+                                        <span class="caption">Add new database mapping value set</span>
+                                    </button>
+                                    <button class="image-button" id="save-db-map-changes" onclick="saveDbMapChanges()">
+                                        <span class="mif-floppy-disk icon"></span>
+                                        <span class="caption">Save changes</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="column center-header">Singular Values</h5>
+                                <h5 class="column center-header">Value Sets</h5>
+                            </div>
+                            <div id="database-mapping-table-singular" class="column"></div>
+                            <div id="database-mapping-table-plural" class="column"></div>
+                        </div>
+                        <div id="_target_standard">
+                            <div>
+                                <div class="column">
+                                    <button class="image-button" onclick="addNewStandardMapSingular()" id="new-stand-singular">
+                                        <span class="mif-plus icon"></span>
+                                        <span class="caption">Add new standardized terminology mapping singular value</span>
+                                    </button>
+                                </div> 
+                                <div class="column">
+                                    <button class="image-button" onclick="addNewStandardMapPlural()" id="new-stand-plural">
+                                        <span class="mif-plus icon"></span>
+                                        <span class="caption">Add new standardized terminology mapping value set</span>
+                                    </button>
+                                    <button class="image-button" id="save-term-map-changes" onclick="saveTermMapChanges()">
+                                        <span class="mif-floppy-disk icon"></span>
+                                        <span class="caption">Save changes</span>
+                                    </button>
+                                </div> 
+                            </div>
+
+                            <div>
+                                <h5 class="column center-header">Singular Values</h5>
+                                <h5 class="column center-header">Value Sets</h5>
+                            </div>
+                            <div id="standardized-mapping-table-singular" class="column"></div>
+                            <div id="standardized-mapping-table-plural" class="column"></div>
+                        </div>
                     </div>
-                    <div id="database-mapping-table-singular" class="column"></div>
-                    <div id="database-mapping-table-plural" class="column"></div>
-                </div>
-                <div id="_target_standard">
-                    <div>
-                        <div class="column">
-                            <button class="image-button" onclick="addNewStandardMapSingular()" id="new-stand-singular">
-                                <span class="mif-plus icon"></span>
-                                <span class="caption">Add new standardized terminology mapping singular value</span>
-                            </button>
-                        </div> 
-                        <div class="column">
-                            <button class="image-button" onclick="addNewStandardMapPlural()" id="new-stand-plural">
-                                <span class="mif-plus icon"></span>
-                                <span class="caption">Add new standardized terminology mapping value set</span>
-                            </button>
-                            <button class="image-button" id="save-term-map-changes" onclick="saveTermMapChanges()">
-                                <span class="mif-floppy-disk icon"></span>
-                                <span class="caption">Save changes</span>
-                            </button>
-                        </div> 
-                    </div>
-                    
-                    <div>
-                        <h5 class="column center-header">Singular Values</h5>
-                        <h5 class="column center-header">Value Sets</h5>
-                    </div>
-                    <div id="standardized-mapping-table-singular" class="column"></div>
-                    <div id="standardized-mapping-table-plural" class="column"></div>
                 </div>
             </div>
         </div>

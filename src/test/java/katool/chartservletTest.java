@@ -89,11 +89,22 @@ public class chartservletTest {
     public void tearDown() {
     }
 
-    // Test for adding Start
+    // Test for Start
     @org.junit.jupiter.api.Test
     public void testAddStart() throws IOException, Exception{
         String expectedResponse = "{\"state\":[{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null}], \"endLines\":[]}";
         request.setURI("/katool?function=update&" + chartItemToURLString(mockStart));
+        response.parse(tester.getResponses(request.generate()));
+        
+        assertEquals(expectedResponse, response.getContent());
+    }
+    
+    @org.junit.jupiter.api.Test
+    public void testTryToRemoveStart() throws IOException, Exception {
+        String expectedResponse = "{\"state\":[{\"id\":\"a111\",\"type\":\"start\",\"prevItemId\":\"-1\",\"caption\":\"Start\",\"condition\":null}], \"endLines\":[]}";
+        request.setURI("/katool?function=update&" + chartItemToURLString(mockStart));
+        tester.getResponses(request.generate());
+        request.setURI("/katool?function=delete&id=" + mockStart.getId());
         response.parse(tester.getResponses(request.generate()));
         
         assertEquals(expectedResponse, response.getContent());

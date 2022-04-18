@@ -673,12 +673,17 @@ public class chartservlet extends HttpServlet {
                         selectedFileString += fileReader.nextLine();
                     }
                     if (Utils.checkFileValidity(selectedFileString)){
-                        ObjectMapper mapper = new ObjectMapper();
-                        selectedFileContents = mapper.readTree(selectedFileString);
-                        String title = selectedFileContents.at("/maintenance/title").asText();
-                        mlmname = selectedFileContents.at("/maintenance/mlmname").asText();
+                        Pattern patternMlmname = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
+                        Pattern patternTitle = Pattern.compile("\"title\":\"(.+)\",\"ml");
+                        Matcher matcherMlmname = patternMlmname.matcher(selectedFileString);
+                        Matcher matcherTitle = patternTitle.matcher(selectedFileString);
+                        matcherMlmname.find();
+                        matcherTitle.find();
+                        String title = matcherTitle.group(1);
+                        mlmname = matcherMlmname.group(1);
                         Utils.addNewDependency(title, path, selectedFileContents);
                     }
+                    break;
                 }
             } 
         } catch (Exception e){}  
@@ -691,6 +696,7 @@ public class chartservlet extends HttpServlet {
         maintainMaxDequeSize("undo");
         undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
         ChartItem oldItem = currentState.getValue0().get(itemIndex);
+        if (oldItem.getType().equals("start")) { return; }
         if (oldItem.getType().equals("conditional")) { removeConditional(oldItem.getId()); }
         else { 
             currentState.getValue0().remove(oldItem);
