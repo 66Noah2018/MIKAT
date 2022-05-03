@@ -356,7 +356,7 @@ function displayTestResults(testsPassed, testsFailed){
         resultsView += '<li data-icon="' + errorIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1] + '" data-actual = "' + test[2] + '"></li>';
     });
     testsPassed.forEach(test => {
-        resultsView += '<li data-icon="' + successIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1] + '" data-actual = "' + test[2] + '"></li>';
+        resultsView += '<li data-icon="' + successIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1].join(", ") + '" data-actual = "' + test[2].join(", ") + '"></li>';
     });
     resultsView += "</ul>";
     target.appendChild(parser.parseFromString(resultsView, 'text/html').body.firstChild);
