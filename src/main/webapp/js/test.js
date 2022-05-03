@@ -334,9 +334,9 @@ function runTest(patient, parameters) {
     });
     
     let testPassed = true;
-    expectedResults.forEach(msg => {
-        if (!results.includes(msg)) { testPassed = false; }
-    });
+    const diff1 = expectedResults.filter(x => !results.includes(x));
+    const diff2 = results.filter(y => !expectedResults.includes(y));
+    if ((diff1.length > 0) || (diff2.length > 0)) {testPassed = false; }
     
     let result = new Object();
     result.testCaseNr = patient["#"];
@@ -353,7 +353,7 @@ function displayTestResults(testsPassed, testsFailed){
     target.innerHTML = "<div id='test-results-headings'><span id='testcase-nr'><b>Test case</b></span><span id='expected'><b>Expected result</b></span><span id='actual'><b>Actual result</b></span></div>";
     let resultsView = "<ul id='test-results-listview' data-role='listview', data-view='table' data-structure = '{\"expected\": true, \"actual\": true}'>";
     testsFailed.forEach(test => {
-        resultsView += '<li data-icon="' + errorIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1] + '" data-actual = "' + test[2] + '"></li>';
+        resultsView += '<li data-icon="' + errorIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1].join(", ") + '" data-actual = "' + test[2].join(", ") + '"></li>';
     });
     testsPassed.forEach(test => {
         resultsView += '<li data-icon="' + successIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1].join(", ") + '" data-actual = "' + test[2].join(", ") + '"></li>';
