@@ -185,11 +185,6 @@ function updateEndLinesList(id, newEndline = false){
 }
 
 function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = false, condition=null, isRedraw=false){
-//    let hasNext = JSON.parse(servletRequest(`./chartservlet?function=hasNext&id=${prevId}`)).hasNext;
-//    if ((hasNext === true || hasNext === "true") && (isRedraw === false)) {
-//        Metro.notify.create("Cannot add new step to chart item that does already have a next step", "Warning: Cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
-//        return;
-//    }
     if (stepType === elements.retrievedata) { 
         const values = JSON.parse(servletRequest('./chartservlet?function=localmap'));
         if (Object.keys(values.singulars).includes(iconCaption)) {

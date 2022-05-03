@@ -713,6 +713,7 @@ public class chartservlet extends HttpServlet {
             currentState = new Pair(currentState.getValue0(), new ArrayList<>());
         } else {
            removeEndline(id); 
+           currentState.getValue1().add("\"" + oldItem.getPrevItemId() + "\"");
         }
         removeUnusedEndlines();
     }
@@ -739,9 +740,9 @@ public class chartservlet extends HttpServlet {
         String finalMultipart = request.getParameter("finalMultipart");
         String firstMultipart = request.getParameter("firstMultipart");
 
-        if (currentState.getValue1().contains(prevItemId)){ //deal with endlines
-            removeEndline(prevItemId);
-            currentState.getValue1().add(id);
+        if (currentState.getValue1().contains("\"" + prevItemId + "\"")){ //deal with endlines
+            removeEndline("\"" + prevItemId + "\"");
+            currentState.getValue1().add("\"" + id + "\"");
         }
         
         if (isMultipart == null) { isMultipart = "false"; }
