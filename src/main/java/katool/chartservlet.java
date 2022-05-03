@@ -739,16 +739,16 @@ public class chartservlet extends HttpServlet {
         String isMultipart = request.getParameter("isMultipart");
         String finalMultipart = request.getParameter("finalMultipart");
         String firstMultipart = request.getParameter("firstMultipart");
-
-        if (currentState.getValue1().contains("\"" + prevItemId + "\"")){ //deal with endlines
-            removeEndline("\"" + prevItemId + "\"");
-            currentState.getValue1().add("\"" + id + "\"");
-        }
         
         if (isMultipart == null) { isMultipart = "false"; }
         if (finalMultipart == null) { finalMultipart = "false"; }
         if (firstMultipart == null) { firstMultipart = "false"; }
-        
+
+        if (currentState.getValue1().contains("\"" + prevItemId + "\"")){ //deal with endlines
+            removeEndline("\"" + prevItemId + "\"");
+            if (isMultipart.equals("false")) { currentState.getValue1().add("\"" + id + "\""); }
+        }
+
         ChartItem newItem = new ChartItem(id, type, prevItemId, caption);
         if (condition != null && !condition.equals("null")) { newItem = new ChartItem(id, type, prevItemId, caption, condition); }
         
