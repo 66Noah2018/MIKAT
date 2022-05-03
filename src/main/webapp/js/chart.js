@@ -103,6 +103,13 @@ document.addEventListener('keydown', function(event) {
     if (event.keyCode === 46){
         if (selectedItemId !== -1){ deleteItem(selectedItemId); }
     }
+    
+    if(event.keyCode === 17) isCtrl=true;
+    if(event.keyCode === 83 && isCtrl === true) {
+        event.preventDefault();
+        servletRequest("http://localhost:8080/katool/chartservlet?function=save");
+        Metro.notify.create("Project saved", "Success", {animation: 'easeOutBounce', cls: "save-success"})
+    }
 });
 
 document.addEventListener('scroll', function(){ redrawLines(); });
