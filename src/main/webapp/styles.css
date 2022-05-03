@@ -21,6 +21,7 @@ and open the template in the editor.
 
 #sidebar-index{
     margin-top:25px; 
+    z-index: 10000;
 }
 
 .ribbon-toggle-group {
