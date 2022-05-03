@@ -695,3 +695,8 @@ body {
 .label-local {
     padding-right: 49px;
 }
+
+#_target_results thead th {
+    text-align: left;
+    font-size: larger;
+}

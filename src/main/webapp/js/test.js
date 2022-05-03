@@ -350,16 +350,15 @@ function displayTestResults(testsPassed, testsFailed){
     const successIcon = "<span class='mif-done'></span>";
     const errorIcon = "<span class='mif-cancel'></span>";
     let target = document.getElementById("_target_results");
-    target.innerHTML = "<div id='test-results-headings'><span id='testcase-nr'><b>Test case</b></span><span id='expected'><b>Expected result</b></span><span id='actual'><b>Actual result</b></span></div>";
-    let resultsView = "<ul id='test-results-listview' data-role='listview', data-view='table' data-structure = '{\"expected\": true, \"actual\": true}'>";
+    let tableCode = "<table style='width:100%'><thead><tr><th style='width:75px'>Status</th><th style='width:150px'>Test case</th><th>Expected result</th><th>Actual result</th></tr></thead><tbody>";
     testsFailed.forEach(test => {
-        resultsView += '<li data-icon="' + errorIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1].join(", ") + '" data-actual = "' + test[2].join(", ") + '"></li>';
+        tableCode += "<tr><td style='width:75px'>" + errorIcon + "</td><td style='width:150px'>Test case " + test[0] + "</td><td>" + test[1].join(", ") + "</td><td>" + test[2].join(", ") + "</td></tr>";
     });
     testsPassed.forEach(test => {
-        resultsView += '<li data-icon="' + successIcon + '" data-caption = "Test case ' + test[0] + '" data-expected="' + test[1].join(", ") + '" data-actual = "' + test[2].join(", ") + '"></li>';
+        tableCode += "<tr><td style='width:75px'>" + successIcon + "</td><td style='width:150px'>Test case " + test[0] + "</td><td>" + test[1].join(", ") + "</td><td>" + test[2].join(", ") + "</td></tr>";
     });
-    resultsView += "</ul>";
-    target.appendChild(parser.parseFromString(resultsView, 'text/html').body.firstChild);
+    tableCode += "</tbody></table>";
+    target.innerHTML = tableCode;
     showTestResults();
 }
 
