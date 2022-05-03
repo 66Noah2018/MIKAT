@@ -1002,8 +1002,99 @@ function closeAllForms(){
     });
 }
 
+function validateConditionalForm(){
+    let returnValue = true;
+    try {
+        let formdata = new FormData(document.getElementById("conditional-form"));
+        const variable = formdata.get("data-conditional-var");
+        const conditionPrefix = formdata.get("condition-prefix");
+        const condition = formdata.get("condition");
+        const dataConditionalPos = formdata.get("data-conditional-pos");
+        const dataConditionalNeg = formdata.get("data-conditional-neg");
+        let statementPos = null;
+        let statementNeg = null;
+        switch (dataConditionalPos){
+            case elements.subroutine:
+                statementPos = document.getElementById("subroutine-conditional-pos-input").files[0].name;
+                break;
+            case elements.retrievedata:
+            case elements.newProcedure:
+            case elements.orderLabs:
+            case elements.newPrescription:
+            case elements.addDiagnosis:
+            case elements.newVaccination:
+            case elements.addNotes:
+            case elements.returnValue:
+                statementPos = formdata.get("statement1-caption");
+                break;
+        }
+        
+        switch (dataConditionalNeg){
+            case elements.subroutine:
+                statementNeg = document.getElementById("subroutine-conditional-neg-input").files[0].name;
+                break;
+            case elements.retrievedata:
+            case elements.newProcedure:
+            case elements.orderLabs:
+            case elements.newPrescription:
+            case elements.addDiagnosis:
+            case elements.newVaccination:
+            case elements.addNotes:
+            case elements.returnValue:
+                statementNeg = formdata.get("statement2-caption");
+                break;
+        }
+        
+        if (variable === undefined || variable === "") {
+            returnValue = false;
+            document.getElementById("conditional-variable").children[0].classList.add("invalid");
+        } else { document.getElementById("conditional-variable").children[0].classList.remove("invalid"); }
+        
+        if (conditionPrefix === undefined || conditionPrefix === "") {
+            returnValue = false;
+            document.getElementById("condition-prefix-div").children[0].classList.add("invalid");
+        } else { document.getElementById("condition-prefix-div").children[0].classList.remove("invalid"); }
+        
+        if (condition === undefined || condition === "") {
+            returnValue = false;
+            document.getElementById("condition").classList.add("invalid");
+        } else { document.getElementById("condition").classList.remove("invalid"); }
+        
+        if (dataConditionalPos === undefined || dataConditionalPos === ""){
+            returnValue = false;
+            document.getElementById("conditional-statement1").children[0].classList.add("invalid");
+        } else { document.getElementById("conditional-statement1").children[0].classList.remove("invalid"); }
+        
+        if (dataConditionalNeg === undefined || dataConditionalNeg === "") {
+            returnValue = false;
+            document.getElementById("conditional-statement2").children[0].classList.add("invalid");
+        } else { document.getElementById("conditional-statement2").children[0].classList.remove("invalid"); }
+
+        if (dataConditionalPos !== elements.end && dataConditionalPos !== elements.conditional) {
+            if (document.getElementById("conditional-form-group-pos").children.length > 0) {
+                if (statementPos === "") { 
+                    returnValue = false;
+                    document.getElementById("conditional-form-group-pos").children[0].children[0].classList.add("invalid");
+                } else { document.getElementById("conditional-form-group-pos").children[0].children[0].classList.remove("invalid"); }
+            }
+        }
+        
+        if (dataConditionalNeg !== elements.end && dataConditionalNeg !== elements.conditional) {
+            if (document.getElementById("conditional-form-group-neg").children.length > 0) {
+                if (statementNeg === "") { 
+                    returnValue = false;
+                    document.getElementById("conditional-form-group-neg").children[0].children[0].classList.add("invalid");
+                } else { document.getElementById("conditional-form-group-neg").children[0].children[0].classList.remove("invalid"); }
+            }
+        }   
+    }
+    catch (e) { console.log(e) }
+    return returnValue;
+}
+    
 function processFormConditional(){
     event.preventDefault();
+    if (validateConditionalForm() === false) { return; }
     
     //get data
     let formdata = new FormData(document.getElementById("conditional-form"));
