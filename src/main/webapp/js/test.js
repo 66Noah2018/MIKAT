@@ -74,6 +74,7 @@ function generateTestcasesTableCode(variables, possibleValues, possibleOutcomes)
 }
 
 function showTestCases(){
+    if (testPatients === null) { try {loadTestCases(); } catch (e) {} }
     highlight('open-test-cases', 'open-test-results');
     const currentState = document.getElementsByClassName("tests")[0].style.display;
     if (currentState !== "block"){ document.getElementsByClassName("tests")[0].style.display = "block"; } //make tabs + content visible
@@ -132,10 +133,9 @@ function getTestCasesTableCode(variables, medicalActions, testPatients = null){
         
         target.appendChild(parser.parseFromString(code, 'text/html').body.firstChild);
         spinner.style.display = "none";
-        showTestCases();
+//        showTestCases();
         document.getElementById("open-test-cases").classList.remove("disabled");
         document.getElementById("create-test-cases").classList.add("disabled");
-        document.getElementById("load-testcases-from-file").classList.add("disabled");
     }
 }
 
@@ -153,9 +153,11 @@ function loadTestCases(){
 }
 
 function refreshTable(){
+    if (testPatients === null) { try {loadTestCases(); } catch (e) {} }
     document.getElementById("testcases").remove();
     const headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
     getTestCasesTableCode(headings.retrievedata, headings.medicalActions, testPatients);
+    showTestCases();
 }
 
 function showTestResults(){
@@ -293,6 +295,7 @@ function startTests(){
         Metro.notify.create("Cannot run tests while model contains errors", "Warning: Cannot run tests", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true}); 
         return;
     }
+    if (testPatients === null) { try {loadTestCases(); } catch (e) {} }
     let testsPassed = [];
     let testsFailed = [];
     
