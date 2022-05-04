@@ -131,6 +131,29 @@ and open the template in the editor.
                     <div class="form-group error" id="standardized-group"></div>
                     <div id="selectedStandardizedFile"></div>
                 </form>
+                <h2>Triggers</h2>
+                <form id="edit-properties-triggers">
+                    <div class="form-group">
+                        <button class="image-button" onclick="addNewTrigger('triggers-table-new')" id="new-trigger">
+                            <span class="mif-plus icon"></span>
+                            <span class="caption">Add new trigger</span>
+                        </button>
+                    </div>
+                    <div class="form-group"  id="triggers-group">
+                        <table id="triggers-table-new">
+                            <thead>
+                                <tr>
+                                    <th>Trigger name</th>
+                                    <th>Trigger definition: event { ... }</th>
+                                </tr>
+                            </thead>
+                            <tbody contenteditable>
+                                <tr><td> </td><td> </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-group error" id="triggers-group-error"></div>
+                </form>
                 <button class="image-button" id="save-project-properties-changes" onclick="editProject(true)">
                     <span class="mif-floppy-disk icon"></span>
                     <span class="caption">Save changes</span>

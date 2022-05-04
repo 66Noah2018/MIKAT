@@ -9,7 +9,7 @@ let invalidForm = false;
 let properties = null;
 
 function valuesToJson(title, mlmname, arden, version, institution, author, specialist, date, validation, purpose, explanation, 
-    keywords, citations, links, localMappingFile, standardizedMappingFile){
+    keywords, citations, links, localMappingFile, standardizedMappingFile, triggers){
     const obj = {"maintenance": {
                     "title": title, 
                     "mlmname": mlmname, 
@@ -27,7 +27,8 @@ function valuesToJson(title, mlmname, arden, version, institution, author, speci
                     "citations": citations, 
                     "links": links}, 
                 "localMappingFile": localMappingFile, 
-                "standardizedMappingFile": standardizedMappingFile};
+                "standardizedMappingFile": standardizedMappingFile,
+                "triggers": triggers};
     return JSON.stringify(obj);
 }
 
@@ -120,6 +121,7 @@ function editProject(isNew = false){
     let citations = libraryFormdata.get("citations");
     let links = libraryFormdata.get("links");
     
+    
     if (properties !== null) {
         if (localFile === undefined) { localFile = properties.localMappingFile; }
         if (standardizedFile === undefined) { standardizedFile = properties.standardizedMappingFile; } 
@@ -142,11 +144,22 @@ function editProject(isNew = false){
     if (keywords === "") { displayErrorMessage("keywords-group", "Keywords cannot be empty"); }
     if (localFile === undefined) { displayErrorMessage("local-group", "Please select a local mappings file"); }
     if (standardizedFile === undefined) { displayErrorMessage("standardized-group", "Please select a standardized mappings file"); }
+    let triggers = {};
+    let tableRows = null;
+    if (isNew) { tableRows = document.getElementById("triggers-table-new").rows; }
+    else { tableRows = document.getElementById("triggers-table-edit").rows; }
+    for (let singleRow of tableRows) {
+        let key = singleRow.cells[0].innerText.trim();
+        let value = singleRow.cells[1].innerText.trim();
+        if (key !== "" && value !== "" && key !== "Trigger name") {
+            if (!specialChars.test(key) && key.indexOf(" ") === -1) { triggers[key] = value; }
+            else { displayErrorMessage("triggers-group-error", "Every trigger name must have a definition and trigger names cannot contain special characters (_ is allowed) or spaces"); }
+        }
+    }
     
     if (invalidForm) { return; }
     validation = document.querySelector('input[name="validation"]:checked').value;
-    const projectJson = valuesToJson(title, mlmname, arden, version, institution, author, specialist, date, validation, purpose, explanation, keywords, citations, links, localFile, standardizedFile);
-    
+    const projectJson = valuesToJson(title, mlmname, arden, version, institution, author, specialist, date, validation, purpose, explanation, keywords, citations, links, localFile, standardizedFile, triggers);
     servletRequestPost("../chartservlet?function=setWorkingDirectory", terminologyFormdata.get("workingDirectory"));
     servletRequestPost("../chartservlet?function=saveProject&isNew=" + isNew, projectJson);
     window.location.href = "../index.html";
@@ -256,6 +269,14 @@ function editProjectProperties(){
         document.getElementById("selectedLocalFile").style.visibility = "visible";
         document.getElementById("selectedStandardizedFile").innerText = "Selected standardized mappings file: " + properties.standardizedMappingFile;
         document.getElementById("selectedStandardizedFile").style.visibility = "visible";
+        let triggerTarget = document.getElementById("triggers-group");
+        triggerTarget.innerHTML = "";
+        let newRowsCode = '<table id="triggers-table-edit"><thead><tr><th>Trigger name</th><th>Trigger definition: event { ... }</th></tr></thead><tbody contenteditable>';
+        for (const trigger in properties.triggers) {
+            newRowsCode += "<tr><td>" + trigger + "</td><td>" + properties.triggers[trigger] + "</td></tr>";
+        }
+        newRowsCode += "</body></table>";
+        triggerTarget.appendChild(parser.parseFromString(newRowsCode, 'text/html').body.firstChild);
     }   
 }
 
@@ -486,6 +507,13 @@ function addNewStandardMapSingular() {
 
 function addNewStandardMapPlural() {
     let newRow = document.getElementById("standardized-mapping-plural").insertRow();
+    newRow.insertCell(0);
+    newRow.insertCell(0);
+}
+
+function addNewTrigger(id) {
+    event.preventDefault();
+    let newRow = document.getElementById(id).insertRow();
     newRow.insertCell(0);
     newRow.insertCell(0);
 }

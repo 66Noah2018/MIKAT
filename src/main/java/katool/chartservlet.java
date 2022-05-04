@@ -452,6 +452,7 @@ public class chartservlet extends HttpServlet {
         String testCasesFileLocationString = Paths.get(testCasesFileLocation).toString().replace("\\", "\\\\");
         String body = Utils.getBody(request).replace("\\\"", "\"");
         body = body.substring(0, body.length()-2);
+        System.out.println(body);
         body += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
                 ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocationString + "\"}";
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
@@ -466,8 +467,6 @@ public class chartservlet extends HttpServlet {
             file.write(body);
             file.close();
             setMappingLocations(body);
-            
-            ObjectMapper mapper = new ObjectMapper();
             
             for (int i = 0; i < Utils.prevOpened.size(); i++){
                 JsonNode node = Utils.prevOpened.get(i);

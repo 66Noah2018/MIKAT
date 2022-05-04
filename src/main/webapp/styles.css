@@ -531,12 +531,12 @@ table{
     margin-left: 10px;
 }
 
-#standardized-mapping-table-singular th, #standardized-mapping-table-plural th, #database-mapping-table-singular th, #database-mapping-table-plural th,
-#standardized-mapping-table-singular td, #standardized-mapping-table-plural td, #database-mapping-table-singular td, #database-mapping-table-plural td {
+#standardized-mapping-table-singular th, #standardized-mapping-table-plural th, #database-mapping-table-singular th, #database-mapping-table-plural th,#triggers-table-edit th, #triggers-table-new th,
+#standardized-mapping-table-singular td, #standardized-mapping-table-plural td, #database-mapping-table-singular td, #database-mapping-table-plural td, #triggers-table-edit td, #triggers-table-new td {
     border: 1px solid var(--statusbar-bg-color);
 }
 
-#standardized-mapping-table-singular td, #standardized-mapping-table-plural td, #database-mapping-table-singular td, #database-mapping-table-plural td {
+#standardized-mapping-table-singular td, #standardized-mapping-table-plural td, #database-mapping-table-singular td, #database-mapping-table-plural td, #triggers-table-edit td, #triggers-table-new td {
     padding-left: 10px;
     height: 25px;
 }
@@ -641,22 +641,6 @@ table{
 
 #update-test-cases-btn{
     float: right;
-}
-
-#test-results-listview {
-    width: 1000px;
-}
-
-#expected {
-    margin-left: 92px;
-}
-
-#actual {
-    margin-left: 233px;
-}
-
-#expected, #actual, #testcase-nr {
-    font-size: x-large;
 }
 
 .ribbon-menu{
