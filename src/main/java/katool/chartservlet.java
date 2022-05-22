@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,19 +34,15 @@ import java.util.Date;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.javatuples.Pair;
-import static java.util.stream.Collectors.*;
 
 /**
  *
@@ -60,11 +55,12 @@ public class chartservlet extends HttpServlet {
     private Deque<Pair<LinkedList<ChartItem>, ArrayList<String>>> redoStack = new LinkedList<>();
     private final Integer MAX_DEQUE_SIZE = 10;
     private String conditionalId = null;
-    private String localMappingsFileLocation = null;
-    private String standardizedMappingsFileLocation = null;
+    public String localMappingsFileLocation = null;
+    public String standardizedMappingsFileLocation = null;
     private String localMapping = "{}";
     private String standardizedMapping = "{}";
     private String testCasesFileLocation = null;
+    private String projectProperties = null;
     
     
     /**
@@ -187,7 +183,8 @@ public class chartservlet extends HttpServlet {
                 response.getWriter().write(translation);
                 break;
             case "translateAS":
-                ChartTranslator.translateToArdenSyntax(currentState);
+                String exportPath = ChartTranslator.translateToArdenSyntax(currentState, projectProperties);
+                response.getWriter().write("\"path\":\"" + exportPath.replace("\\", "\\\\") + "\"}");
                 break;
             case "getDefaultWorkingDirectory":
                 if (Utils.defaultWorkingDirectory == null) { Utils.loadSettings(); }
@@ -323,7 +320,6 @@ public class chartservlet extends HttpServlet {
     private String setTestCasesFileLocation(HttpServletRequest request) throws IOException{
         String fileName = Utils.getBody(request);
         String pathToFile = null;
-        System.out.println(fileName);
         fileName = fileName.substring(1, fileName.length()-1);
         if (Utils.workingDir != null) {
             Iterator<File> fileIterator = FileUtils.iterateFiles(new File(Utils.workingDir.toString()), Utils.extensions, true);
@@ -463,9 +459,9 @@ public class chartservlet extends HttpServlet {
         String testCasesFileLocationString = Paths.get(testCasesFileLocation).toString().replace("\\", "\\\\");
         String body = Utils.getBody(request).replace("\\\"", "\"");
         body = body.substring(0, body.length()-2);
-        System.out.println(body);
         body += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
                 ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocationString + "\"}";
+        projectProperties = body;
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(body);
         Boolean matchFound = matcher.find();
@@ -593,6 +589,7 @@ public class chartservlet extends HttpServlet {
             fileName = fileName.substring(1, fileName.length()-1); }
         if (fileName.startsWith(Utils.rootPath)) { // fully specified path
             project = new String(Files.readAllBytes(Paths.get(fileName)));
+            projectProperties = project;
             if (!Utils.checkFileValidity(project)) { return "Invalid file, not MIKAT"; }
             Utils.currentPath = fileName;
             fileName = Paths.get(fileName).getFileName().toString();
@@ -616,6 +613,7 @@ public class chartservlet extends HttpServlet {
             }
             if (pathToFile == null) { return "Invalid file, no path"; }
             project = new String(Files.readAllBytes(Paths.get(pathToFile)));
+            projectProperties = project;
             if (!Utils.checkFileValidity(project)) { return "Invalid file, not MIKAT"; }
             Utils.currentPath = pathToFile;
         }
@@ -662,7 +660,7 @@ public class chartservlet extends HttpServlet {
         return "File opened successfully";
     }
         
-    private String selectFile(HttpServletRequest request) throws IOException{ // is this even used?
+    private String selectFile(HttpServletRequest request) throws IOException{ // used for adding subroutines
         String fileName = request.getParameter("name");
         File root = new File(Utils.workingDir.toString());
         String path = null;
@@ -824,7 +822,7 @@ public class chartservlet extends HttpServlet {
         localMappingsFileLocation = null;
         standardizedMappingsFileLocation = null;
         Pattern patternLocal = Pattern.compile("\"localMappingFile\":\"(.+)\",\"s");
-        Pattern patternStandardized = Pattern.compile("\"standardizedMappingFile\":\"(.+)\",\"depen");
+        Pattern patternStandardized = Pattern.compile("\"standardizedMappingFile\":\"(.+)\",\"trig");
         Matcher matcherLocal = patternLocal.matcher(body);
         Matcher matcherStandardized = patternStandardized.matcher(body);
         Boolean matchFound = matcherLocal.find();
@@ -931,6 +929,7 @@ public class chartservlet extends HttpServlet {
         String properties = currentProject.split(",\"dependencies\"")[0];
         properties += ",\"dependencies\":" + Utils.dependencies.toString() + ",\"state\":" + JSONEncoder.encodeChart(currentState.getValue0()) + ",\"endLines\":" + currentState.getValue1().toString() + 
                 ",\"workingDirectory\":\"" + Utils.workingDir.toString().replace("\\", "\\\\") + "\"" + ",\"testCasesFileLocation\":\"" + testCasesFileLocation.replace("\\", "\\\\") + "\"}";
+        projectProperties = properties;
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(properties);
         Boolean matchFound = matcher.find();

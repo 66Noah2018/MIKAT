@@ -34,9 +34,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
@@ -407,5 +409,61 @@ public class Utils {
             if (id.equals(element.getPrevItemId())) { nextItems.add(element); }
         }
         return nextItems;
+    }
+    
+    public static Map<String, String> getLocalMappingDictionary(String fileName) throws JsonProcessingException, IOException{
+        String localMappingsFileLocation = null;
+        
+        if (workingDir != null) {
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(workingDir.toString()), extensions, true);
+            while (fileIterator.hasNext() && localMappingsFileLocation == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { localMappingsFileLocation = file.getPath(); }
+            }
+        }
+        if (defaultWorkingDirectory == null && localMappingsFileLocation == null) {
+            loadSettings();
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(defaultWorkingDirectory), extensions, true);
+            while (fileIterator.hasNext() && localMappingsFileLocation == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { localMappingsFileLocation = file.getPath(); }
+            }
+        }
+        if (localMappingsFileLocation == null) {
+            if (rootPath.equals("")) { determineOS(); }
+            Iterator<File> fileIterator = FileUtils.iterateFiles(new File(rootPath), extensions, true);
+            while (fileIterator.hasNext() && localMappingsFileLocation == null) {
+                File file = fileIterator.next();
+                if (file.getName().equals(fileName)) { localMappingsFileLocation = file.getPath(); }
+            }
+        }
+        
+        Map<String, String> mappings = new HashMap<String, String>();
+        System.out.println(localMappingsFileLocation);
+        String localMapping = new String(Files.readAllBytes(Paths.get(localMappingsFileLocation)));
+        if (localMapping.equals("") || !Utils.checkMappingFileValidity(localMapping)) { localMapping = "{}"; }
+        Pattern mappingsPattern = Pattern.compile("\"singulars\":[^a-z](.+)[^a-z],\"plurals\":[^a-z](.+)[^a-z]{2}");
+        Matcher mappingsMatcher = mappingsPattern.matcher(localMapping);
+        Boolean mappingsMatch = mappingsMatcher.find();
+        
+        if (mappingsMatch){
+            String[] singularsString = mappingsMatcher.group(1).split(",");
+            String[] pluralsString = mappingsMatcher.group(2).split(",");
+            for (String item : singularsString) {
+                String[] mapEntryArray = item.split(":");
+                String key = mapEntryArray[0];
+                String value = mapEntryArray[1];
+                mappings.put(key.substring(1, key.length() - 1), value.substring(1, value.length() - 1));
+            }
+            
+            for (String item : pluralsString) {
+                String[] mapEntryArray = item.split(":");
+                String key = mapEntryArray[0];
+                String value = mapEntryArray[1];
+                mappings.put(key.substring(1, key.length() - 1), value.substring(1, value.length() - 1));
+            }
+        }
+        
+        return mappings;
     }
 }

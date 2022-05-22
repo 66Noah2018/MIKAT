@@ -359,7 +359,9 @@ function editProperties(){}
  * 
  * @returns {null}
  */
-function exportAsArden(){}
+function exportAsArden(){
+    servletRequest("http://localhost:8080/katool/chartservlet?function=translateAS");
+}
 
 /**
  * 
@@ -432,8 +434,8 @@ function saveDbMapChanges(){
     const rowsPlural = document.getElementById("database-mapping-plural").rows;
     for (let row of rowsSingular) {
         if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
-            let key = row.cells[0].innerText.trim();
-            let value = row.cells[1].innerText.trim();
+            let key = row.cells[0].innerText.trim().replaceAll("\"", "'");
+            let value = row.cells[1].innerText.trim().replaceAll("\"", "'");
             if (key.indexOf(" ") >= 0) { 
                 Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
                 return;
@@ -445,8 +447,8 @@ function saveDbMapChanges(){
     
     for (let row of rowsPlural) {
         if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
-            let key = row.cells[0].innerText.trim();
-            let value = row.cells[1].innerText.trim();
+            let key = row.cells[0].innerText.trim().replaceAll("\"", "'");
+            let value = row.cells[1].innerText.trim().replaceAll("\"", "'");
             if (key.indexOf(" ") >= 0) { 
                 Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
                 return;
@@ -469,8 +471,8 @@ function saveTermMapChanges(){
     const rowsPlural = document.getElementById("standardized-mapping-plural").rows;
     for (let row of rowsSingular) {
         if (row.cells[0].innerText !== "" && row.cells[1].innerText !== "") {
-            let key = row.cells[0].innerText.trim();
-            let value = row.cells[1].innerText.trim();
+            let key = row.cells[0].innerText.trim().replaceAll("\"", "'");
+            let value = row.cells[1].innerText.trim().replaceAll("\"", "'");
             if (key.indexOf(" ") >= 0) { 
                 Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
                 return;
