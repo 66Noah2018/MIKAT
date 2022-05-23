@@ -59,8 +59,6 @@ public class ChartTranslator {
     }
     
     public static String translateToArdenSyntax(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState, String projectProperties) throws IOException{
-        ardenHasMedicalActions = false;
-        ardenHasReturns = false;
         Pattern pattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
         Matcher matcher = pattern.matcher(projectProperties);
         Boolean matchFound = matcher.find();
@@ -213,9 +211,9 @@ public class ChartTranslator {
                     break;
             }
             String conditionPart = conditionMatcher.group(2);
-            if (StringUtils.isNumericSpace(conditionPart.strip())) { preppedCondition += conditionPart; }
-            else if (conditionPart.strip().equals("true") || conditionPart.strip().equals("True") || conditionPart.strip().equals("TRUE")) { preppedCondition += "TRUE"; }
-            else if (conditionPart.strip().equals("false") || conditionPart.strip().equals("False") || conditionPart.strip().equals("FALSE")) { preppedCondition += "FALSE"; }
+            if (StringUtils.isNumericSpace(conditionPart.strip())) { preppedCondition = "AS NUMBER " + preppedCondition + conditionPart; }
+            else if (conditionPart.strip().equals("true") || conditionPart.strip().equals("True") || conditionPart.strip().equals("TRUE")) { preppedCondition = "AS NUMBER " + preppedCondition + "1"; }
+            else if (conditionPart.strip().equals("false") || conditionPart.strip().equals("False") || conditionPart.strip().equals("FALSE")) { preppedCondition = "AS NUMBER " + preppedCondition + "0"; }
             else { preppedCondition += "\"" + conditionPart + "\""; }
             return preppedCondition;
         }
@@ -326,12 +324,12 @@ public class ChartTranslator {
             Map<String, String> mappings = Utils.getLocalMappingDictionary(localMappingMatcher.group(1));
             for (String dataItem : dataToRetrieve) {
                 if (mappings.containsKey(dataItem)) {
-                    writer.write("\t\t" + dataItem + ":= READ {" + mappings.get(dataItem).replaceAll("\\\"", "'") + "};\n");
+                    writer.write("\t\t" + dataItem + ":= READ FIRST {" + mappings.get(dataItem).replaceAll("\\\"", "'") + "};\n");
                 }
             }
             for (String loopItem : dataForLoops) {
                 if (mappings.containsKey(loopItem)) {
-                    writer.write("\t\t" + loopItem + ":= READ {" + mappings.get(loopItem).replaceAll("\\\"", "'") + "};\n");
+                    writer.write("\t\t" + loopItem + ":= READ FIRST {" + mappings.get(loopItem).replaceAll("\\\"", "'") + "};\n");
                 }
             }
         }
@@ -373,10 +371,12 @@ public class ChartTranslator {
     }
     
     private static void writeState(Pair<LinkedList<ChartItem>, ArrayList<String>> currentState, FileWriter writer) throws IOException{
+        ardenHasMedicalActions = false;
+        ardenHasReturns = false;
         Integer nrOfTabs = 1;
         ArrayList<String> conditionalIds = new ArrayList<>();
         ArrayList<String> lastElseIds = new ArrayList<>();
-        writer.write(String.join("", Collections.nCopies(nrOfTabs, "\t")) + "medical_actions_list:= ();\n");
+        writer.write(String.join("", Collections.nCopies(nrOfTabs, "\t")) + "medical_actions_list:= \"\";\n");
         writer.write(String.join("", Collections.nCopies(nrOfTabs, "\t")) + "return_value:= NULL;\n");
         for (ChartItem item : currentState.getValue0()) {
             if (conditionalIds.contains(item.getPrevItemId()) && (item.getCondition() == null || (item.getCondition()).equals("null"))) { 
@@ -409,7 +409,7 @@ public class ChartTranslator {
                 case "addDiagnosis":
                 case "newVaccination":
                 case "addNotes":
-                    writer.write(String.join("", Collections.nCopies(nrOfTabs, "\t")) + "medical_actions_list:= medical_actions_list, \"" + getMessage(item.getType(), item.getCaption()) + "\";\n");
+                    writer.write(String.join("", Collections.nCopies(nrOfTabs, "\t")) + "medical_actions_list:= medical_actions_list || \";\" || \"" + getMessage(item.getType(), item.getCaption()) + "\";\n");
                     ardenHasMedicalActions = true;
                     break;
                 case "returnValue":
