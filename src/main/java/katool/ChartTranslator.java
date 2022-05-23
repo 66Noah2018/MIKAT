@@ -380,11 +380,7 @@ public class ChartTranslator {
         writer.write(String.join("", Collections.nCopies(nrOfTabs, "\t")) + "return_value:= NULL;\n");
         for (ChartItem item : currentState.getValue0()) {
             if (conditionalIds.contains(item.getPrevItemId()) && (item.getCondition() == null || (item.getCondition()).equals("null"))) { 
-                Boolean nextItem = false;
-                for (ChartItem element : currentState.getValue0()) {
-                    if (item.getId().equals(element.getPrevItemId())) { nextItem = true; }
-                }
-                if (nextItem) { 
+                if (currentState.getValue1().contains("\"" + item.getId() + "\"")) {
                     writer.write(String.join("", Collections.nCopies(nrOfTabs-1, "\t")) + "ELSE\n");
                     lastElseIds.add(item.getId());
                 }
