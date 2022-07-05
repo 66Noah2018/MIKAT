@@ -31,7 +31,6 @@ This work is licenced under the GNU General Public License (GPL) version 3.
 
 <h2>Possible future changes</h2>
 <ul>
-  <li>Export project to Arden Syntax (before May 30th)</li>
   <li>Facilitate insertion of conditionals between existing ChartItems</li>
   <li>Allow sharing MIKAT projects using standardized terminology</li>
   <li>Add more information boxes about the status of a query (e.g., saved successfully)</li>
