@@ -312,14 +312,14 @@ function processOpen(projectName){
         let returnValue = JSON.parse(http.responseText).response;
         target.style.display = "none";
         
-        if (returnValue === "File opened successfully"){
+        if (returnValue === "Unsupported OS"){ Metro.notify.create("The detected OS is not supported", "Warning: unsupported OS", {animation: 'easeOutBounce', cls: "edit-notify"}); }
+        else if (returnValue === "Invalid file, not MIKAT" || returnValue === "File is not MIKAT file"){Metro.notify.create("The selected file is not a MIKAT project", "Warning: Not MIKAT", {animation: 'easeOutBounce', cls: "edit-notify"}); }
+        else if (returnValue === "Invalid file, no path"){ Metro.notify.create("The selected file could not be found", "Warning: File not found", {animation: 'easeOutBounce', cls: "edit-notify"}); }
+        else if (returnValue === "File opened successfully"){
+            const hasTestCases = JSON.parse(servletRequest("../chartservlet?function=hasTestCases")).hasTestCases;
+            if (!hasTestCases) { document.getElementById("open-test-cases").classList.add("disabled"); }
             window.location.href = "../index.html";
         }
-        else if (returnValue === "Unsupported OS"){ Metro.notify.create("The detected OS is not supported", "Warning: unsupported OS", {animation: 'easeOutBounce', cls: "edit-notify"}); }
-        else if (returnValue === "Invalid file, not MIKAT"){Metro.notify.create("The selected file is not a MIKAT project", "Warning: Not MIKAT", {animation: 'easeOutBounce', cls: "edit-notify"}); }
-        else if (returnValue === "Invalid file, no path"){ Metro.notify.create("The selected file could not be found", "Warning: File not found", {animation: 'easeOutBounce', cls: "edit-notify"}); }
-        const hasTestCases = JSON.parse(servletRequest("./chartservlet?function=hasTestCases")).hasTestCases;
-        if (!hasTestCases) { document.getElementById("open-test-cases").classList.add("disabled"); }
     };
 }
 
