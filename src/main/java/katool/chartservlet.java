@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 RLvanBrummelen
+ * Copyright (C) 2022 Amsterdam Universitair Medische Centra
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -656,7 +656,8 @@ public class chartservlet extends HttpServlet {
         }
         
         Utils.updatePrevOpened(mlmName);
-        setMappingLocations(project);
+        Boolean mappingLocationsSet = setMappingLocations(project);
+        if (!mappingLocationsSet) { return "File is not MIKAT file"; }
         return "File opened successfully";
     }
         
@@ -818,7 +819,7 @@ public class chartservlet extends HttpServlet {
     
     // Helper functions
     
-    private void setMappingLocations(String body) throws IOException{
+    private Boolean setMappingLocations(String body) throws IOException{
         localMappingsFileLocation = null;
         standardizedMappingsFileLocation = null;
         Pattern patternLocal = Pattern.compile("\"localMappingFile\":\"(.+)\",\"s");
@@ -839,6 +840,8 @@ public class chartservlet extends HttpServlet {
                     if (file.getName().equals(matcherLocal.group(1))) { localMappingsFileLocation = file.getPath(); }
                 }
             }
+        } else {
+            return false;
         }
         matchFound = matcherStandardized.find();
         if (matchFound) {
@@ -854,7 +857,10 @@ public class chartservlet extends HttpServlet {
                     if (file.getName().equals(matcherStandardized.group(1))) { standardizedMappingsFileLocation = file.getPath(); }
                 }
             }
+        } else {
+            return false;
         }
+        return true;
     }
     
     private void removeEndline(String id) {

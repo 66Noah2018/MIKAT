@@ -1,7 +1,7 @@
 package katool;
 
 /*
- * Copyright (C) 2022 RLvanBrummelen
+ * Copyright (C) 2022 Amsterdam Universitair Medische Centra
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
