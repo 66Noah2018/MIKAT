@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2022 RLvanBrummelen
+ * Copyright (C) 2022 Amsterdam Universitair Medische Centra
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,11 @@
 
 let parser = new DOMParser();
 
+const infoBoxProperties = {
+    warning: {animation: 'easeOutBounce', cls: "edit-notify"},
+    warningKeepOpen: {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true},
+    success: {animation: 'easeOutBounce', cls: "save-success"}
+};
 const flowchartImageCodes = {
     start: "<span class='far fa-play-circle flow-icon'></span>",
     end: "<span class='far fa-stop-circle flow-icon'></span>",
@@ -106,7 +111,7 @@ window.addEventListener('load', function () {
     else {
         document.getElementById("section-model").classList.add("disabled");
         document.getElementById("section-test").classList.add("disabled");
-        Metro.notify.create("No project opened. Click File -> Open Project to open a project or File -> New Project to create a project", "Warning: No project", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true});
+        displayQueryInfoBox(infoBoxProperties.warningKeepOpen, "Warning: No project", "No project opened. Click File -> Open Project to open a project or File -> New Project to create a project");
     }
 });
 
@@ -115,12 +120,12 @@ document.addEventListener('keydown', function(event) {
         if (selectedItemId !== -1){ deleteItem(selectedItemId); }
     }
     
-    if(event.keyCode === 17) isCtrl=true;
-    if(event.keyCode === 83 && isCtrl === true) {
-        event.preventDefault();
-        servletRequest("http://localhost:8080/katool/chartservlet?function=save");
-        Metro.notify.create("Project saved", "Success", {animation: 'easeOutBounce', cls: "save-success"})
-    }
+//    if(event.keyCode === 17) isCtrl=true;
+//    if(event.keyCode === 83 && isCtrl === true) {
+//        event.preventDefault();
+//        servletRequest("http://localhost:8080/katool/chartservlet?function=save");
+//        displayQueryInfoBox(infoBoxProperties.success, "Success", "Project saved");
+//    }
 });
 
 document.addEventListener('scroll', function(){ redrawLines(); });
@@ -213,7 +218,7 @@ function addNewStep(stepId, stepType, iconCaption, prevId, options, lowerY = fal
     }
     
     if (prevId !== -1 && prevId === endIconId) { 
-        Metro.notify.create("Cannot add element after end", "Warning: cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot add", "Cannot add element after end");
         return;
     }
     
@@ -286,7 +291,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
     catch (e) {}
     
     if (prevId !== -1 && prevId === endIconId) { 
-        Metro.notify.create("Cannot add element after end", "Warning: cannot add", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot add", "Cannot add element after end");
         return;
     }
     
@@ -475,7 +480,7 @@ function addStop(){
     const itemHasNext = JSON.parse(servletRequest(`./chartservlet?function=hasNext&id=${selectedItemId}`)).hasNext;
     if (itemHasNext)
     {
-        Metro.notify.create("Cannot add insert between elements", "Warning: cannot insert end", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot insert end", "Cannot add insert between elements");
     } else {
         let newItem = addNewStep(getRandomId(), elements.end, "End", selectedItemId, getLineStyle(elements.end)); 
         if (newItem !== undefined) { updateState([newItem], false); }
@@ -501,7 +506,7 @@ function deleteItem(id){
     let item = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${id}`)).chartItem;
     let state = JSON.parse(servletRequest(`./chartservlet?function=state`)).state;
     if (item.type === elements.start) {
-        Metro.notify.create("Cannot delete start element", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot delete", "Cannot delete start element");
         return;
     }
     if (item.type === elements.retrievedata) {
@@ -544,7 +549,7 @@ function deleteItem(id){
     // add option: if item is end, find all conditionals with line to end and give them questionmark
     // option 1: the item is a loop
     if (item.type === elements.loop && !item.caption.startsWith("End for") && JSON.parse(servletRequest(`./chartservlet?function=loopHasEnd&caption=${item.caption}`)).hasEnd === true){
-        Metro.notify.create("Cannot delete for loop with defined end", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot delete", "Cannot delete for loop with defined end");
         return;
     }
     // option 2: the item to be deleted is not a conditional, nor part of it
@@ -571,7 +576,7 @@ function deleteItem(id){
                 return element.type !== "questionMark";
             }
         })) {
-            Metro.notify.create("Cannot delete if-else with defined child node(s)", "Warning: cannot delete", {animation: 'easeOutBounce', cls: "edit-notify"});
+            displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot delete", "Cannot delete if-else with defined child node(s)");
             return;
         // option 4b: both branches are undefined
         } 
@@ -610,7 +615,7 @@ function redo(){
 function defineElement(id){
     let chartItem = JSON.parse(servletRequest(`./chartservlet?function=getElement&id=${id}`)).chartItem;
     if (chartItem.type === elements.start || chartItem.type === elements.end){
-        Metro.notify.create("Cannot edit properties of start and end elements", "Warning: cannot edit", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: cannot edit", "Cannot edit properties of start and end elements");
     } 
     else {
         elementToDefine = chartItem;
@@ -1463,4 +1468,8 @@ function closeTestView(){
     document.getElementsByClassName("tests")[0].style.display = "none";
     document.getElementById("open-test-cases").classList.remove("highlight");
     document.getElementById("open-test-results").classList.remove("highlight");
+}
+
+function displayQueryInfoBox(properties, header, message){
+    Metro.notify.create(message, header, properties);
 }

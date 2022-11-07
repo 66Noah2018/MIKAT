@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2022 RLvanBrummelen
+ * Copyright (C) 2022 Amsterdam Universitair Medische Centra
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -223,7 +223,7 @@ function updateTestCases(){
         testPatients.push(testCase);
     }
     servletRequestPost("./chartservlet?function=saveTestCases&newFile=" + newTestCasesFile, {"headings": headings, "testCases": testPatients});
-    Metro.notify.create("Test cases saved", "Success", {animation: 'easeOutBounce', cls: "save-success"});
+    displayQueryInfoBox(infoBoxProperties.success, "Success", "Test cases saved");
 }
 
 Element.prototype.remove = function() {
@@ -257,7 +257,7 @@ function processCSVData(fileName){
     http.onload = function(){ 
         const fileContent = JSON.parse(http.responseText).fileContent;
         if (fileContent === "Invalid file, no path") { 
-            Metro.notify.create("Selected file does not exist", "Warning: Nonexistent file", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true}); 
+            displayQueryInfoBox(infoBoxProperties.warningKeepOpen, "Warning: Nonexistent file", "Selected file does not exist");
             return;
         }
         testPatients = [];
@@ -276,7 +276,7 @@ function processCSVData(fileName){
             } 
         }
         servletRequestPost("./chartservlet?function=saveTestCases&newFile=true", {"headings": headings, "testCases": testPatients});
-        Metro.notify.create("Test cases imported", "Success", {animation: 'easeOutBounce', cls: "save-success"});
+        displayQueryInfoBox(infoBoxProperties.success, "Success", "Test cases imported");
         loadTestCases();
     }
 }
@@ -298,12 +298,12 @@ function exportToCSV(){
         csvString += patientString + ";ret;";
     });
     servletRequestPost("./chartservlet?function=exportCSV", csvString);
-    Metro.notify.create("Test cases exported", "Success", {animation: 'easeOutBounce', cls: "save-success"});
+    displayQueryInfoBox(infoBoxProperties.success, "Success", "Test cases exported");
 }
 
 function startTests(){
     if (hasErrors) {
-        Metro.notify.create("Cannot run tests while model contains errors", "Warning: Cannot run tests", {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true}); 
+        displayQueryInfoBox(infoBoxProperties.warningKeepOpen, "Warning: Cannot run tests", "Cannot run tests while model contains errors");
         return;
     }
     if (testPatients === null) { try {loadTestCases(); } catch (e) {} }

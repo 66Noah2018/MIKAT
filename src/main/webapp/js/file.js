@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2022 RLvanBrummelen
+ * Copyright (C) 2022 Amsterdam Universitair Medische Centra
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -312,9 +312,9 @@ function processOpen(projectName){
         let returnValue = JSON.parse(http.responseText).response;
         target.style.display = "none";
         
-        if (returnValue === "Unsupported OS"){ Metro.notify.create("The detected OS is not supported", "Warning: unsupported OS", {animation: 'easeOutBounce', cls: "edit-notify"}); }
-        else if (returnValue === "Invalid file, not MIKAT" || returnValue === "File is not MIKAT file"){Metro.notify.create("The selected file is not a MIKAT project", "Warning: Not MIKAT", {animation: 'easeOutBounce', cls: "edit-notify"}); }
-        else if (returnValue === "Invalid file, no path"){ Metro.notify.create("The selected file could not be found", "Warning: File not found", {animation: 'easeOutBounce', cls: "edit-notify"}); }
+        if (returnValue === "Unsupported OS"){ displayQueryInfoBox(infoBoxProperties.warning, "Warning: unsupported OS", "The detected OS is not supported");}
+        else if (returnValue === "Invalid file, not MIKAT" || returnValue === "File is not MIKAT file"){displayQueryInfoBox(infoBoxProperties.warning, "Warning: Not MIKAT", "The selected file is not a MIKAT project"); }
+        else if (returnValue === "Invalid file, no path"){ displayQueryInfoBox(infoBoxProperties.warning, "Warning: File not found", "The selected file could not be found"); }
         else if (returnValue === "File opened successfully"){
             const hasTestCases = JSON.parse(servletRequest("../chartservlet?function=hasTestCases")).hasTestCases;
             if (!hasTestCases) { document.getElementById("open-test-cases").classList.add("disabled"); }
@@ -378,7 +378,7 @@ function loadMappings(){
         dbMappings = JSON.parse(servletRequest("../chartservlet?function=localmap"));
         standardMappings = JSON.parse(servletRequest("../chartservlet?function=standardmap"));
     } catch (e) {
-        Metro.notify.create("No open project", "Warning: No open project", {animation: 'easeOutBounce', cls: "edit-notify"});
+        displayQueryInfoBox(infoBoxProperties.warning, "Warning: No open project", "No open project");
         spinner.style.display = "none";
         buttonsToDisable.forEach((btn) => document.getElementById(btn).classList.add("disabled"));
         return;
@@ -435,7 +435,7 @@ function saveDbMapChanges(){
             let key = row.cells[0].innerText.trim();
             let value = row.cells[1].innerText.trim();
             if (key.indexOf(" ") >= 0) { 
-                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                displayQueryInfoBox(infoBoxProperties.warning, "Warning: Space in term", "Terms cannot contain spaces");
                 return;
             }
             singulars[key] = value;
@@ -448,7 +448,7 @@ function saveDbMapChanges(){
             let key = row.cells[0].innerText.trim();
             let value = row.cells[1].innerText.trim();
             if (key.indexOf(" ") >= 0) { 
-                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                displayQueryInfoBox(infoBoxProperties.warning, "Warning: Space in term", "Terms cannot contain spaces");
                 return;
             }
             plurals[key] = value;
@@ -459,7 +459,7 @@ function saveDbMapChanges(){
     const mapping = {"singulars": singulars, "plurals": plurals};
     
     servletRequestPost("../chartservlet?function=updateLocalMapping", mapping);
-    Metro.notify.create("Database mapping saved", "Success", {animation: 'easeOutBounce', cls: "save-success"});
+    displayQueryInfoBox(infoBoxProperties.success, "Success", "Database mapping saved");
 }
 
 function saveTermMapChanges(){
@@ -472,7 +472,7 @@ function saveTermMapChanges(){
             let key = row.cells[0].innerText.trim();
             let value = row.cells[1].innerText.trim();
             if (key.indexOf(" ") >= 0) { 
-                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                displayQueryInfoBox(infoBoxProperties.warning, "Warning: Space in term", "Terms cannot contain spaces");
                 return;
             }
             singulars[key] = value;
@@ -485,7 +485,7 @@ function saveTermMapChanges(){
             let key = row.cells[0].innerText.trim();
             let value = row.cells[1].innerText.trim();
             if (key.indexOf(" ") >= 0) { 
-                Metro.notify.create("Terms cannot contain spaces", "Warning: Space in term", {animation: 'easeOutBounce', cls: "edit-notify"}); 
+                displayQueryInfoBox(infoBoxProperties.warning, "Warning: Space in term", "Terms cannot contain spaces");
                 return;
             }
             plurals[key] = value;
@@ -495,7 +495,7 @@ function saveTermMapChanges(){
     
     const mapping = {"singulars": singulars, "plurals": plurals};
     servletRequestPost("../chartservlet?function=updateStandardizedMapping", mapping);
-    Metro.notify.create("Standardized terminology mapping saved", "Success", {animation: 'easeOutBounce', cls: "save-success"})
+    displayQueryInfoBox(infoBoxProperties.success, "Success", "Standardized terminology mapping saved");
 }
 
 function addNewDBMapSingular() {
@@ -586,7 +586,7 @@ function showPreferences(){
 function savePreferencesChanges(){
     const defaultWorkingDir = document.getElementById("defaultWorkingDirectory").value;
     servletRequestPost("../chartservlet?function=setDefaultWorkingDirectory", defaultWorkingDir);
-    Metro.notify.create("Preferences saved", "Success", {animation: 'easeOutBounce', cls: "save-success"})
+    displayQueryInfoBox(infoBoxProperties.success, "Success", "Preferences saved");
 }
 
 function removeClassesFromDefaultDirBtn() {
