@@ -370,7 +370,7 @@ function addConditionalStep(stepId, stepType, iconCaption, posValue, stepTypePos
         {id:stepIdNeg, type:stepTypeNeg, prevItemId: stepId, caption: iconCaptionNeg, condition: null}];
 }
 
-function drawChart(state, endlines){
+function drawChart(state, endlines){ //check for number of lines at conditional. seems possible to have three? (including endline that is NOT documented!!)
     lines = [];
     linesToEnd = [];
     startIcon = null;
@@ -462,6 +462,7 @@ function drawChart(state, endlines){
             line.position();
         });
     }
+    console.log(endlines);
     showErrorsWarning(state);
 }
 

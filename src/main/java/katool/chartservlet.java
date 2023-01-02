@@ -620,12 +620,12 @@ public class chartservlet extends HttpServlet {
             Utils.currentPath = pathToFile;
         }
         
-        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+)\",\"t");
-        Pattern statePattern = Pattern.compile("\"state\":(.+),\"e");
-        Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+),\"w");
-        Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+),\"s");
-        Pattern testCasesPattern = Pattern.compile("\"testCasesFileLocation\":\"(.+)\"}");
-        Pattern mlmNamePattern = Pattern.compile("\"mlmname\":\"(.+)\",\"ar");
+        Pattern workingDirPattern = Pattern.compile("\"workingDirectory\":\"(.+?)\",\"t");
+        Pattern statePattern = Pattern.compile("\"state\":(.+?),\"e");
+        Pattern endLinesPattern = Pattern.compile("\"endLines\":(.+?),\"w");
+        Pattern dependenciesPattern = Pattern.compile("\"dependencies\":(.+?),\"s");
+        Pattern testCasesPattern = Pattern.compile("\"testCasesFileLocation\":\"(.+?)\"}");
+        Pattern mlmNamePattern = Pattern.compile("\"mlmname\":\"(.+?)\",\"ar");
         Matcher workingDirMatcher = workingDirPattern.matcher(project);
         Matcher stateMatcher = statePattern.matcher(project);
         Matcher endLinesMatcher = endLinesPattern.matcher(project);
@@ -722,9 +722,10 @@ public class chartservlet extends HttpServlet {
             
         if (oldItem.getType().equals("end")){
             currentState = new Pair(currentState.getValue0(), new ArrayList<>());
+            return;
         } else {
            removeEndline(id); 
-           currentState.getValue1().add("\"" + oldItem.getPrevItemId() + "\"");
+           if (Utils.nextIsEnd(id, currentState.getValue0())) { currentState.getValue1().add("\"" + oldItem.getPrevItemId() + "\""); }
         }
         removeUnusedEndlines();
     }
@@ -738,7 +739,7 @@ public class chartservlet extends HttpServlet {
         for (String id : currentState.getValue1()) {
             if (!stateIds.contains(id)) { endlinesCopy.remove(id); }
         }
-        currentState = currentState.setAt1(endlinesCopy);
+        System.out.println(endlinesCopy.toString());
     }
     
     private void updateState(HttpServletRequest request) throws IOException{
