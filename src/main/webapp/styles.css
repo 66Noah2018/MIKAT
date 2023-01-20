@@ -121,6 +121,11 @@ a{
     margin: auto;
 }
 
+.waiting-to-run-icon{
+    font-size: 12px !important;
+    font-weight: 100;
+}
+
 .ribbon-grid{
     display: flex;
     -webkit-box-orient: vertical;
@@ -696,4 +701,15 @@ body {
 #_target_results thead th {
     text-align: left;
     font-size: larger;
+}
+
+#testingProgress {
+    width: 200px;
+    margin: 0;
+    float: left;
+}
+
+#testingProgressPercentage{
+    line-height: 0.7;
+    margin-left: 205px;
 }

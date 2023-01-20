@@ -21,6 +21,9 @@ let outcomesTable = 0;
 let headings = null;
 let chartJS;
 let newTestCasesFile = false;
+const successIcon = "<span class='mif-done'></span>";
+const errorIcon = "<span class='mif-cancel'></span>";
+const waitingToRunIcon = "<span class='mif-spinner ani-pulse waiting-to-run-icon'></span>"
 
 function cartesian(args) {
     var r = [], max = args.length-1;
@@ -310,6 +313,7 @@ function startTests(){
     let testsPassed = [];
     let testsFailed = [];
     
+    setUpResultsView(testPatients);
     const http = new XMLHttpRequest();
     http.open("GET", "./chartservlet?function=translateJS", false);
     http.send();
@@ -322,13 +326,43 @@ function startTests(){
         functionString += "code)";
         chartJS = eval(functionString);
         let result;
+        const NR_OF_TESTS = testPatients.length;
+        let nrOfTestsCompleted = 0;
         testPatients.forEach(patient => {
             let result = runTest(patient, parameters );
-            if (result.passed === true) { testsPassed.push([result.testCaseNr, result.expectedResult, result.testResult]); }
-            else { testsFailed.push([result.testCaseNr, result.expectedResult, result.testResult]); }
+            if (result.passed === true) {
+                document.getElementById("statusTest" + result.testCaseNr).innerHTML = successIcon;
+            } else {
+                document.getElementById("statusTest" + result.testCaseNr).innerHTML = errorIcon;
+                document.getElementById("actualResultTest" + result.testCaseNr).innerText = result.expectedResult.join(", ");
+            }
+            nrOfTestsCompleted += 1;
+            let newValue = Math.round((nrOfTestsCompleted/NR_OF_TESTS) * 100);
+            document.getElementById("testingProgress").setAttribute("data-value", newValue);
+            if (newValue < 100) { document.getElementById("testingProgressPercentage").innerText = newValue + "%"; }
+            else { document.getElementById("testingProgressPercentage").innerText = "Done"; }
         });
-        displayTestResults(testsPassed, testsFailed);
+    } // add infobox if this crashes?
+}
+
+function setUpResultsView(testPatients){
+    if (headings === undefined || headings.medicalActions === undefined) {
+        headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
     }
+    document.getElementById("results_menu").innerHTML = '<div>Testing progress:</div><div data-role="progress" data-type="load" data-value="0" id="testingProgress"></div><div id="testingProgressPercentage"></div>';
+    let target = document.getElementById("results_table");
+    let tableCode = "<table style='width:100%'><thead><tr><th style='width:75px'>Status</th><th style='width:150px'>Test case</th><th>Expected result</th><th>Actual result</th></tr></thead><tbody>";
+    testPatients.forEach(patient => {
+        expectedResults = [];
+        (headings.medicalActions).forEach(action => {
+            let value = patient[action];
+            if (value === "true") { expectedResults.push(action); }
+        });
+        tableCode += "<tr><td style='width:75px' id='statusTest" + patient["#"] + "'>" + waitingToRunIcon + "</td><td style='width:150px'>Test case " + patient["#"] + "</td><td>" + expectedResults.join(", ") + "</td><td id='actualResultTest" + patient["#"] + "'></td></tr>";
+    });
+    tableCode += "</tbody></table>";
+    target.innerHTML = tableCode;
+    showTestResults();
 }
 
 function runTest(patient, parameters) {
@@ -358,22 +392,6 @@ function runTest(patient, parameters) {
     result.expectedResult = expectedResults;
     result.testResult = results;
     return result;
-}
-
-function displayTestResults(testsPassed, testsFailed){
-    const successIcon = "<span class='mif-done'></span>";
-    const errorIcon = "<span class='mif-cancel'></span>";
-    let target = document.getElementById("_target_results");
-    let tableCode = "<table style='width:100%'><thead><tr><th style='width:75px'>Status</th><th style='width:150px'>Test case</th><th>Expected result</th><th>Actual result</th></tr></thead><tbody>";
-    testsFailed.forEach(test => {
-        tableCode += "<tr><td style='width:75px'>" + errorIcon + "</td><td style='width:150px'>Test case " + test[0] + "</td><td>" + test[1].join(", ") + "</td><td>" + test[2].join(", ") + "</td></tr>";
-    });
-    testsPassed.forEach(test => {
-        tableCode += "<tr><td style='width:75px'>" + successIcon + "</td><td style='width:150px'>Test case " + test[0] + "</td><td>" + test[1].join(", ") + "</td><td>" + test[2].join(", ") + "</td></tr>";
-    });
-    tableCode += "</tbody></table>";
-    target.innerHTML = tableCode;
-    showTestResults();
 }
 
 function stopTests(){}
