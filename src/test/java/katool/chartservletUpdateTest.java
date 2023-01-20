@@ -34,38 +34,18 @@ import org.eclipse.jetty.testing.ServletTester;
 public class chartservletUpdateTest {
     private static ServletTester tester;
     private static ChartItem mockStart;
-    private static ChartItem mockElement1;
-    private static ChartItem mockElement2;
-    private static ChartItem mockEnd;
     private static ChartItem mockInsertElement;
     private static LinkedList<ChartItem> mockConditional;
     private static LinkedList<ChartItem> mockConditional2;
-    private static ChartItem mockRetrieveData;
     private static ChartItem mockRetrieveData2;
-    private static ChartItem mockRetrieveDataPlural;
-    private static ChartItem mockRetrieveDataPlural2;
-    private static ChartItem mockLoop;
-    private static ChartItem mockLoopFirstAction;
-    private static ChartItem mockLoop2;
-    private static ChartItem mockLoop2FirstAction;
     private static HttpTester request;
     private static HttpTester response;
 
     @BeforeAll
     public static void setUpClass() throws Exception {
         mockStart = new ChartItem("a111", "start", "-1", "Start", null);
-        mockElement1 = new ChartItem("a222", "newProcedure", "a111", "Procedure", null);
-        mockElement2 = new ChartItem("a333", "orderLabs", "a222", "Labs", null);
-        mockEnd = new ChartItem("a0", "end", "a333", "End", null);
         mockInsertElement = new ChartItem("a444", "addNotes", "a222", "Notes", null);
-        mockRetrieveData = new ChartItem("a2", "retrievedata", "a111", "Test1", null);
         mockRetrieveData2 = new ChartItem("a3", "retrievedata", "a1", "Test2", null);
-        mockRetrieveDataPlural = new ChartItem("a4", "retrievedata", "a111", "Plural1", null);
-        mockLoop = new ChartItem("a5", "loop", "a4", "Plural1", null);
-        mockLoopFirstAction = new ChartItem("a6", "orderLabs", "a5", "Labs", null);
-        mockRetrieveDataPlural2 = new ChartItem("a8", "retrievedata", "a6", "Plural2", null);
-        mockLoop2 = new ChartItem("a9", "loop", "a8", "Plural2", null);
-        mockLoop2FirstAction = new ChartItem("a30", "addNotes", "a9", "Notes", null);
         
         mockConditional = new LinkedList<>();
         mockConditional.add(new ChartItem("a1", "conditional", "a2", "Test1", null));

@@ -17,8 +17,6 @@
 package katool;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import org.eclipse.jetty.testing.HttpTester;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;

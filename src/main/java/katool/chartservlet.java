@@ -778,13 +778,13 @@ public class chartservlet extends HttpServlet {
         } else if (index > 0) { // replace
             if (isMultipart.equals("false") || firstMultipart.equals("true")) {
                 maintainMaxDequeSize("undo");
-                undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
+                if (!firstMultipart.equals("true")) { undoStack.addFirst(Utils.deepCopyCurrentState(currentState)); }
             }
             currentState.getValue0().set(index, newItem);
         } else if (isMultipart.equals("true")){ // conditional
             if (firstMultipart.equals("true")) { 
                 maintainMaxDequeSize("undo");
-                undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
+//                undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
                 conditionalId = id;
             }
             
@@ -802,6 +802,7 @@ public class chartservlet extends HttpServlet {
                     nextItem.setPrevItemId(prevItemId);
                     currentState.getValue0().set(nextIndex, nextItem);
                 }
+                undoStack.addFirst(Utils.deepCopyCurrentState(currentState));
             }
         } else { // standard
             maintainMaxDequeSize("undo");
