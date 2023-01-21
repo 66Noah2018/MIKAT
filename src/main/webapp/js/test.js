@@ -367,7 +367,7 @@ function filterTestResults(){
         let table = document.getElementById("resultsTable");
         let tr = table.getElementsByTagName("tr");
 
-        if ((showPassedTests && showFailedTests) || (!showPassedTests && !showFailedTests)){
+        if (showPassedTests && showFailedTests){
             for (i = 0; i < tr.length; i++) { tr[i].style.display = ""; }
         } else if (showPassedTests && !showFailedTests) {
             for (i = 0; i < tr.length; i++) {
