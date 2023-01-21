@@ -23,7 +23,9 @@ let chartJS;
 let newTestCasesFile = false;
 const successIcon = "<span class='mif-done'></span>";
 const errorIcon = "<span class='mif-cancel'></span>";
-const waitingToRunIcon = "<span class='mif-spinner ani-pulse waiting-to-run-icon'></span>"
+const waitingToRunIcon = "<span class='mif-spinner ani-pulse waiting-to-run-icon'></span>";
+let testsPassedIds = [];
+let testsFailedIds = [];
 
 function cartesian(args) {
     var r = [], max = args.length-1;
@@ -310,48 +312,96 @@ function startTests(){
         return;
     }
     if (testPatients === null) { try {loadTestCases(); } catch (e) {} }
-    let testsPassed = [];
-    let testsFailed = [];
+    testsPassedIds = [];
+    testsFailedIds = [];
     
     setUpResultsView(testPatients);
     const http = new XMLHttpRequest();
     http.open("GET", "./chartservlet?function=translateJS", false);
     http.send();
     if (http.readyState === 4 && http.status === 200) {
-        const response = JSON.parse(http.responseText);
-        const parameters = response.parameters;
-        const code = response.code;
-        let functionString = "new Function(";
-        parameters.forEach(parameter => functionString += "\"" + parameter + "\",");
-        functionString += "code)";
-        chartJS = eval(functionString);
-        let result;
-        const NR_OF_TESTS = testPatients.length;
-        let nrOfTestsCompleted = 0;
-        testPatients.forEach(patient => {
-            let result = runTest(patient, parameters );
-            if (result.passed === true) {
-                document.getElementById("statusTest" + result.testCaseNr).innerHTML = successIcon;
+        if (http.status === 200) {
+            const response = JSON.parse(http.responseText);
+            const parameters = response.parameters;
+            const code = response.code;
+            let functionString = "new Function(";
+            parameters.forEach(parameter => functionString += "\"" + parameter + "\",");
+            functionString += "code)";
+            chartJS = eval(functionString);
+            const NR_OF_TESTS = testPatients.length;
+            let nrOfTestsCompleted = 0;
+            testPatients.forEach(patient => {
+                let result = runTest(patient, parameters );
+                if (result.passed === true) {
+                    document.getElementById("statusTest" + result.testCaseNr).innerHTML = successIcon;
+                    testsPassedIds.push("statusTest" + result.testCaseNr);
+                } 
+                else {
+                    document.getElementById("statusTest" + result.testCaseNr).innerHTML = errorIcon;
+                    document.getElementById("actualResultTest" + result.testCaseNr).innerText = result.expectedResult.join(", ");
+                    testsFailedIds.push("statusTest" + result.testCaseNr);
+                }
+                nrOfTestsCompleted += 1;
+                let newValue = Math.round((nrOfTestsCompleted/NR_OF_TESTS) * 100);
+                document.getElementById("testingProgress").setAttribute("data-value", newValue);
+                if (newValue < 100) { document.getElementById("testingProgressPercentage").innerText = newValue + "%"; }
+                else { document.getElementById("testingProgressPercentage").innerText = "Done"; }
+            });
+            if (testsFailedIds.length > 0){
+                document.getElementById("tests-failed-btn").setAttribute("class", "button active bg-gray js-active");
+                document.getElementById("tests-passed-btn").setAttribute("class", "button");
+                filterTestResults();
             } else {
-                document.getElementById("statusTest" + result.testCaseNr).innerHTML = errorIcon;
-                document.getElementById("actualResultTest" + result.testCaseNr).innerText = result.expectedResult.join(", ");
+                document.getElementById("tests-failed-btn").setAttribute("class", "button active bg-gray js-active");
+                document.getElementById("tests-passed-btn").setAttribute("class", "button active bg-gray js-active");
             }
-            nrOfTestsCompleted += 1;
-            let newValue = Math.round((nrOfTestsCompleted/NR_OF_TESTS) * 100);
-            document.getElementById("testingProgress").setAttribute("data-value", newValue);
-            if (newValue < 100) { document.getElementById("testingProgressPercentage").innerText = newValue + "%"; }
-            else { document.getElementById("testingProgressPercentage").innerText = "Done"; }
-        });
-    } // add infobox if this crashes?
+        } 
+        else { displayQueryInfoBox(infoBoxProperties.error, "Error: Unknown error", "Cannot run tests due to unknown error"); }
+    }
+}
+
+function filterTestResults(){
+    setTimeout(function(){
+        const showPassedTests = document.getElementById("tests-passed-btn").classList.contains("active");
+        const showFailedTests = document.getElementById("tests-failed-btn").classList.contains("active");
+        let table = document.getElementById("resultsTable");
+        let tr = table.getElementsByTagName("tr");
+
+        if ((showPassedTests && showFailedTests) || (!showPassedTests && !showFailedTests)){
+            for (i = 0; i < tr.length; i++) { tr[i].style.display = ""; }
+        } else if (showPassedTests && !showFailedTests) {
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    if (testsPassedIds.includes(td.id)) {
+                        tr[i].style.display = "table-row";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+        else if (!showPassedTests && showFailedTests){
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    if (testsFailedIds.includes(td.id)) {
+                        tr[i].style.display = "table-row";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    }, 0);
 }
 
 function setUpResultsView(testPatients){
     if (headings === undefined || headings.medicalActions === undefined) {
         headings = JSON.parse(servletRequest("./chartservlet?function=getTestTableHeadings"));
     }
-    document.getElementById("results_menu").innerHTML = '<div>Testing progress:</div><div data-role="progress" data-type="load" data-value="0" id="testingProgress"></div><div id="testingProgressPercentage"></div>';
     let target = document.getElementById("results_table");
-    let tableCode = "<table style='width:100%'><thead><tr><th style='width:75px'>Status</th><th style='width:150px'>Test case</th><th>Expected result</th><th>Actual result</th></tr></thead><tbody>";
+    let tableCode = "<table style='width:100%' id='resultsTable'><thead><tr><th style='width:75px'>Status</th><th style='width:150px'>Test case</th><th>Expected result</th><th>Actual result</th></tr></thead><tbody>";
     testPatients.forEach(patient => {
         expectedResults = [];
         (headings.medicalActions).forEach(action => {

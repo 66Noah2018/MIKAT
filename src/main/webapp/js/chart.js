@@ -20,7 +20,8 @@ let parser = new DOMParser();
 const infoBoxProperties = {
     warning: {animation: 'easeOutBounce', cls: "edit-notify"},
     warningKeepOpen: {animation: 'easeOutBounce', cls: "edit-notify", keepOpen: true},
-    success: {animation: 'easeOutBounce', cls: "save-success"}
+    success: {animation: 'easeOutBounce', cls: "save-success"},
+    error: {anymation: 'easeOutBounce', cls: "info-box-error"}
 };
 const flowchartImageCodes = {
     start: "<span class='far fa-play-circle flow-icon'></span>",

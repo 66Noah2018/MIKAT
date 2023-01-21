@@ -246,7 +246,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </button>
                     </div>
                     <div id="_target_results">
-                        <div id="results_menu"></div>
+                        <div id="results_menu">
+                            <div class="progress-block">
+                                <div>Testing progress:</div>
+                                <div data-role="progress" data-type="load" data-value="0" id="testingProgress"></div>
+                                <div id="testingProgressPercentage"></div>
+                            </div>
+                            <div class="select-results-to-show">
+                                <div data-role="buttongroup" data-mode="multi" data-cls-active="bg-gray">
+                                    <button class="button bg-grayWhite" onclick="filterTestResults()" id="tests-passed-btn"><span class="mif-done"></span></button>
+                                    <button class="button bg-grayWhite" onclick="filterTestResults()" id="tests-failed-btn"><span class="mif-cancel"></span></button>
+                                </div>
+                            </div>
+                        </div>
                         <div id="results_table"></div>
                     </div>
                 </div>

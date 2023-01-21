@@ -480,6 +480,10 @@ table{
     color: white;
 }
 
+.info-box-error {
+    background-color: red;
+}
+
 #condition-prefix-div .select {
     width: 100px !important;
 }
@@ -712,4 +716,12 @@ body {
 #testingProgressPercentage{
     line-height: 0.7;
     margin-left: 205px;
+}
+
+.progress-block{
+    float: left;
+}
+
+.select-results-to-show{
+    margin-left: 300px;
 }
